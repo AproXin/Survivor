@@ -1,0 +1,6 @@
+{
+  "name": "墨夜提灯 · Ink-Night",
+  "description": "中式水墨志怪双世界变脸幸存者动作游戏 — 提灯守夜，翻界变脸，谨守禁忌。",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
