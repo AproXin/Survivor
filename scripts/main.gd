@@ -429,6 +429,8 @@ func choose_upgrade(index: int) -> void:
 		return
 	var id: String = choices[index].id
 	if upgrade_levels[id] >= 3:
+		phase = Phase.PLAYING
+		_emit_hud()
 		return
 	upgrade_levels[id] += 1
 	match id:

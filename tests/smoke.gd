@@ -141,6 +141,10 @@ func _run() -> void:
 	upgrade_scene.choose_upgrade(2)
 	_check(is_equal_approx(upgrade_scene.player.sheng_damage_bonus, 4.0), "sword upgrade must add sheng damage")
 	_check(is_equal_approx(upgrade_scene.player.sheng_interval_bonus, -0.03), "sword upgrade must reduce sheng interval")
+	upgrade_scene.phase = upgrade_scene.Phase.LEVELUP
+	upgrade_scene.upgrade_levels.talisman = 3
+	upgrade_scene.choose_upgrade(0)
+	_check(upgrade_scene.phase == upgrade_scene.Phase.PLAYING, "maxed upgrade choice must not softlock")
 	upgrade_scene.queue_free()
 	quit(1 if failures > 0 else 0)
 
