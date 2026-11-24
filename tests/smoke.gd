@@ -146,6 +146,30 @@ func _run() -> void:
 	upgrade_scene.choose_upgrade(0)
 	_check(upgrade_scene.phase == upgrade_scene.Phase.PLAYING, "maxed upgrade choice must not softlock")
 	upgrade_scene.queue_free()
+	var taboo_scene = _new_main()
+	await process_frame
+	if not taboo_scene.has_method("setup_taboos"):
+		printerr("FAIL: taboo methods are missing")
+		quit(1)
+		return
+	taboo_scene.start_run()
+	taboo_scene.setup_taboos()
+	var shadow_pos: Vector2 = taboo_scene.hazards.shadow_zones[0].pos
+	taboo_scene.player.pos = shadow_pos
+	taboo_scene.update_taboos(1.1)
+	_check(taboo_scene.violations == 1, "shadow taboo must trigger after one second")
+	_check(not taboo_scene.enemies.is_empty(), "shadow violation must spawn punisher")
+	taboo_scene.hazards.white_stranger.active = true
+	taboo_scene.hazards.white_stranger.pos = taboo_scene.player.pos + Vector2(20.0, 0.0)
+	taboo_scene.update_taboos(0.016)
+	_check(taboo_scene.violations == 2, "white stranger proximity must violate rule")
+	taboo_scene.hazards.blackout_active = true
+	taboo_scene.hazards.blackout_remaining = 5.0
+	taboo_scene.hazards.frozen_light = Vector2(500.0, 500.0)
+	taboo_scene.player.pos = Vector2.ZERO
+	taboo_scene.update_taboos(0.016)
+	_check(taboo_scene.violations == 3, "leaving frozen light during blackout must violate rule")
+	taboo_scene.queue_free()
 	quit(1 if failures > 0 else 0)
 
 func _check(condition: bool, message: String) -> void:

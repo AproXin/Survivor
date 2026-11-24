@@ -188,6 +188,7 @@ func _reset_run_state() -> void:
 func start_run() -> void:
 	_reset_run_state()
 	phase = Phase.PLAYING
+	setup_taboos()
 	_emit_hud()
 
 func return_to_title() -> void:
@@ -225,6 +226,7 @@ func step(dt: float) -> void:
 	if move.length_squared() > 0.01:
 		player.walk += speed * dt
 	camera = camera.lerp(player.pos, 1.0 - exp(-8.0 * dt))
+	update_taboos(dt)
 	if flip_freeze <= 0.0:
 		update_combat(dt)
 	update_waves(dt)
@@ -390,6 +392,70 @@ func update_effects(dt: float) -> void:
 		particles[i].life -= dt
 		if particles[i].life <= 0.0:
 			particles.remove_at(i)
+
+func setup_taboos() -> void:
+	hazards.shadow_zones = [
+		{"pos": Vector2(-260.0, -120.0), "radius": 95.0},
+		{"pos": Vector2(310.0, 180.0), "radius": 110.0},
+		{"pos": Vector2(-120.0, 390.0), "radius": 85.0},
+	]
+	hazards.white_stranger = {"active": false, "pos": Vector2(900.0, 900.0), "timer": 18.0}
+	hazards.blackout_cycle = 28.0
+
+func is_in_shadow(pos: Vector2) -> bool:
+	for zone in hazards.shadow_zones:
+		if pos.distance_to(zone.pos) <= zone.radius:
+			return true
+	return false
+
+func is_in_light(pos: Vector2) -> bool:
+	var radius: float = hazards.frozen_radius if hazards.blackout_active else (235.0 if realm == "mortal" else 185.0)
+	var center: Vector2 = hazards.frozen_light if hazards.blackout_active else player.pos
+	return pos.distance_to(center) <= radius
+
+func update_taboos(dt: float) -> void:
+	if is_in_shadow(player.pos):
+		hazards.shadow_timer += dt
+		if hazards.shadow_timer >= 1.0:
+			hazards.shadow_timer = 0.0
+			violate_rule("shadow")
+	else:
+		hazards.shadow_timer = 0.0
+	if not hazards.white_stranger.active:
+		hazards.white_stranger.timer -= dt
+		if hazards.white_stranger.timer <= 0.0:
+			hazards.white_stranger.active = true
+			hazards.white_stranger.timer = 13.0
+			var angle := rng.randf_range(0.0, TAU)
+			hazards.white_stranger.pos = player.pos + Vector2(cos(angle), sin(angle)) * 330.0
+	elif player.pos.distance_to(hazards.white_stranger.pos) <= 90.0:
+		hazards.white_stranger.active = false
+		hazards.white_stranger.timer = 22.0
+		violate_rule("stranger")
+	if not hazards.blackout_active:
+		hazards.blackout_cycle -= dt
+		if hazards.blackout_cycle <= 0.0:
+			hazards.blackout_active = true
+			hazards.blackout_remaining = 5.0
+			hazards.frozen_light = player.pos
+			hazards.frozen_radius = 235.0 if realm == "mortal" else 185.0
+	else:
+		hazards.blackout_remaining -= dt
+		if hazards.blackout_remaining <= 0.0:
+			hazards.blackout_active = false
+			hazards.blackout_cycle = 28.0
+		elif not is_in_light(player.pos):
+			hazards.blackout_active = false
+			hazards.blackout_cycle = 28.0
+			violate_rule("blackout")
+
+func violate_rule(rule_id: String) -> void:
+	violations += 1
+	for rule in rules:
+		if rule.id == rule_id:
+			rule.broken = true
+	spawn_punisher()
+	damage_player(8.0)
 
 func update_pickups(dt: float) -> void:
 	for i in range(gems.size() - 1, -1, -1):

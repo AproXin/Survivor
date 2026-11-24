@@ -255,8 +255,15 @@ func _draw_game_hud() -> void:
 	draw_string(body_font, Vector2(44, 162), realm_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, palette.grey_dark)
 	draw_style_box(parchment, Rect2(440, 28, 560, 44))
 	var rules: Array = current_snapshot.get("rules", [])
-	var rule_text := "  ·  ".join(rules.map(func(rule): return str(rule.get("title", ""))))
-	draw_string(body_font, Vector2(456, 57), "禁忌  " + rule_text, HORIZONTAL_ALIGNMENT_LEFT, 528, 14, palette.ink_night)
+	var rule_x: float = 456.0
+	draw_string(body_font, Vector2(rule_x, 57), "禁忌", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, palette.ink_night)
+	rule_x += body_font.get_string_size("禁忌", HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x + 12.0
+	for i in range(rules.size()):
+		var rule: Dictionary = rules[i]
+		var text := "  ·  " + str(rule.get("title", "")) if i > 0 else str(rule.get("title", ""))
+		var color: Color = palette.vermilion if bool(rule.get("broken", false)) else palette.ink_night
+		draw_string(body_font, Vector2(rule_x, 57), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, color)
+		rule_x += body_font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x
 	draw_style_box(parchment, Rect2(1170, 28, 242, 132))
 	draw_string(mono_font, Vector2(1188, 54), "COINS  x0", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, palette.ink_night)
 	draw_string(mono_font, Vector2(1188, 84), "EXP  %d/%d" % [int(current_snapshot.get("xp", 0.0)), int(current_snapshot.get("xp_to_next", 12.0))], HORIZONTAL_ALIGNMENT_LEFT, -1, 14, palette.ink_night)

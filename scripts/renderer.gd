@@ -56,6 +56,7 @@ func _draw() -> void:
 	_draw_ground(palette)
 	for prop in scenery:
 		_draw_prop(prop, palette)
+	_draw_taboos(palette)
 	_draw_player(palette)
 	_draw_entities(palette)
 	draw_set_transform(Vector2.ZERO)
@@ -128,6 +129,30 @@ func _draw_wall(pos: Vector2, scale_value: float, palette: Dictionary) -> void:
 	for i in range(7):
 		var offset := Vector2((i % 3) * 22.0 - 22.0, -float(i / 3) * 18.0)
 		draw_rect(Rect2(pos + offset * scale_value, Vector2(24.0, 18.0) * scale_value), palette.grey_dark)
+
+func _draw_taboos(palette: Dictionary) -> void:
+	for zone in sim.hazards.shadow_zones:
+		var pos: Vector2 = zone.pos
+		var radius: float = zone.radius
+		draw_circle(pos, radius, Color(0.0, 0.0, 0.0, 0.32))
+		if sim.is_in_shadow(sim.player.pos):
+			draw_arc(pos, radius, 0.0, TAU, 40, Color(palette.vermilion, 0.45), 2.0, true)
+	if sim.hazards.blackout_active:
+		var frozen: Vector2 = sim.hazards.frozen_light
+		draw_circle(frozen, sim.hazards.frozen_radius, Color(palette.amber, 0.06))
+		draw_arc(frozen, sim.hazards.frozen_radius, 0.0, TAU, 48, Color(palette.amber, 0.35), 2.0, true)
+	if sim.hazards.white_stranger.active:
+		var pos: Vector2 = sim.hazards.white_stranger.pos
+		draw_circle(pos + Vector2(0, -26), 13, palette.bone_bright)
+		draw_colored_polygon(PackedVector2Array([
+			pos + Vector2(-15, -12),
+			pos + Vector2(15, -12),
+			pos + Vector2(20, 26),
+			pos + Vector2(-20, 26),
+		]), palette.bone)
+		draw_circle(pos + Vector2(-5, -28), 2.2, palette.ink_deep)
+		draw_circle(pos + Vector2(5, -28), 2.2, palette.ink_deep)
+		draw_line(pos + Vector2(-5, -19), pos + Vector2(5, -19), palette.ink_deep, 1.4)
 
 func _draw_player(palette: Dictionary) -> void:
 	var pos: Vector2 = sim.player.pos
@@ -243,11 +268,13 @@ func set_light_uniforms() -> void:
 	if overlay == null or overlay.material == null:
 		return
 	var viewport_size := get_viewport_rect().size
-	var light_center: Vector2 = sim.player.pos - sim.camera + viewport_size * 0.5
+	var light_world: Vector2 = sim.hazards.frozen_light if sim.hazards.blackout_active else sim.player.pos
+	var light_center: Vector2 = light_world - sim.camera + viewport_size * 0.5
+	var light_radius: float = sim.hazards.frozen_radius if sim.hazards.blackout_active else (235.0 if sim.realm == "mortal" else 185.0)
 	overlay.material.set_shader_parameter("light_center", light_center / viewport_size)
 	overlay.material.set_shader_parameter("viewport_size", viewport_size)
-	overlay.material.set_shader_parameter("light_radius", 235.0 if sim.realm == "mortal" else 185.0)
-	overlay.material.set_shader_parameter("darkness", 0.62 if sim.realm == "mortal" else 0.72)
+	overlay.material.set_shader_parameter("light_radius", light_radius)
+	overlay.material.set_shader_parameter("darkness", 0.86 if sim.hazards.blackout_active else (0.62 if sim.realm == "mortal" else 0.72))
 
 func capture_screenshot(path: String) -> void:
 	await RenderingServer.frame_post_draw
