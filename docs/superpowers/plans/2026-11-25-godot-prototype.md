@@ -620,6 +620,10 @@ git commit -m "feat: add Godot state machine and movement"
 
 ```gdscript
 	var renderer_script = load("res://scripts/renderer.gd")
+	if renderer_script == null:
+		printerr("FAIL: scripts/renderer.gd is missing")
+		quit(1)
+		return
 	var renderer = renderer_script.new()
 	var scenery_a = renderer.make_scenery(20261125)
 	var scenery_b = renderer.make_scenery(20261125)
@@ -1807,24 +1811,24 @@ func _initialize() -> void:
 func _run(scene: InkMain) -> void:
 	DirAccess.make_dir_recursive_absolute("res://docs/screenshots")
 	await _frames(8)
-	await scene.$WorldView.capture_screenshot("res://docs/screenshots/title.png")
+	await scene.get_node("WorldView").capture_screenshot("res://docs/screenshots/title.png")
 	scene.start_run()
 	await _frames(120)
-	await scene.$WorldView.capture_screenshot("res://docs/screenshots/mortal.png")
+	await scene.get_node("WorldView").capture_screenshot("res://docs/screenshots/mortal.png")
 	scene.flip_realm()
 	await _frames(45)
-	await scene.$WorldView.capture_screenshot("res://docs/screenshots/spectral.png")
+	await scene.get_node("WorldView").capture_screenshot("res://docs/screenshots/spectral.png")
 	scene.add_xp(999.0)
 	await _frames(8)
-	await scene.$WorldView.capture_screenshot("res://docs/screenshots/levelup.png")
+	await scene.get_node("WorldView").capture_screenshot("res://docs/screenshots/levelup.png")
 	scene.choose_upgrade(0)
 	scene.toggle_pause()
 	await _frames(8)
-	await scene.$WorldView.capture_screenshot("res://docs/screenshots/pause.png")
+	await scene.get_node("WorldView").capture_screenshot("res://docs/screenshots/pause.png")
 	scene.toggle_pause()
 	scene.finish_run(true)
 	await _frames(8)
-	await scene.$WorldView.capture_screenshot("res://docs/screenshots/result.png")
+	await scene.get_node("WorldView").capture_screenshot("res://docs/screenshots/result.png")
 	quit(0)
 
 func _frames(count: int) -> void:
