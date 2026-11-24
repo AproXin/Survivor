@@ -61,10 +61,13 @@ var hazards := {
 	"frozen_radius": 235.0,
 }
 
+@onready var world_view: InkRenderer = $WorldView
+
 func _ready() -> void:
 	rng.randomize()
 	_ensure_input_actions()
 	_reset_run_state()
+	world_view.setup(self)
 	_emit_hud()
 
 func _process(delta: float) -> void:

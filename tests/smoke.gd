@@ -56,6 +56,18 @@ func _run() -> void:
 	Input.action_release("move_right")
 	_check(main_scene.player.pos.x <= data.WORLD_HALF, "player must stay inside world bounds")
 	main_scene.queue_free()
+	var renderer_script = load("res://scripts/renderer.gd")
+	if renderer_script == null:
+		printerr("FAIL: scripts/renderer.gd is missing")
+		quit(1)
+		return
+	var renderer = renderer_script.new()
+	var scenery_a = renderer.make_scenery(20261125)
+	var scenery_b = renderer.make_scenery(20261125)
+	_check(scenery_a.size() >= 60, "scenery must contain at least 60 props")
+	_check(scenery_a == scenery_b, "same seed must produce identical scenery")
+	_check(scenery_a[0].pos == scenery_b[0].pos, "scenery positions must be deterministic")
+	renderer.free()
 	quit(1 if failures > 0 else 0)
 
 func _check(condition: bool, message: String) -> void:
