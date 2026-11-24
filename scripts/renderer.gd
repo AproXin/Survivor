@@ -61,6 +61,8 @@ func _draw() -> void:
 	draw_set_transform(Vector2.ZERO)
 	_draw_moon(palette, viewport_size)
 	_draw_foreground_mist(palette, viewport_size)
+	if sim.flip_freeze > 0.0:
+		draw_rect(Rect2(Vector2.ZERO, viewport_size), Color(palette.bone_bright, sim.flip_freeze / InkData.player_base().flip_freeze_sec * 0.22))
 
 func _draw_ground(palette: Dictionary) -> void:
 	draw_rect(Rect2(-InkData.WORLD_HALF, -InkData.WORLD_HALF, InkData.WORLD_SIZE, InkData.WORLD_SIZE), palette.ink_night)
@@ -130,11 +132,25 @@ func _draw_wall(pos: Vector2, scale_value: float, palette: Dictionary) -> void:
 func _draw_player(palette: Dictionary) -> void:
 	var pos: Vector2 = sim.player.pos
 	var bob := sin(sim.player.walk * 0.08) * 2.0 if sim.player.vel.length_squared() > 1.0 else 0.0
+	var is_spectral := sim.realm == "spectral"
+	var robe: Color = palette.grey_mid
+	if is_spectral:
+		robe = palette.bone if sim.face == "dan" else palette.grey_light
 	draw_circle(pos + Vector2(0.0, 18.0), 18.0, Color(0.0, 0.0, 0.0, 0.35))
-	draw_rect(Rect2(pos + Vector2(-13.0, -24.0 + bob), Vector2(26.0, 38.0)), palette.grey_mid)
-	draw_circle(pos + Vector2(0.0, -30.0 + bob), 11.0, palette.bone_dark)
+	draw_rect(Rect2(pos + Vector2(-13.0, -24.0 + bob), Vector2(26.0, 38.0)), robe)
+	draw_circle(pos + Vector2(0.0, -30.0 + bob), 11.0, palette.bone_bright if is_spectral else palette.bone_dark)
 	draw_rect(Rect2(pos + Vector2(-17.0, -42.0 + bob), Vector2(34.0, 7.0)), palette.ink_deep)
 	draw_rect(Rect2(pos + Vector2(-12.0, -49.0 + bob), Vector2(24.0, 8.0)), palette.ink_slate)
+	if is_spectral:
+		draw_line(pos + Vector2(0, -39 + bob), pos + Vector2(0, -22 + bob), palette.vermilion_dark, 1.5)
+		draw_arc(pos + Vector2(-5, -31 + bob), 3.0, PI, TAU, 8, palette.ink_deep, 1.5, true)
+		draw_arc(pos + Vector2(5, -31 + bob), 3.0, PI, TAU, 8, palette.ink_deep, 1.5, true)
+		if sim.face == "sheng":
+			draw_line(pos + Vector2(18, -2), pos + Vector2(42, -48), palette.bone_bright, 3.0)
+			draw_line(pos + Vector2(15, -6), pos + Vector2(24, -10), palette.amber, 4.0)
+		else:
+			draw_arc(pos + Vector2(-18, -6), 26.0, PI * 0.8, TAU * 0.9, 18, palette.bone, 7.0, true)
+			draw_arc(pos + Vector2(18, -6), 26.0, PI * 0.1, PI * 1.2, 18, palette.bone, 7.0, true)
 	var lantern_pos := pos + Vector2(20.0 * sim.player.facing, -10.0 + bob)
 	draw_circle(lantern_pos, 42.0, Color(palette.amber, 0.08))
 	draw_circle(lantern_pos, 25.0, Color(palette.amber, 0.15))

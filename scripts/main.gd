@@ -385,6 +385,46 @@ func update_effects(dt: float) -> void:
 		if particles[i].life <= 0.0:
 			particles.remove_at(i)
 
+func flip_realm() -> bool:
+	if phase != Phase.PLAYING or flip_cooldown > 0.0:
+		return false
+	realm = "spectral" if realm == "mortal" else "mortal"
+	flip_cooldown = InkData.player_base().flip_cooldown_sec
+	flip_freeze = InkData.player_base().flip_freeze_sec
+	player.fuel = maxf(0.0, player.fuel - 8.0)
+	var blast_radius: float = InkData.player_base().flip_blast_radius
+	for i in range(enemies.size() - 1, -1, -1):
+		if player.pos.distance_to(enemies[i].pos) <= blast_radius:
+			damage_enemy(i, InkData.player_base().flip_blast_damage)
+	slashes.append({"pos": player.pos, "radius": blast_radius, "life": 0.42, "face": "flip"})
+	particles.append({"pos": player.pos, "vel": Vector2.ZERO, "life": 0.35, "color": InkData.palette().bone_bright})
+	return true
+
+func toggle_face() -> void:
+	if phase != Phase.PLAYING:
+		return
+	if realm == "spectral":
+		face = "dan" if face == "sheng" else "sheng"
+	else:
+		face = "dan"
+		flip_realm()
+
+func trigger_flip_input() -> void:
+	flip_realm()
+
+func trigger_face_input() -> void:
+	toggle_face()
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("pause"):
+		toggle_pause()
+	elif event.is_action_pressed("confirm") and phase == Phase.TITLE:
+		start_run()
+	elif event.is_action_pressed("flip"):
+		trigger_flip_input()
+	elif event.is_action_pressed("face"):
+		trigger_face_input()
+
 # Temporary stub; Task 9 replaces this with the real result flow.
 func finish_run(_victory: bool) -> void:
 	push_error("finish_run is not implemented until Task 9")

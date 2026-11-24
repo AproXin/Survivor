@@ -99,6 +99,23 @@ func _run() -> void:
 	combat_scene.damage_player(11.0)
 	_check(combat_scene.player.hp == 74.0, "invulnerability must block immediate second hit")
 	combat_scene.queue_free()
+	var flip_scene = _new_main()
+	await process_frame
+	if not flip_scene.has_method("flip_realm"):
+		printerr("FAIL: realm flip methods are missing")
+		quit(1)
+		return
+	flip_scene.start_run()
+	flip_scene.spawn_enemy("ghost", Vector2(60.0, 0.0))
+	_check(flip_scene.flip_realm(), "first flip must succeed")
+	_check(flip_scene.realm == "spectral", "flip must enter spectral realm")
+	_check(flip_scene.flip_freeze > 0.0, "flip must freeze simulation briefly")
+	_check(flip_scene.enemies.is_empty(), "flip blast must kill nearby ghost")
+	_check(not flip_scene.flip_realm(), "flip must fail during cooldown")
+	flip_scene.face = "sheng"
+	flip_scene.toggle_face()
+	_check(flip_scene.face == "dan", "Q must toggle sheng to dan")
+	flip_scene.queue_free()
 	quit(1 if failures > 0 else 0)
 
 func _check(condition: bool, message: String) -> void:
