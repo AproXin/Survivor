@@ -1071,11 +1071,19 @@ git commit -m "feat: add title screen and ink-parchment HUD"
 - [ ] **Step 1: Add failing combat tests**
 
 ```gdscript
-	var combat_scene := _new_main()
+	var combat_scene = _new_main()
+	await process_frame
+	if not combat_scene.has_method("spawn_enemy"):
+		printerr("FAIL: combat methods are missing")
+		quit(1)
+		return
 	combat_scene.start_run()
-	var enemy_index := combat_scene.spawn_enemy("ghost", Vector2(80.0, 0.0))
+	var enemy_index = combat_scene.spawn_enemy("ghost", Vector2(80.0, 0.0))
 	_check(combat_scene.enemies[enemy_index].hp == 16.0, "spawned ghost must have 16 HP")
-	combat_scene.damage_enemy(enemy_index, 16.0)
+	combat_scene.damage_enemy(enemy_index, 1.0)
+	_check(combat_scene.enemies[enemy_index].hp == 15.0, "nonlethal hit must reduce enemy HP")
+	_check(combat_scene.enemies[enemy_index].knockback.length() > 0.0, "hit must apply knockback")
+	combat_scene.damage_enemy(enemy_index, 15.0)
 	_check(combat_scene.enemies.is_empty(), "dead enemy must be removed")
 	_check(combat_scene.gems.size() == 1, "dead ghost must drop one gem")
 	_check(combat_scene.kills == 1, "kill count must increment")
@@ -1118,14 +1126,14 @@ func spawn_enemy(kind: String, pos: Vector2) -> int:
 
 func spawn_punisher() -> int:
 	var angle := rng.randf_range(0.0, TAU)
-	var pos := player.pos + Vector2(cos(angle), sin(angle)) * 420.0
+	var pos: Vector2 = player.pos + Vector2(cos(angle), sin(angle)) * 420.0
 	return spawn_enemy("punisher", pos)
 
 func find_nearest_enemy(max_range: float) -> int:
 	var best_index := -1
 	var best_distance := max_range
 	for i in range(enemies.size()):
-		var distance := player.pos.distance_to(enemies[i].pos)
+		var distance: float = player.pos.distance_to(enemies[i].pos)
 		if distance <= best_distance:
 			best_distance = distance
 			best_index = i
@@ -1140,7 +1148,7 @@ func update_waves(dt: float) -> void:
 	for i in range(count):
 		var angle := rng.randf_range(0.0, TAU)
 		var radius := rng.randf_range(480.0, 620.0)
-		var pos := player.pos + Vector2(cos(angle), sin(angle)) * radius
+		var pos: Vector2 = player.pos + Vector2(cos(angle), sin(angle)) * radius
 		var kind := "ghost" if rng.randf() < 0.7 else "jiangshi"
 		spawn_enemy(kind, pos)
 
@@ -1149,6 +1157,9 @@ func damage_enemy(index: int, amount: float) -> void:
 		return
 	enemies[index].hp -= amount
 	enemies[index].hit_flash = 0.12
+	var away: Vector2 = enemies[index].pos - player.pos
+	if away.length_squared() > 0.01:
+		enemies[index].knockback = away.normalized() * 140.0
 	floaters.append({"pos": enemies[index].pos + Vector2(0.0, -28.0), "text": str(int(amount)), "life": 0.7})
 	if enemies[index].hp > 0.0:
 		return
@@ -1196,8 +1207,8 @@ func update_enemies(dt: float) -> void:
 	for i in range(enemies.size() - 1, -1, -1):
 		var enemy := enemies[i]
 		enemy.hit_flash = maxf(0.0, enemy.hit_flash - dt)
-		var direction := player.pos - enemy.pos
-		var distance := direction.length()
+		var direction: Vector2 = player.pos - enemy.pos
+		var distance: float = direction.length()
 		if distance > 0.01:
 			enemy.pos += direction.normalized() * enemy.speed * dt + enemy.knockback * dt
 			enemy.knockback = enemy.knockback.lerp(Vector2.ZERO, 1.0 - exp(-10.0 * dt))
