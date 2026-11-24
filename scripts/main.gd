@@ -230,6 +230,12 @@ func step(dt: float) -> void:
 	update_waves(dt)
 	update_enemies(dt)
 	update_effects(dt)
+	update_pickups(dt)
+	if realm == "mortal" and player.regen > 0.0:
+		player.regen_timer += dt
+		if player.regen_timer >= 4.0:
+			player.regen_timer = 0.0
+			player.hp = minf(player.max_hp, player.hp + player.regen)
 	if time_sec >= InkData.RUN_DURATION:
 		finish_run(true)
 
@@ -385,6 +391,59 @@ func update_effects(dt: float) -> void:
 		if particles[i].life <= 0.0:
 			particles.remove_at(i)
 
+func update_pickups(dt: float) -> void:
+	for i in range(gems.size() - 1, -1, -1):
+		var gem := gems[i]
+		gem.life -= dt
+		var offset: Vector2 = player.pos - gem.pos
+		var distance: float = offset.length()
+		if distance <= player.pickup_radius:
+			gem.pos += offset.normalized() * 260.0 * dt
+		if distance <= 18.0:
+			add_xp(gem.value)
+			gems.remove_at(i)
+		elif gem.life <= 0.0:
+			gems.remove_at(i)
+
+func add_xp(amount: float) -> void:
+	if phase != Phase.PLAYING:
+		return
+	xp += amount
+	if xp < xp_to_next:
+		return
+	xp -= xp_to_next
+	level += 1
+	xp_to_next = float(InkData.XP_PER_LEVEL + (level - 1) * 5)
+	phase = Phase.LEVELUP
+	level_up.emit(current_upgrade_choices())
+	_emit_hud()
+
+func current_upgrade_choices() -> Array:
+	return InkData.fixed_upgrades()
+
+func choose_upgrade(index: int) -> void:
+	if phase != Phase.LEVELUP:
+		return
+	var choices := current_upgrade_choices()
+	if index < 0 or index >= choices.size():
+		return
+	var id: String = choices[index].id
+	if upgrade_levels[id] >= 3:
+		return
+	upgrade_levels[id] += 1
+	match id:
+		"talisman":
+			player.invuln_bonus += 0.15
+			player.speed_bonus += 8.0
+		"crane":
+			player.pickup_radius += 45.0
+			player.regen += 2.0
+		"sword":
+			player.sheng_damage_bonus += 4.0
+			player.sheng_interval_bonus -= 0.03
+	phase = Phase.PLAYING
+	_emit_hud()
+
 func flip_realm() -> bool:
 	if phase != Phase.PLAYING or flip_cooldown > 0.0:
 		return false
@@ -424,6 +483,12 @@ func _unhandled_input(event: InputEvent) -> void:
 		trigger_flip_input()
 	elif event.is_action_pressed("face"):
 		trigger_face_input()
+	elif event.is_action_pressed("upgrade_1"):
+		choose_upgrade(0)
+	elif event.is_action_pressed("upgrade_2"):
+		choose_upgrade(1)
+	elif event.is_action_pressed("upgrade_3"):
+		choose_upgrade(2)
 
 # Temporary stub; Task 9 replaces this with the real result flow.
 func finish_run(_victory: bool) -> void:

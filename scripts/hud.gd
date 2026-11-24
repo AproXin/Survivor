@@ -118,7 +118,7 @@ func show_level_up(choices: Array) -> void:
 	current_choices = choices
 	modal_kind = "levelup"
 	for i in range(upgrade_buttons.size()):
-		upgrade_buttons[i].text = str(i + 1) if i < choices.size() else ""
+		upgrade_buttons[i].text = ""
 	_update_button_visibility()
 	if not upgrade_buttons.is_empty():
 		upgrade_buttons[0].grab_focus()
