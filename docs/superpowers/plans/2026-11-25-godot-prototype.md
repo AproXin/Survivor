@@ -1748,7 +1748,12 @@ git commit -m "feat: complete pause and run result flow"
 - [ ] **Step 1: Add failing audio tests**
 
 ```gdscript
-	var audio_scene := _new_main()
+	var audio_scene = _new_main()
+	await process_frame
+	if not audio_scene.has_method("_make_tone"):
+		printerr("FAIL: audio synthesis is missing")
+		quit(1)
+		return
 	var stream: AudioStreamWAV = audio_scene._make_tone(440.0, 0.1, 0.2)
 	_check(stream.data.size() > 0, "synthesized audio must contain PCM data")
 	_check(stream.mix_rate == 22050, "audio sample rate must be 22050")
@@ -1758,6 +1763,8 @@ git commit -m "feat: complete pause and run result flow"
 	audio_scene.toggle_mute()
 	_check(not AudioServer.is_bus_mute(0), "master bus must unmute")
 	audio_scene.queue_free()
+	await process_frame
+	await process_frame
 ```
 
 - [ ] **Step 2: Run and confirm failure**
@@ -1768,6 +1775,11 @@ Expected: audio methods are missing.
 
 ```gdscript
 var audio_players: Dictionary = {}
+
+func _exit_tree() -> void:
+	for player_node in audio_players.values():
+		player_node.stop()
+	audio_players.clear()
 
 func _setup_audio() -> void:
 	var definitions := {
@@ -1803,7 +1815,7 @@ func _make_tone(frequency: float, duration: float, volume: float) -> AudioStream
 	return stream
 
 func play_sfx(name: String) -> void:
-	if muted or not audio_players.has(name):
+	if DisplayServer.get_name() == "headless" or muted or not audio_players.has(name):
 		return
 	audio_players[name].play()
 
