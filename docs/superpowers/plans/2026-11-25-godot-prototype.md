@@ -961,6 +961,10 @@ curl -L --fail -o assets/fonts/JetBrainsMono-OFL.txt https://raw.githubuserconte
 
 ```gdscript
 	var hud_script = load("res://scripts/hud.gd")
+	if hud_script == null:
+		printerr("FAIL: scripts/hud.gd is missing")
+		quit(1)
+		return
 	var hud = hud_script.new()
 	_check(hud.format_time(65.9) == "01:05", "HUD time must format as MM:SS")
 	_check(hud.format_time(0.0) == "00:00", "zero time must format as 00:00")
@@ -980,7 +984,7 @@ Port `src/components/TitleOverlay.tsx`, `src/components/GameHud.tsx`, and `src/c
 - `TitlePanel` contains title brush font `72`, subtitle `18`, primary Button `执灯入夜`, disabled Button `守夜行囊`, and control hint `14`.
 - `GameHud` contains left parchment `Panel`, top-center rule `HBoxContainer`, right `Panel`, fuel/HP `ProgressBar`s and pause/mute buttons.
 - `ModalLayer` contains a centered `PanelContainer` with `VBoxContainer`; reuse it for level-up, pause and result.
-- Colors and border widths come from `src/index.css:38-119`.
+- Colors and border widths come from `src/index.css:38-119`. Primary amber buttons (`执灯入夜`, `再入墨夜`) use ink-dark text; the HP bar uses amber, not vermilion, because vermilion is reserved for taboos and alerts.
 
 Implement these exact public methods:
 
