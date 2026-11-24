@@ -1658,12 +1658,17 @@ git commit -m "feat: implement three working night taboos"
 - [ ] **Step 1: Add failing end-flow tests**
 
 ```gdscript
-	var end_scene := _new_main()
+	var end_scene = _new_main()
+	await process_frame
 	end_scene.start_run()
 	end_scene.time_sec = InkData.RUN_DURATION
 	end_scene.step(0.016)
 	_check(end_scene.phase == end_scene.Phase.ENDED, "60 seconds must end the run")
 	_check(end_scene.ended_victory, "surviving 60 seconds must be victory")
+	if not end_scene.has_method("restart_run"):
+		printerr("FAIL: restart_run is missing")
+		quit(1)
+		return
 	end_scene.restart_run()
 	_check(end_scene.phase == end_scene.Phase.PLAYING, "restart must begin a clean run")
 	_check(end_scene.time_sec == 0.0, "restart must reset timer")
