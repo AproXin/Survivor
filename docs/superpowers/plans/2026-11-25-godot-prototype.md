@@ -958,7 +958,7 @@ func format_time(seconds: float) -> String:
 
 - [ ] **Step 5: Add HUD to `scenes/main.tscn`**
 
-Add this ext resource:
+Change `load_steps=5` to `load_steps=6`, then add this ext resource:
 
 ```gdscene
 [ext_resource type="Script" path="res://scripts/hud.gd" id="4_hud"]
