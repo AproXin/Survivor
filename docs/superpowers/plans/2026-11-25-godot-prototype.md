@@ -1388,7 +1388,12 @@ git commit -m "feat: add realm flipping and opera attacks"
 - [ ] **Step 1: Add failing pickup and upgrade tests**
 
 ```gdscript
-	var upgrade_scene := _new_main()
+	var upgrade_scene = _new_main()
+	await process_frame
+	if not upgrade_scene.has_method("update_pickups"):
+		printerr("FAIL: pickup and upgrade methods are missing")
+		quit(1)
+		return
 	upgrade_scene.start_run()
 	upgrade_scene.gems.append({"pos": upgrade_scene.player.pos, "value": 12.0, "life": 20.0})
 	upgrade_scene.update_pickups(0.016)
@@ -1400,6 +1405,14 @@ git commit -m "feat: add realm flipping and opera attacks"
 	_check(is_equal_approx(upgrade_scene.player.invuln_bonus, 0.15), "talisman must add invulnerability")
 	_check(is_equal_approx(upgrade_scene.player.speed_bonus, 8.0), "talisman must add speed")
 	_check(upgrade_scene.phase == upgrade_scene.Phase.PLAYING, "choosing upgrade must resume")
+	upgrade_scene.phase = upgrade_scene.Phase.LEVELUP
+	upgrade_scene.choose_upgrade(1)
+	_check(is_equal_approx(upgrade_scene.player.pickup_radius, 113.0), "crane must add pickup radius")
+	_check(is_equal_approx(upgrade_scene.player.regen, 2.0), "crane must add mortal regeneration")
+	upgrade_scene.phase = upgrade_scene.Phase.LEVELUP
+	upgrade_scene.choose_upgrade(2)
+	_check(is_equal_approx(upgrade_scene.player.sheng_damage_bonus, 4.0), "sword upgrade must add sheng damage")
+	_check(is_equal_approx(upgrade_scene.player.sheng_interval_bonus, -0.03), "sword upgrade must reduce sheng interval")
 	upgrade_scene.queue_free()
 ```
 
