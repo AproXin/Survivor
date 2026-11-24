@@ -170,6 +170,31 @@ func _run() -> void:
 	taboo_scene.update_taboos(0.016)
 	_check(taboo_scene.violations == 3, "leaving frozen light during blackout must violate rule")
 	taboo_scene.queue_free()
+	var end_scene = _new_main()
+	await process_frame
+	end_scene.start_run()
+	end_scene.time_sec = InkData.RUN_DURATION
+	end_scene.step(0.016)
+	_check(end_scene.phase == end_scene.Phase.ENDED, "60 seconds must end the run")
+	_check(end_scene.ended_victory, "surviving 60 seconds must be victory")
+	if not end_scene.has_method("restart_run"):
+		printerr("FAIL: restart_run is missing")
+		quit(1)
+		return
+	end_scene.restart_run()
+	_check(end_scene.phase == end_scene.Phase.PLAYING, "restart must begin a clean run")
+	_check(end_scene.time_sec == 0.0, "restart must reset timer")
+	_check(end_scene.player.hp == 85.0, "restart must reset HP")
+	_check(end_scene.enemies.is_empty(), "restart must clear enemies")
+	end_scene.player.hp = 1.0
+	end_scene.invuln = 0.0
+	end_scene.damage_player(99.0)
+	_check(end_scene.phase == end_scene.Phase.ENDED, "lethal damage must end run")
+	_check(not end_scene.ended_victory, "death must not count as victory")
+	end_scene.restart_run()
+	end_scene.return_to_title()
+	_check(end_scene.phase == end_scene.Phase.TITLE, "return title must restore title phase")
+	end_scene.queue_free()
 	quit(1 if failures > 0 else 0)
 
 func _check(condition: bool, message: String) -> void:

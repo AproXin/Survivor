@@ -558,9 +558,30 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event.is_action_pressed("upgrade_3"):
 		choose_upgrade(2)
 
-# Temporary stub; Task 9 replaces this with the real result flow.
-func finish_run(_victory: bool) -> void:
-	push_error("finish_run is not implemented until Task 9")
+func finish_run(victory: bool) -> void:
+	if phase == Phase.ENDED:
+		return
+	phase = Phase.ENDED
+	ended_victory = victory
+	time_sec = minf(time_sec, InkData.RUN_DURATION)
+	var kept := 0
+	for rule in rules:
+		if not rule.broken:
+			kept += 1
+	var summary := {
+		"victory": victory,
+		"time": time_sec,
+		"kills": kills,
+		"level": level,
+		"rules_kept": kept,
+		"rules_total": rules.size(),
+		"violations": violations,
+	}
+	run_finished.emit(summary)
+	_emit_hud()
+
+func restart_run() -> void:
+	start_run()
 
 func toggle_mute() -> void:
 	muted = not muted
