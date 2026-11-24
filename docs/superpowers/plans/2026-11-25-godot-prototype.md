@@ -42,6 +42,8 @@
 | `tests/smoke.gd` | Deterministic headless logic tests |
 | `tests/capture.gd` | Windowed screenshot capture |
 | `tests/benchmark.gd` | 100-enemy FPS benchmark |
+| `tests/full_run.gd` | Accelerated 60-second deterministic simulation |
+| `tests/soak.gd` | Real-time 60-second windowed stability run |
 | `docs/verification.md` | Test evidence, screenshots, failures and migration verdict |
 
 ---
@@ -1845,6 +1847,8 @@ git commit -m "feat: add synthesized combat audio and mute"
 **Files:**
 - Create: `tests/capture.gd`
 - Create: `tests/benchmark.gd`
+- Create: `tests/full_run.gd`
+- Create: `tests/soak.gd`
 - Create: `docs/screenshots/title.png`
 - Create: `docs/screenshots/mortal.png`
 - Create: `docs/screenshots/spectral.png`
@@ -1943,7 +1947,16 @@ func _run(scene: InkMain) -> void:
 
 Expected: import clean, smoke exit `0`, benchmark at least `55.0 FPS` average over five seconds.
 
-- [ ] **Step 5: Perform visual comparison**
+- [ ] **Step 5: Run accelerated and real-time 60-second checks**
+
+```bash
+/Users/yuanxxx/Applications/Godot.app/Contents/MacOS/Godot --headless --path /Users/yuanxxx/Agents/qoder/tasks/ink/godot-prototype --script res://tests/full_run.gd
+/Users/yuanxxx/Applications/Godot.app/Contents/MacOS/Godot --path /Users/yuanxxx/Agents/qoder/tasks/ink/godot-prototype --script res://tests/soak.gd
+```
+
+Expected: both exit `0`; the run ends at `60.0` seconds with victory, nonzero kills and no script errors.
+
+- [ ] **Step 6: Perform visual comparison**
 
 Open the six PNGs beside `/tmp/ink_title.png`, `/tmp/ink_fixed.png`, `/tmp/ink_spectral.png`, `/tmp/ink_levelup.png`, and `/tmp/ink_soak.png`. Check:
 
@@ -1954,11 +1967,11 @@ Open the six PNGs beside `/tmp/ink_title.png`, `/tmp/ink_fixed.png`, `/tmp/ink_s
 - spectral realm visibly darker than mortal;
 - no font fallback boxes, clipped labels or stretched panels.
 
-- [ ] **Step 6: Write `docs/verification.md`**
+- [ ] **Step 7: Write `docs/verification.md`**
 
 Record exact command outputs, FPS, six screenshot links, all failed checks, manual feel notes, time spent and one verdict: `PASS`, `FAIL`, or `PASS WITH LIMITATIONS`. Do not write PASS if any hard gate failed.
 
-- [ ] **Step 7: Commit verification only if implementation commits were authorized**
+- [ ] **Step 8: Commit verification only if implementation commits were authorized**
 
 ```bash
 git add tests/capture.gd tests/benchmark.gd docs/screenshots docs/verification.md
