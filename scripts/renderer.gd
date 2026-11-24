@@ -8,6 +8,8 @@ var body_font: Font = ThemeDB.fallback_font
 
 func setup(target: InkMain) -> void:
 	sim = target
+	if ResourceLoader.exists("res://assets/fonts/NotoSerifSC[wght].ttf"):
+		body_font = load("res://assets/fonts/NotoSerifSC[wght].ttf")
 	scenery = make_scenery(20261125)
 	queue_redraw()
 

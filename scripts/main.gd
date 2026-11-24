@@ -62,12 +62,17 @@ var hazards := {
 }
 
 @onready var world_view: InkRenderer = $WorldView
+@onready var hud: InkHud = $ScreenLayer/Hud
 
 func _ready() -> void:
 	rng.randomize()
 	_ensure_input_actions()
 	_reset_run_state()
 	world_view.setup(self)
+	hud.setup(self)
+	hud_changed.connect(hud.show_snapshot)
+	level_up.connect(hud.show_level_up)
+	run_finished.connect(hud.show_result)
 	_emit_hud()
 
 func _process(delta: float) -> void:

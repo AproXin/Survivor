@@ -68,6 +68,15 @@ func _run() -> void:
 	_check(scenery_a == scenery_b, "same seed must produce identical scenery")
 	_check(scenery_a[0].pos == scenery_b[0].pos, "scenery positions must be deterministic")
 	renderer.free()
+	var hud_script = load("res://scripts/hud.gd")
+	if hud_script == null:
+		printerr("FAIL: scripts/hud.gd is missing")
+		quit(1)
+		return
+	var hud = hud_script.new()
+	_check(hud.format_time(65.9) == "01:05", "HUD time must format as MM:SS")
+	_check(hud.format_time(0.0) == "00:00", "zero time must format as 00:00")
+	hud.free()
 	quit(1 if failures > 0 else 0)
 
 func _check(condition: bool, message: String) -> void:
