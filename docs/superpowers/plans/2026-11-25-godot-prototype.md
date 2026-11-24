@@ -22,6 +22,7 @@
 - The three sample taboos must all execute logic; displaying an unwired rule is a failure.
 - Target `60 FPS` with `100` active enemies on the M1 Mac.
 - Use TDD: write a failing smoke assertion before each logic change, then implement the smallest passing change.
+- After adding or renaming a `class_name` script, run the headless editor import command once before `--script` tests so Godot refreshes its global class cache.
 - Do not run `git commit` during execution unless the user explicitly authorizes implementation commits. Commit commands below are prepared but gated.
 - Do not push to any remote.
 
@@ -67,6 +68,9 @@ extends SceneTree
 var failures := 0
 
 func _initialize() -> void:
+	call_deferred("_run")
+
+func _run() -> void:
 	var data_script = load("res://scripts/data.gd")
 	if data_script == null:
 		printerr("FAIL: scripts/data.gd is missing")
@@ -248,33 +252,59 @@ git commit -m "feat: bootstrap Godot prototype data contract"
 
 - [ ] **Step 1: Add failing state and movement tests**
 
-Append these calls inside `_initialize()` before `quit()`:
+Append these calls inside `_run()` before `quit()`:
 
 ```gdscript
-	var main_scene := _new_main()
+	var main_scene = _new_main()
+	if main_scene == null:
+		quit(1)
+		return
+	await process_frame
+	var right_event_count := InputMap.action_get_events("move_right").size()
+	main_scene._ensure_input_actions()
+	_check(InputMap.action_get_events("move_right").size() == right_event_count, "input setup must be idempotent")
 	_check(main_scene.phase == main_scene.Phase.TITLE, "initial phase must be title")
 	main_scene.start_run()
 	_check(main_scene.phase == main_scene.Phase.PLAYING, "start_run must enter playing")
 	main_scene.step(1.0)
 	_check(is_equal_approx(main_scene.time_sec, 1.0), "playing time must advance")
 	main_scene.toggle_pause()
-	var paused_time := main_scene.time_sec
+	var paused_time: float = main_scene.time_sec
 	main_scene.step(1.0)
 	_check(is_equal_approx(main_scene.time_sec, paused_time), "paused time must not advance")
 	main_scene.toggle_pause()
+	Input.action_press("move_right")
+	main_scene.step(1.0)
+	Input.action_release("move_right")
+	_check(is_equal_approx(main_scene.player.pos.x, 175.0), "right movement must be 175 units in one second")
+	_check(is_equal_approx(main_scene.player.pos.y, 0.0), "right movement must not change vertical position")
+	main_scene.player.pos = Vector2.ZERO
 	Input.action_press("move_right")
 	Input.action_press("move_down")
 	main_scene.step(1.0)
 	Input.action_release("move_right")
 	Input.action_release("move_down")
-	_check(is_equal_approx(main_scene.player.pos.x, 175.0), "right movement must be 175 units in one second")
-	_check(is_equal_approx(main_scene.player.pos.y, 175.0), "diagonal movement must be normalized")
-	main_scene.player.pos = Vector2(InkData.WORLD_HALF - 1.0, 0.0)
+	_check(is_equal_approx(main_scene.player.pos.length(), 175.0), "diagonal movement must preserve total speed")
+	_check(is_equal_approx(main_scene.player.pos.x, main_scene.player.pos.y), "diagonal movement must be normalized")
+	main_scene.player.pos = Vector2(data.WORLD_HALF - 1.0, 0.0)
 	Input.action_press("move_right")
 	main_scene.step(0.1)
 	Input.action_release("move_right")
-	_check(main_scene.player.pos.x <= InkData.WORLD_HALF, "player must stay inside world bounds")
+	_check(main_scene.player.pos.x <= data.WORLD_HALF, "player must stay inside world bounds")
 	main_scene.queue_free()
+```
+
+Add this helper to `tests/smoke.gd`. It intentionally has no `InkMain` return type so the RED run can fail cleanly before the class exists:
+
+```gdscript
+func _new_main():
+	var packed = load("res://scenes/main.tscn")
+	if packed == null:
+		printerr("FAIL: scenes/main.tscn is missing")
+		return null
+	var scene = packed.instantiate()
+	root.add_child(scene)
+	return scene
 ```
 
 - [ ] **Step 2: Run and confirm failure**
@@ -505,7 +535,7 @@ func step(dt: float) -> void:
 		damage_player(999.0)
 		return
 	var move := Input.get_vector("move_left", "move_right", "move_up", "move_down")
-	var speed := InkData.player_base().mortal_speed if realm == "mortal" else InkData.player_base().spectral_speed
+	var speed: float = InkData.player_base().mortal_speed if realm == "mortal" else InkData.player_base().spectral_speed
 	speed += player.speed_bonus
 	player.vel = move * speed
 	player.pos += player.vel * dt
@@ -556,6 +586,11 @@ func toggle_mute() -> void:
 Tasks 5, 9 and 10 replace the stubs with real implementations. Task 2 tests do not reach the damage or finish branches.
 
 - [ ] **Step 5: Run the test and confirm state/movement pass**
+
+```bash
+/Users/yuanxxx/Applications/Godot.app/Contents/MacOS/Godot --headless --path /Users/yuanxxx/Agents/qoder/tasks/ink/godot-prototype --editor --quit
+/Users/yuanxxx/Applications/Godot.app/Contents/MacOS/Godot --headless --path /Users/yuanxxx/Agents/qoder/tasks/ink/godot-prototype --script res://tests/smoke.gd
+```
 
 Expected: all previous data checks plus state and movement checks pass.
 
