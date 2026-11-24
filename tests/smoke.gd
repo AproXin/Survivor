@@ -77,6 +77,28 @@ func _run() -> void:
 	_check(hud.format_time(65.9) == "01:05", "HUD time must format as MM:SS")
 	_check(hud.format_time(0.0) == "00:00", "zero time must format as 00:00")
 	hud.free()
+	var combat_scene = _new_main()
+	await process_frame
+	if not combat_scene.has_method("spawn_enemy"):
+		printerr("FAIL: combat methods are missing")
+		quit(1)
+		return
+	combat_scene.start_run()
+	var enemy_index = combat_scene.spawn_enemy("ghost", Vector2(80.0, 0.0))
+	_check(combat_scene.enemies[enemy_index].hp == 16.0, "spawned ghost must have 16 HP")
+	combat_scene.damage_enemy(enemy_index, 1.0)
+	_check(combat_scene.enemies[enemy_index].hp == 15.0, "nonlethal hit must reduce enemy HP")
+	_check(combat_scene.enemies[enemy_index].knockback.length() > 0.0, "hit must apply knockback")
+	combat_scene.damage_enemy(enemy_index, 15.0)
+	_check(combat_scene.enemies.is_empty(), "dead enemy must be removed")
+	_check(combat_scene.gems.size() == 1, "dead ghost must drop one gem")
+	_check(combat_scene.kills == 1, "kill count must increment")
+	combat_scene.spawn_enemy("jiangshi", combat_scene.player.pos)
+	combat_scene.damage_player(11.0)
+	_check(combat_scene.player.hp == 74.0, "contact damage must reduce HP")
+	combat_scene.damage_player(11.0)
+	_check(combat_scene.player.hp == 74.0, "invulnerability must block immediate second hit")
+	combat_scene.queue_free()
 	quit(1 if failures > 0 else 0)
 
 func _check(condition: bool, message: String) -> void:

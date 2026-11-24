@@ -5,11 +5,14 @@ var sim: InkMain
 var scenery: Array[Dictionary] = []
 var visual_time := 0.0
 var body_font: Font = ThemeDB.fallback_font
+var number_font: Font = ThemeDB.fallback_font
 
 func setup(target: InkMain) -> void:
 	sim = target
 	if ResourceLoader.exists("res://assets/fonts/NotoSerifSC[wght].ttf"):
 		body_font = load("res://assets/fonts/NotoSerifSC[wght].ttf")
+	if ResourceLoader.exists("res://assets/fonts/JetBrainsMono[wght].ttf"):
+		number_font = load("res://assets/fonts/JetBrainsMono[wght].ttf")
 	scenery = make_scenery(20261125)
 	queue_redraw()
 
@@ -54,6 +57,7 @@ func _draw() -> void:
 	for prop in scenery:
 		_draw_prop(prop, palette)
 	_draw_player(palette)
+	_draw_entities(palette)
 	draw_set_transform(Vector2.ZERO)
 	_draw_moon(palette, viewport_size)
 	_draw_foreground_mist(palette, viewport_size)
@@ -137,6 +141,73 @@ func _draw_player(palette: Dictionary) -> void:
 	draw_rect(Rect2(lantern_pos - Vector2(7.0, 10.0), Vector2(14.0, 20.0)), palette.amber)
 	draw_rect(Rect2(lantern_pos - Vector2(9.0, 12.0), Vector2(18.0, 16.0)), palette.amber_bright)
 	draw_line(lantern_pos + Vector2(0.0, -14.0), lantern_pos + Vector2(0.0, -10.0), palette.ink_deep, 2.0)
+
+func _draw_entities(palette: Dictionary) -> void:
+	for gem in sim.gems:
+		var pos: Vector2 = gem.pos
+		var pulse := 1.0 + sin(visual_time * 5.0 + pos.x) * 0.08
+		draw_circle(pos, 12.0 * pulse, Color(palette.xp_mid, 0.10))
+		var points := PackedVector2Array([
+			pos + Vector2(0, -8) * pulse,
+			pos + Vector2(6, 0) * pulse,
+			pos + Vector2(0, 8) * pulse,
+			pos + Vector2(-6, 0) * pulse,
+		])
+		draw_colored_polygon(points, palette.xp_mid)
+		draw_line(pos + Vector2(0, -6), pos + Vector2(0, 5), palette.xp_bright, 1.5)
+	for enemy in sim.enemies:
+		_draw_enemy(enemy, palette)
+	for projectile in sim.projectiles:
+		var from: Vector2 = projectile.from
+		var to: Vector2 = projectile.to
+		draw_line(from, to, Color(palette.amber_bright, 0.25), 8.0)
+		draw_line(from, to, palette.amber_bright, 2.5)
+	for slash in sim.slashes:
+		var pos: Vector2 = slash.pos
+		var radius: float = slash.radius * (1.0 - float(slash.life) * 0.8)
+		var color: Color = palette.bone_bright if slash.face != "flip" else palette.amber_bright
+		draw_arc(pos, radius, -PI * 0.8, PI * 0.8, 28, Color(color, float(slash.life) * 3.0), 5.0, true)
+	for particle in sim.particles:
+		var pos: Vector2 = particle.pos
+		draw_circle(pos, 5.0 + float(particle.life) * 18.0, Color(particle.color, float(particle.life) * 2.0))
+	for floater in sim.floaters:
+		var pos: Vector2 = floater.pos
+		draw_string(number_font, pos, str(floater.text), HORIZONTAL_ALIGNMENT_CENTER, -1.0, 15, palette.bone_bright)
+
+func _draw_enemy(enemy: Dictionary, palette: Dictionary) -> void:
+	var pos: Vector2 = enemy.pos
+	var flash := float(enemy.hit_flash) > 0.0
+	var body_color: Color = palette.bone_bright if flash else palette.sage_light
+	match enemy.kind:
+		"ghost":
+			var bob := sin(visual_time * 3.0 + pos.x) * 3.0
+			draw_circle(pos + Vector2(0, bob), 17, Color(body_color, 0.96))
+			draw_colored_polygon(PackedVector2Array([
+				pos + Vector2(-16, 4 + bob),
+				pos + Vector2(16, 4 + bob),
+				pos + Vector2(10, 24 + bob),
+				pos + Vector2(0, 18 + bob),
+				pos + Vector2(-10, 24 + bob),
+			]), body_color)
+			draw_circle(pos + Vector2(-6, -2 + bob), 2.6, palette.ink_deep)
+			draw_circle(pos + Vector2(6, -2 + bob), 2.6, palette.ink_deep)
+			draw_arc(pos + Vector2(0, 4 + bob), 4.0, 0.0, PI, 8, palette.ink_deep, 1.4, true)
+		"jiangshi":
+			draw_rect(Rect2(pos + Vector2(-15, -20), Vector2(30, 40)), palette.grey_mid)
+			draw_circle(pos + Vector2(0, -25), 11, palette.sage_mid)
+			draw_rect(Rect2(pos + Vector2(-18, -40), Vector2(36, 7)), palette.ink_deep)
+			draw_rect(Rect2(pos + Vector2(-10, -47), Vector2(20, 8)), palette.ink_slate)
+			draw_line(pos + Vector2(-12, -8), pos + Vector2(-28, 4), palette.sage_mid, 6)
+			draw_line(pos + Vector2(12, -8), pos + Vector2(28, 4), palette.sage_mid, 6)
+			draw_circle(pos + Vector2(-4, -26), 2.0, palette.vermilion)
+			draw_circle(pos + Vector2(4, -26), 2.0, palette.vermilion)
+		"punisher":
+			draw_rect(Rect2(pos + Vector2(-13, -28), Vector2(26, 48)), palette.bone)
+			draw_circle(pos + Vector2(0, -34), 12, palette.bone_bright)
+			draw_rect(Rect2(pos + Vector2(-20, -50), Vector2(40, 8)), palette.ink_deep)
+			draw_line(pos + Vector2(-16, -46), pos + Vector2(16, -46), palette.vermilion, 3)
+			draw_line(pos + Vector2(-10, -10), pos + Vector2(-24, 8), palette.bone_dark, 5)
+			draw_line(pos + Vector2(10, -10), pos + Vector2(24, 8), palette.bone_dark, 5)
 
 func _draw_moon(palette: Dictionary, viewport_size: Vector2) -> void:
 	var moon_pos := viewport_size * Vector2(0.72, 0.18) - sim.camera * 0.05

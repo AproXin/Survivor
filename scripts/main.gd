@@ -225,6 +225,11 @@ func step(dt: float) -> void:
 	if move.length_squared() > 0.01:
 		player.walk += speed * dt
 	camera = camera.lerp(player.pos, 1.0 - exp(-8.0 * dt))
+	if flip_freeze <= 0.0:
+		update_combat(dt)
+	update_waves(dt)
+	update_enemies(dt)
+	update_effects(dt)
 	if time_sec >= InkData.RUN_DURATION:
 		finish_run(true)
 
@@ -250,10 +255,137 @@ func get_snapshot() -> Dictionary:
 func _emit_hud() -> void:
 	hud_changed.emit(get_snapshot())
 
-# Temporary stubs; later tasks replace these with real implementations.
-func damage_player(_amount: float) -> void:
-	push_error("damage_player is not implemented until Task 5")
+func spawn_enemy(kind: String, pos: Vector2) -> int:
+	var archetype := InkData.enemy(kind)
+	var spawn_pos := pos
+	spawn_pos.x = clampf(spawn_pos.x, -InkData.WORLD_HALF, InkData.WORLD_HALF)
+	spawn_pos.y = clampf(spawn_pos.y, -InkData.WORLD_HALF, InkData.WORLD_HALF)
+	var enemy := {
+		"kind": kind,
+		"pos": spawn_pos,
+		"hp": archetype.hp,
+		"max_hp": archetype.hp,
+		"speed": archetype.speed,
+		"damage": archetype.damage,
+		"xp": archetype.xp,
+		"radius": archetype.radius,
+		"hit_flash": 0.0,
+		"knockback": Vector2.ZERO,
+	}
+	enemies.append(enemy)
+	return enemies.size() - 1
 
+func spawn_punisher() -> int:
+	var angle := rng.randf_range(0.0, TAU)
+	var pos: Vector2 = player.pos + Vector2(cos(angle), sin(angle)) * 420.0
+	return spawn_enemy("punisher", pos)
+
+func find_nearest_enemy(max_range: float) -> int:
+	var best_index := -1
+	var best_distance := max_range
+	for i in range(enemies.size()):
+		var distance: float = player.pos.distance_to(enemies[i].pos)
+		if distance <= best_distance:
+			best_distance = distance
+			best_index = i
+	return best_index
+
+func update_waves(dt: float) -> void:
+	spawn_timer -= dt
+	if spawn_timer > 0.0 or enemies.size() >= 100:
+		return
+	spawn_timer = maxf(0.45, 1.4 - time_sec * 0.012)
+	var count := 1 + int(time_sec / 25.0)
+	for i in range(count):
+		var angle := rng.randf_range(0.0, TAU)
+		var radius := rng.randf_range(480.0, 620.0)
+		var pos: Vector2 = player.pos + Vector2(cos(angle), sin(angle)) * radius
+		var kind := "ghost" if rng.randf() < 0.7 else "jiangshi"
+		spawn_enemy(kind, pos)
+
+func damage_enemy(index: int, amount: float) -> void:
+	if index < 0 or index >= enemies.size():
+		return
+	enemies[index].hp -= amount
+	enemies[index].hit_flash = 0.12
+	var away: Vector2 = enemies[index].pos - player.pos
+	if away.length_squared() > 0.01:
+		enemies[index].knockback = away.normalized() * 140.0
+	floaters.append({"pos": enemies[index].pos + Vector2(0.0, -28.0), "text": str(int(amount)), "life": 0.7})
+	if enemies[index].hp > 0.0:
+		return
+	var enemy := enemies[index]
+	if enemy.xp > 0.0:
+		gems.append({"pos": enemy.pos, "value": enemy.xp, "life": 20.0})
+	kills += 1
+	enemies.remove_at(index)
+
+func damage_player(amount: float) -> void:
+	if phase != Phase.PLAYING or invuln > 0.0:
+		return
+	player.hp = maxf(0.0, player.hp - amount)
+	invuln = InkData.player_base().hit_invuln_sec + player.invuln_bonus
+	particles.append({"pos": player.pos, "vel": Vector2.ZERO, "life": 0.25, "color": InkData.palette().vermilion})
+	if player.hp <= 0.0:
+		finish_run(false)
+
+func update_combat(dt: float) -> void:
+	attack_timer = maxf(0.0, attack_timer - dt)
+	if attack_timer > 0.0 or flip_freeze > 0.0:
+		return
+	var base := InkData.player_base()
+	if realm == "mortal":
+		attack_timer = base.lantern_interval
+		var target := find_nearest_enemy(base.lantern_range)
+		if target >= 0:
+			var target_pos: Vector2 = enemies[target].pos
+			projectiles.append({"from": player.pos, "to": target_pos, "life": 0.18, "damage": base.lantern_damage, "target": target})
+			damage_enemy(target, base.lantern_damage)
+	elif face == "sheng":
+		attack_timer = maxf(0.12, base.sheng_interval + player.sheng_interval_bonus)
+		var target := find_nearest_enemy(base.sheng_range)
+		if target >= 0:
+			slashes.append({"pos": enemies[target].pos, "radius": 54.0, "life": 0.18, "face": "sheng"})
+			damage_enemy(target, base.sheng_damage + player.sheng_damage_bonus)
+	else:
+		attack_timer = base.dan_interval
+		slashes.append({"pos": player.pos, "radius": base.dan_radius, "life": 0.28, "face": "dan"})
+		for i in range(enemies.size() - 1, -1, -1):
+			if player.pos.distance_to(enemies[i].pos) <= base.dan_radius + enemies[i].radius:
+				damage_enemy(i, base.dan_damage)
+
+func update_enemies(dt: float) -> void:
+	for i in range(enemies.size() - 1, -1, -1):
+		var enemy := enemies[i]
+		enemy.hit_flash = maxf(0.0, enemy.hit_flash - dt)
+		var direction: Vector2 = player.pos - enemy.pos
+		var distance: float = direction.length()
+		if distance > 0.01:
+			enemy.pos += direction.normalized() * enemy.speed * dt + enemy.knockback * dt
+			enemy.knockback = enemy.knockback.lerp(Vector2.ZERO, 1.0 - exp(-10.0 * dt))
+		if distance <= enemy.radius + 16.0:
+			damage_player(enemy.damage)
+
+func update_effects(dt: float) -> void:
+	for i in range(projectiles.size() - 1, -1, -1):
+		projectiles[i].life -= dt
+		if projectiles[i].life <= 0.0:
+			projectiles.remove_at(i)
+	for i in range(slashes.size() - 1, -1, -1):
+		slashes[i].life -= dt
+		if slashes[i].life <= 0.0:
+			slashes.remove_at(i)
+	for i in range(floaters.size() - 1, -1, -1):
+		floaters[i].life -= dt
+		floaters[i].pos.y -= 24.0 * dt
+		if floaters[i].life <= 0.0:
+			floaters.remove_at(i)
+	for i in range(particles.size() - 1, -1, -1):
+		particles[i].life -= dt
+		if particles[i].life <= 0.0:
+			particles.remove_at(i)
+
+# Temporary stub; Task 9 replaces this with the real result flow.
 func finish_run(_victory: bool) -> void:
 	push_error("finish_run is not implemented until Task 9")
 
