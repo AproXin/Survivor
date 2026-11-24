@@ -1522,7 +1522,12 @@ git commit -m "feat: add XP pickups and level-up choices"
 - [ ] **Step 1: Add three failing taboo tests**
 
 ```gdscript
-	var taboo_scene := _new_main()
+	var taboo_scene = _new_main()
+	await process_frame
+	if not taboo_scene.has_method("setup_taboos"):
+		printerr("FAIL: taboo methods are missing")
+		quit(1)
+		return
 	taboo_scene.start_run()
 	taboo_scene.setup_taboos()
 	var shadow_pos: Vector2 = taboo_scene.hazards.shadow_zones[0].pos
@@ -1566,7 +1571,7 @@ func is_in_shadow(pos: Vector2) -> bool:
 	return false
 
 func is_in_light(pos: Vector2) -> bool:
-	var radius := hazards.frozen_radius if hazards.blackout_active else (235.0 if realm == "mortal" else 185.0)
+	var radius: float = hazards.frozen_radius if hazards.blackout_active else (235.0 if realm == "mortal" else 185.0)
 	var center: Vector2 = hazards.frozen_light if hazards.blackout_active else player.pos
 	return pos.distance_to(center) <= radius
 
