@@ -20,6 +20,7 @@ var flip_freeze := 0.0
 var attack_timer := 0.0
 var invuln := 0.0
 var muted := false
+var audio_players: Dictionary = {}
 var violations := 0
 var spawn_timer := 0.0
 var hud_timer := 0.0
@@ -70,6 +71,7 @@ func _ready() -> void:
 	_reset_run_state()
 	world_view.setup(self)
 	hud.setup(self)
+	_setup_audio()
 	hud_changed.connect(hud.show_snapshot)
 	level_up.connect(hud.show_level_up)
 	run_finished.connect(hud.show_result)
@@ -333,6 +335,7 @@ func damage_player(amount: float) -> void:
 		return
 	player.hp = maxf(0.0, player.hp - amount)
 	invuln = InkData.player_base().hit_invuln_sec + player.invuln_bonus
+	play_sfx("hit")
 	particles.append({"pos": player.pos, "vel": Vector2.ZERO, "life": 0.25, "color": InkData.palette().vermilion})
 	if player.hp <= 0.0:
 		finish_run(false)
@@ -348,16 +351,19 @@ func update_combat(dt: float) -> void:
 		if target >= 0:
 			var target_pos: Vector2 = enemies[target].pos
 			projectiles.append({"from": player.pos, "to": target_pos, "life": 0.18, "damage": base.lantern_damage, "target": target})
+			play_sfx("lantern")
 			damage_enemy(target, base.lantern_damage)
 	elif face == "sheng":
 		attack_timer = maxf(0.12, base.sheng_interval + player.sheng_interval_bonus)
 		var target := find_nearest_enemy(base.sheng_range)
 		if target >= 0:
 			slashes.append({"pos": enemies[target].pos, "radius": 54.0, "life": 0.18, "face": "sheng"})
+			play_sfx("sword")
 			damage_enemy(target, base.sheng_damage + player.sheng_damage_bonus)
 	else:
 		attack_timer = base.dan_interval
 		slashes.append({"pos": player.pos, "radius": base.dan_radius, "life": 0.28, "face": "dan"})
+		play_sfx("sleeve")
 		for i in range(enemies.size() - 1, -1, -1):
 			if player.pos.distance_to(enemies[i].pos) <= base.dan_radius + enemies[i].radius:
 				damage_enemy(i, base.dan_damage)
@@ -455,6 +461,7 @@ func violate_rule(rule_id: String) -> void:
 		if rule.id == rule_id:
 			rule.broken = true
 	spawn_punisher()
+	play_sfx("violation")
 	damage_player(8.0)
 
 func update_pickups(dt: float) -> void:
@@ -481,6 +488,7 @@ func add_xp(amount: float) -> void:
 	level += 1
 	xp_to_next = float(InkData.XP_PER_LEVEL + (level - 1) * 5)
 	phase = Phase.LEVELUP
+	play_sfx("level")
 	level_up.emit(current_upgrade_choices())
 	_emit_hud()
 
@@ -524,6 +532,7 @@ func flip_realm() -> bool:
 		if player.pos.distance_to(enemies[i].pos) <= blast_radius:
 			damage_enemy(i, InkData.player_base().flip_blast_damage)
 	slashes.append({"pos": player.pos, "radius": blast_radius, "life": 0.42, "face": "flip"})
+	play_sfx("flip")
 	particles.append({"pos": player.pos, "vel": Vector2.ZERO, "life": 0.35, "color": InkData.palette().bone_bright})
 	return true
 
@@ -583,6 +592,50 @@ func finish_run(victory: bool) -> void:
 func restart_run() -> void:
 	start_run()
 
+func _exit_tree() -> void:
+	for player_node in audio_players.values():
+		player_node.stop()
+	audio_players.clear()
+
+func _setup_audio() -> void:
+	var definitions := {
+		"lantern": [660.0, 0.08, 0.16],
+		"sword": [220.0, 0.12, 0.20],
+		"sleeve": [330.0, 0.16, 0.18],
+		"hit": [110.0, 0.10, 0.22],
+		"flip": [520.0, 0.28, 0.20],
+		"level": [880.0, 0.30, 0.18],
+		"violation": [92.0, 0.35, 0.24],
+	}
+	for name in definitions:
+		var player_node := AudioStreamPlayer.new()
+		player_node.stream = _make_tone(definitions[name][0], definitions[name][1], definitions[name][2])
+		add_child(player_node)
+		audio_players[name] = player_node
+
+func _make_tone(frequency: float, duration: float, volume: float) -> AudioStreamWAV:
+	var mix_rate := 22050
+	var sample_count := int(mix_rate * duration)
+	var data := PackedByteArray()
+	data.resize(sample_count * 2)
+	for i in range(sample_count):
+		var t := float(i) / float(mix_rate)
+		var envelope := pow(1.0 - t / duration, 2.0)
+		var value := sin(TAU * frequency * t) * envelope * volume
+		data.encode_s16(i * 2, int(clampf(value, -1.0, 1.0) * 32767.0))
+	var stream := AudioStreamWAV.new()
+	stream.format = AudioStreamWAV.FORMAT_16_BITS
+	stream.mix_rate = mix_rate
+	stream.stereo = false
+	stream.data = data
+	return stream
+
+func play_sfx(name: String) -> void:
+	if DisplayServer.get_name() == "headless" or muted or not audio_players.has(name):
+		return
+	audio_players[name].play()
+
 func toggle_mute() -> void:
 	muted = not muted
+	AudioServer.set_bus_mute(0, muted)
 	_emit_hud()

@@ -195,6 +195,23 @@ func _run() -> void:
 	end_scene.return_to_title()
 	_check(end_scene.phase == end_scene.Phase.TITLE, "return title must restore title phase")
 	end_scene.queue_free()
+	var audio_scene = _new_main()
+	await process_frame
+	if not audio_scene.has_method("_make_tone"):
+		printerr("FAIL: audio synthesis is missing")
+		quit(1)
+		return
+	var stream: AudioStreamWAV = audio_scene._make_tone(440.0, 0.1, 0.2)
+	_check(stream.data.size() > 0, "synthesized audio must contain PCM data")
+	_check(stream.mix_rate == 22050, "audio sample rate must be 22050")
+	audio_scene.toggle_mute()
+	_check(audio_scene.muted, "mute toggle must update state")
+	_check(AudioServer.is_bus_mute(0), "master bus must mute")
+	audio_scene.toggle_mute()
+	_check(not AudioServer.is_bus_mute(0), "master bus must unmute")
+	audio_scene.queue_free()
+	await process_frame
+	await process_frame
 	quit(1 if failures > 0 else 0)
 
 func _check(condition: bool, message: String) -> void:
