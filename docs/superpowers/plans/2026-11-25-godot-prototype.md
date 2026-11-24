@@ -1278,7 +1278,12 @@ git commit -m "feat: add survivor combat and enemy drops"
 - [ ] **Step 1: Add failing flip tests**
 
 ```gdscript
-	var flip_scene := _new_main()
+	var flip_scene = _new_main()
+	await process_frame
+	if not flip_scene.has_method("flip_realm"):
+		printerr("FAIL: realm flip methods are missing")
+		quit(1)
+		return
 	flip_scene.start_run()
 	flip_scene.spawn_enemy("ghost", Vector2(60.0, 0.0))
 	_check(flip_scene.flip_realm(), "first flip must succeed")
@@ -1308,7 +1313,7 @@ func flip_realm() -> bool:
 	flip_cooldown = InkData.player_base().flip_cooldown_sec
 	flip_freeze = InkData.player_base().flip_freeze_sec
 	player.fuel = maxf(0.0, player.fuel - 8.0)
-	var blast_radius := InkData.player_base().flip_blast_radius
+	var blast_radius: float = InkData.player_base().flip_blast_radius
 	for i in range(enemies.size() - 1, -1, -1):
 		if player.pos.distance_to(enemies[i].pos) <= blast_radius:
 			damage_enemy(i, InkData.player_base().flip_blast_damage)
