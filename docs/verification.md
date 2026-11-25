@@ -15,8 +15,8 @@
 **PASS WITH LIMITATIONS — 技术迁移可行，建议进入全量迁移前先做一轮视觉细化。**
 
 - 功能、操作、战斗、翻界、禁忌、升级、暂停、结算、音效链路全部跑通。
-- 100 敌人平均 `69.6 FPS`，超过 `55 FPS` 验收门。
-- 真实时间连续运行 `59.9` 秒后成功结束，`94.0 FPS`，无脚本错误。
+- 100 敌人平均 `59.9 FPS`，超过 `55 FPS` 验收门。
+- 真实时间连续运行 `59.9` 秒后成功结束，`89.0 FPS`，无脚本错误。
 - 标题、HUD、双世界、灯笼暖光和核心元素与当前网页版同一路数。
 - 视觉仍比网页版更暗、更简；升级卡牌、标题徽记和角色细节需要细化。最终“像不像”由用户看截图确认。
 
@@ -33,9 +33,9 @@
 | 升级三选一、三项升级生效 | 通过 | `tests/smoke.gd`、`screenshots/levelup.png` |
 | 暂停、60 秒成功、死亡、重开、回标题 | 通过 | `tests/smoke.gd`、`screenshots/pause.png`、`screenshots/result.png` |
 | 七类合成音效、主总线静音 | 通过 | `tests/smoke.gd`、窗口音频冒烟 |
-| 100 敌人性能 | 通过 | `BENCHMARK fps=69.6 enemies=100 seconds=5.0` |
-| 60 秒加速模拟 | 通过 | `FULL_RUN time=60.0 kills=51 level=4 violations=0 enemies=60 phase=4 victory=true` |
-| 60 秒真实时间运行 | 通过 | `SOAK seconds=59.9 phase=4 victory=true kills=52 level=4 fps=94.0` |
+| 100 敌人性能 | 通过 | `BENCHMARK fps=59.9 enemies=100 seconds=5.0` |
+| 60 秒加速模拟 | 通过 | `FULL_RUN time=60.0 kills=50 level=4 violations=0 enemies=61 phase=4 victory=true` |
+| 60 秒真实时间运行 | 通过 | `SOAK seconds=59.9 phase=4 victory=true kills=86 level=5 fps=89.0` |
 
 ## 六张验收截图
 
@@ -72,7 +72,7 @@
 ### 100 敌人基准
 
 ```text
-BENCHMARK fps=69.6 enemies=100 seconds=5.0
+BENCHMARK fps=59.9 enemies=100 seconds=5.0
 ```
 
 测试设置：100 个游魂/行尸同时活动，玩家高生命以避免中途结束，关闭自动攻击以保持敌人数，窗口渲染五秒。
@@ -80,7 +80,7 @@ BENCHMARK fps=69.6 enemies=100 seconds=5.0
 ### 60 秒真实运行
 
 ```text
-SOAK seconds=59.9 phase=4 victory=true kills=52 level=4 fps=94.0
+SOAK seconds=59.9 phase=4 victory=true kills=86 level=5 fps=89.0
 ```
 
 测试设置：正常自动战斗、自动选择升级、高生命以避免测试提前死亡，真实时间运行至胜利结算。
