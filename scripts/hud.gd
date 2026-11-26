@@ -33,6 +33,8 @@ var restart_button: Button
 var title_button: Button
 var upgrade_buttons: Array[Button] = []
 var meta_buttons: Array[Button] = []
+var oil_buttons: Array[Button] = []
+var charm_buttons: Array[Button] = []
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -98,6 +100,22 @@ func _ready() -> void:
 		btn.add_theme_color_override("font_color", palette.ink_deep)
 		btn.add_theme_color_override("font_hover_color", palette.ink_deep)
 		meta_buttons.append(btn)
+	var oil_defs := InkData.oil_blends()
+	for i in range(oil_defs.size()):
+		var oid: String = str(oil_defs[i].id)
+		var btn := _make_button("免费换油", primary, primary_hover, func(): pick_oil(oid))
+		btn.add_theme_font_size_override("font_size", 15)
+		btn.add_theme_color_override("font_color", palette.ink_deep)
+		btn.add_theme_color_override("font_hover_color", palette.ink_deep)
+		oil_buttons.append(btn)
+	var charm_defs := InkData.paper_charms()
+	for i in range(charm_defs.size()):
+		var cid: String = str(charm_defs[i].id)
+		var btn := _make_button("请符", primary, primary_hover, func(): buy_charm(cid))
+		btn.add_theme_font_size_override("font_size", 15)
+		btn.add_theme_color_override("font_color", palette.ink_deep)
+		btn.add_theme_color_override("font_hover_color", palette.ink_deep)
+		charm_buttons.append(btn)
 
 	resized.connect(_layout_buttons)
 	_layout_buttons()
@@ -162,7 +180,11 @@ func show_snapshot(snapshot: Dictionary) -> void:
 		if modal_kind != "bag":
 			modal_kind = "title"
 	elif p == InkMain.Phase.TOWN:
-		modal_kind = "bag" if bool(snapshot.get("town_modal_open", false)) else "town"
+		if bool(snapshot.get("town_modal_open", false)):
+			var tk := str(snapshot.get("town_modal_kind", "bag"))
+			modal_kind = tk if tk != "" else "bag"
+		else:
+			modal_kind = "town"
 	elif p == InkMain.Phase.PLAYING:
 		modal_kind = ""
 	elif p == InkMain.Phase.PAUSED:
@@ -215,9 +237,15 @@ func open_bag() -> void:
 	_update_button_visibility()
 	queue_redraw()
 
+func open_town_modal(kind: String) -> void:
+	modal_kind = kind
+	_update_button_visibility()
+	queue_redraw()
+
 func close_bag() -> void:
 	if sim and sim.phase == InkMain.Phase.TOWN:
 		sim.town_modal_open = false
+		sim.town_modal_kind = ""
 		modal_kind = "town"
 	else:
 		modal_kind = "title"
@@ -227,6 +255,14 @@ func close_bag() -> void:
 func buy_meta(id: String) -> void:
 	if sim:
 		sim.buy_meta_upgrade(id)
+
+func pick_oil(id: String) -> void:
+	if sim:
+		sim.select_oil_blend(id)
+
+func buy_charm(id: String) -> void:
+	if sim:
+		sim.buy_paper_charm(id)
 
 func restart_run() -> void:
 	if sim:
@@ -252,13 +288,16 @@ func _update_button_visibility() -> void:
 	var is_title := modal_kind == "title"
 	var is_town := modal_kind == "town"
 	var is_bag := modal_kind == "bag"
+	var is_oil := modal_kind == "oil_shop"
+	var is_paper := modal_kind == "paper_shop"
+	var is_any_town_modal := is_bag or is_oil or is_paper
 	var is_game := modal_kind == "" or modal_kind == "pause" or modal_kind == "levelup" or modal_kind == "result"
 	start_button.visible = is_title
 	bag_button.visible = is_title
 	mode_button.visible = is_title
-	close_bag_button.visible = is_bag
-	mute_button.visible = is_title or is_town or is_bag or is_game
-	lang_button.visible = is_title or is_town or is_bag
+	close_bag_button.visible = is_any_town_modal
+	mute_button.visible = is_title or is_town or is_any_town_modal or is_game
+	lang_button.visible = is_title or is_town or is_any_town_modal
 	pause_button.visible = is_game and modal_kind != "result"
 	restart_button.visible = modal_kind == "result"
 	title_button.visible = modal_kind == "result"
@@ -292,6 +331,28 @@ func _update_button_visibility() -> void:
 				var cost := int(def.costs[lvl])
 				meta_buttons[i].text = _tr("研习 (%d 钱)" % cost, "Train (%d)" % cost)
 				meta_buttons[i].disabled = bank < cost
+	var oil_defs := InkData.oil_blends()
+	var cur_oil := str(current_snapshot.get("selected_oil", "pine_oil"))
+	for i in range(oil_buttons.size()):
+		oil_buttons[i].visible = is_oil
+		if is_oil and i < oil_defs.size():
+			var is_sel := str(oil_defs[i].id) == cur_oil
+			oil_buttons[i].text = _tr("已添此油", "Active") if is_sel else _tr("免费换油", "Select")
+			oil_buttons[i].disabled = is_sel
+	var charm_defs := InkData.paper_charms()
+	var cur_charm := str(current_snapshot.get("selected_charm", ""))
+	for i in range(charm_buttons.size()):
+		charm_buttons[i].visible = is_paper
+		if is_paper and i < charm_defs.size():
+			var cdef: Dictionary = charm_defs[i]
+			var is_sel := str(cdef.id) == cur_charm
+			var cost := int(cdef.cost)
+			if is_sel:
+				charm_buttons[i].text = _tr("本夜已佩戴", "Equipped")
+				charm_buttons[i].disabled = true
+			else:
+				charm_buttons[i].text = _tr("请符 (%d 钱)" % cost, "Buy (%d)" % cost)
+				charm_buttons[i].disabled = bank < cost
 
 func _scale() -> float:
 	if size.x <= 0.0 or size.y <= 0.0:
@@ -310,7 +371,7 @@ func _layout_buttons() -> void:
 	_place(start_button, 100, 492, 196, 56)
 	_place(bag_button, 314, 492, 168, 56)
 	_place(mode_button, 100, 566, 382, 40)
-	_place(close_bag_button, 645, 650, 150, 46)
+	_place(close_bag_button, 645, 656, 150, 44)
 	_place(mute_button, 1368, 84, 44, 44)
 	_place(lang_button, 1368, 136, 44, 36)
 	_place(pause_button, 1368, 32, 44, 44)
@@ -325,6 +386,12 @@ func _layout_buttons() -> void:
 		var bx := 310.0 + float(col) * 430.0
 		var by := 376.0 + float(row) * 144.0
 		_place(meta_buttons[i], bx + 244.0, by + 34.0, 130, 40)
+	var oil_x := [290.0, 585.0, 880.0]
+	for i in range(oil_buttons.size()):
+		_place(oil_buttons[i], oil_x[i] + 62.0, 548.0, 146, 40)
+	for i in range(charm_buttons.size()):
+		var cx := 310.0 + float(i) * 430.0
+		_place(charm_buttons[i], cx + 252.0, 568.0, 124, 38)
 
 func _place(button: Button, x: float, y: float, w: float, h: float) -> void:
 	button.position = _design_rect(x, y, w, h).position
@@ -343,6 +410,12 @@ func _draw() -> void:
 			else:
 				_draw_title()
 			_draw_bag_modal()
+		"oil_shop":
+			_draw_town_hud()
+			_draw_oil_shop_modal()
+		"paper_shop":
+			_draw_town_hud()
+			_draw_paper_shop_modal()
 		"":
 			_draw_game_hud()
 		"pause":
@@ -356,21 +429,39 @@ func _draw() -> void:
 			_draw_result()
 	draw_set_transform(Vector2.ZERO)
 
+func _oil_name(oil_id: String) -> String:
+	for item in InkData.oil_blends():
+		if str(item.id) == oil_id:
+			return str(item.en_name) if _is_en() else str(item.name)
+	return oil_id
+
+func _charm_name(charm_id: String) -> String:
+	if charm_id == "":
+		return _tr("无", "None")
+	for item in InkData.paper_charms():
+		if str(item.id) == charm_id:
+			return str(item.en_name) if _is_en() else str(item.name)
+	return charm_id
+
 func _draw_town_hud() -> void:
 	var palette := InkData.palette()
-	_draw_parchment_panel(Rect2(26, 26, 268, 92), palette)
-	draw_string(title_font, Vector2(44, 62), _tr("渡墨镇 · 安全区", "Dumo Town · Safe"), HORIZONTAL_ALIGNMENT_LEFT, -1, 24, palette.ink_night)
+	_draw_parchment_panel(Rect2(26, 26, 300, 134), palette)
+	draw_string(title_font, Vector2(44, 60), _tr("渡墨镇 · 安全区", "Dumo Town · Safe"), HORIZONTAL_ALIGNMENT_LEFT, -1, 24, palette.ink_night)
 	var bank := int(current_snapshot.get("bank_coins", 0))
-	draw_string(mono_font, Vector2(44, 96), _tr("香火资  %d 钱  ·  阴邪不侵", "Coins %d  ·  Warded") % bank, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, palette.grey_dark)
+	draw_string(mono_font, Vector2(44, 88), _tr("香火资  %d 钱  ·  阴邪不侵", "Coins %d  ·  Warded") % bank, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, palette.grey_dark)
+	var oil_lbl := _oil_name(str(current_snapshot.get("selected_oil", "pine_oil")))
+	var charm_lbl := _charm_name(str(current_snapshot.get("selected_charm", "")))
+	draw_string(body_font, Vector2(44, 116), _tr("当夜灯油：%s" % oil_lbl, "Oil: %s" % oil_lbl), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, palette.amber_dark)
+	draw_string(body_font, Vector2(44, 140), _tr("纸扎护符：%s" % charm_lbl, "Charm: %s" % charm_lbl), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, palette.ink_slate)
 	var nearby := str(current_snapshot.get("town_nearby", ""))
 	var prompt := _tr("WASD 游历渡墨镇  ·  向北出镇北铁门入乱葬岗  ·  [Enter] 径直出城  ·  [Esc] 回标题", "WASD Explore Town  ·  Walk North through Gate  ·  [Enter] Depart  ·  [Esc] Title")
 	match nearby:
 		"furnace":
-			prompt = _tr("[E] 参拜辟邪祖火 · 研习修为", "[E] Ancestral Furnace · Train")
+			prompt = _tr("[E] 参拜辟邪祖火 · 永久修习", "[E] Ancestral Furnace · Permanent Upgrades")
 		"oil_shop":
-			prompt = _tr("[E] 老油坊 · 添秘芯修习", "[E] Old Oil Shop · Train")
+			prompt = _tr("[E] 老油坊 · 调配当夜灯油（免费三选一）", "[E] Old Oil Shop · Nightly Lamp Oil")
 		"paper_shop":
-			prompt = _tr("[E] 扎彩故铺 · 缝灵囊修习", "[E] Paper-Craft Shop · Train")
+			prompt = _tr("[E] 扎彩故铺 · 阅九大阴戒录 / 请纸扎护身符", "[E] Paper-Craft Shop · Taboo Ledger & Charms")
 		"north_gate":
 			prompt = _tr("[E] / ↑ 领签出镇北铁门 · 入乱葬岗", "[E] / ↑ Step through North Gate")
 	var pw := body_font.get_string_size(prompt, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x + 48.0
@@ -386,6 +477,64 @@ func _draw_town_hud() -> void:
 		draw_rect(Rect2(sx, 774, sw + 28.0, 40), Color(palette.ink_deep, 0.72 * sub_alpha))
 		draw_line(Vector2(sx, 774), Vector2(sx, 814), Color(palette.amber, 0.70 * sub_alpha), 2.2)
 		draw_string(body_font, Vector2(sx + 14.0, 801), sub, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color(palette.bone_dark, sub_alpha))
+
+func _draw_oil_shop_modal() -> void:
+	var palette := InkData.palette()
+	_dim()
+	_draw_parchment_panel(Rect2(250, 150, 940, 570), palette, Color("#E5DEC9"))
+	draw_string(title_font, Vector2(250, 222), _tr("老油坊 · 当夜添油", "Old Oil Shop · Nightly Blend"), HORIZONTAL_ALIGNMENT_CENTER, 940, 42, palette.ink_night)
+	draw_string(body_font, Vector2(250, 256), _tr("出城前免费择一秘油灌入提灯，决定本夜行路流派。", "Pick one free oil blend before stepping beyond the Iron Gate."), HORIZONTAL_ALIGNMENT_CENTER, 940, 15, palette.grey_dark)
+	var oil_defs := InkData.oil_blends()
+	var cur_oil := str(current_snapshot.get("selected_oil", "pine_oil"))
+	var xs := [290.0, 585.0, 880.0]
+	for i in range(oil_defs.size()):
+		var def: Dictionary = oil_defs[i]
+		var is_sel := str(def.id) == cur_oil
+		var card := Rect2(xs[i], 296, 270, 316)
+		draw_rect(card, Color("#FAF6EA") if is_sel else Color("#F3ECE0"))
+		draw_rect(card, palette.amber_dark if is_sel else palette.grey_dark, false, 2.8 if is_sel else 1.6)
+		draw_rect(Rect2(xs[i] + 18, 314, 78, 22), Color(palette.amber_dark if is_sel else palette.ink_slate, 0.18))
+		draw_string(body_font, Vector2(xs[i] + 26, 330), str(def.tag), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, palette.ink_night)
+		var oname := str(def.en_name) if _is_en() else str(def.name)
+		var odesc := str(def.en_desc) if _is_en() else str(def.desc)
+		draw_string(title_font, Vector2(xs[i] + 20, 384), oname, HORIZONTAL_ALIGNMENT_LEFT, 230, 30 if not _is_en() else 22, palette.ink_night)
+		draw_line(Vector2(xs[i] + 20, 404), Vector2(xs[i] + 250, 404), Color(palette.grey_mid, 0.4), 1.0)
+		draw_multiline_string(body_font, Vector2(xs[i] + 20, 434), odesc, HORIZONTAL_ALIGNMENT_LEFT, 230.0, 16, -1, palette.ink_slate)
+
+func _draw_paper_shop_modal() -> void:
+	var palette := InkData.palette()
+	_dim()
+	_draw_parchment_panel(Rect2(220, 130, 1000, 594), palette, Color("#E5DEC9"))
+	draw_string(title_font, Vector2(220, 194), _tr("扎彩故铺 · 阴戒录与护身符", "Paper-Craft Shop · Taboos & Charms"), HORIZONTAL_ALIGNMENT_CENTER, 1000, 38, palette.ink_night)
+	var bank := int(current_snapshot.get("bank_coins", 0))
+	draw_string(body_font, Vector2(220, 224), _tr("乱葬岗九大阴戒速览（每夜抽三）  ·  现有香火资 %d 钱" % bank, "All 9 Graveyard Taboos (3 active nightly)  ·  Coins: %d" % bank), HORIZONTAL_ALIGNMENT_CENTER, 1000, 14, palette.grey_dark)
+	var pool := InkData.full_rule_pool()
+	for i in range(pool.size()):
+		var r: Dictionary = pool[i]
+		var col := i % 3
+		var row := i / 3
+		var rx := 254.0 + float(col) * 316.0
+		var ry := 244.0 + float(row) * 82.0
+		draw_rect(Rect2(rx, ry, 300, 72), Color("#F4EEE1"))
+		draw_rect(Rect2(rx, ry, 300, 72), Color(palette.grey_mid, 0.55), false, 1.2)
+		var rt := str(r.en_title) if _is_en() else str(r.title)
+		var rc := str(r.en_cue) if _is_en() else ("「%s」" % str(r.cue))
+		draw_string(body_font, Vector2(rx + 12, ry + 26), "%d. %s" % [i + 1, rt], HORIZONTAL_ALIGNMENT_LEFT, 276, 14 if not _is_en() else 12, palette.ink_night)
+		draw_string(body_font, Vector2(rx + 12, ry + 52), rc, HORIZONTAL_ALIGNMENT_LEFT, 276, 12, palette.grey_dark)
+	draw_line(Vector2(254, 502), Vector2(1186, 502), Color(palette.grey_dark, 0.45), 1.2)
+	draw_string(body_font, Vector2(254, 524), _tr("当夜纸扎护身符（出城生效，每夜限佩一张）：", "Single-Run Paper Charms (1 per night):"), HORIZONTAL_ALIGNMENT_LEFT, -1, 14, palette.ink_slate)
+	var charms := InkData.paper_charms()
+	var cur_charm := str(current_snapshot.get("selected_charm", ""))
+	for i in range(charms.size()):
+		var cdef: Dictionary = charms[i]
+		var cx := 310.0 + float(i) * 430.0
+		var is_sel := str(cdef.id) == cur_charm
+		draw_rect(Rect2(cx, 536, 392, 98), Color("#FAF6EA") if is_sel else Color("#F4EEE1"))
+		draw_rect(Rect2(cx, 536, 392, 98), palette.amber_dark if is_sel else palette.grey_dark, false, 2.2 if is_sel else 1.4)
+		var cname := str(cdef.en_name) if _is_en() else str(cdef.name)
+		var cdesc := str(cdef.en_desc) if _is_en() else str(cdef.desc)
+		draw_string(title_font, Vector2(cx + 16, 568), cname, HORIZONTAL_ALIGNMENT_LEFT, -1, 22, palette.ink_night)
+		draw_multiline_string(body_font, Vector2(cx + 16, 594), cdesc, HORIZONTAL_ALIGNMENT_LEFT, 226.0, 13, -1, palette.grey_dark)
 
 func _draw_parchment_panel(rect: Rect2, palette: Dictionary, bg: Color = Color("#E6DEC8")) -> void:
 	draw_rect(Rect2(rect.position + Vector2(0.0, 5.0), rect.size), Color(palette.ink_deep, 0.48))

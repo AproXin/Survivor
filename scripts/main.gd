@@ -128,6 +128,9 @@ var town_spots := {
 }
 var town_nearby := ""
 var town_modal_open := false
+var town_modal_kind := ""
+var selected_oil := "pine_oil"
+var selected_charm := ""
 var upgrade_levels: Dictionary = {}
 var rules: Array = InkData.fixed_rules()
 var cold_lights: Array[Dictionary] = []
@@ -230,6 +233,31 @@ func buy_meta_upgrade(id: String) -> bool:
 			return true
 	return false
 
+func select_oil_blend(oil_id: String) -> bool:
+	for item in InkData.oil_blends():
+		if str(item.id) == oil_id:
+			selected_oil = oil_id
+			play_sfx("xp")
+			_emit_hud()
+			return true
+	return false
+
+func buy_paper_charm(charm_id: String) -> bool:
+	if selected_charm == charm_id:
+		return false
+	for item in InkData.paper_charms():
+		if str(item.id) == charm_id:
+			var cost := int(item.cost)
+			if int(save_data.coins) < cost:
+				return false
+			save_data.coins = int(save_data.coins) - cost
+			selected_charm = charm_id
+			_persist_save()
+			play_sfx("level")
+			_emit_hud()
+			return true
+	return false
+
 func _apply_meta_bonuses() -> void:
 	if DisplayServer.get_name() == "headless" and run_mode == "prototype":
 		return
@@ -243,6 +271,24 @@ func _apply_meta_bonuses() -> void:
 	player.speed_mult = 1.0 + float(swf) * 0.07
 	player.damage_mult = 1.0 + float(wck) * 0.10
 	player.pickup_radius = float(InkData.player_base().pickup_radius) + float(pch) * 22.0
+	if run_mode == "full_vigil":
+		match selected_oil:
+			"pine_oil":
+				player.light_mortal_bonus += 28.0
+				player.fuel_drain_mult *= 0.85
+			"tung_oil":
+				player.damage_mult *= 1.15
+				player.fuel_drain_mult *= 1.10
+			"spirit_wax":
+				player.flip_cooldown_reduce += 0.45
+				player.speed_bonus += 12.0
+		if selected_charm == "paper_ward":
+			encore_available = true
+			selected_charm = ""
+		elif selected_charm == "calm_talisman":
+			player.taboo_grace_bonus += 0.45
+			player.punisher_damage_reduce += 4.0
+			selected_charm = ""
 
 func _sync_cold_lights_from_scenery() -> void:
 	cold_lights.clear()
@@ -546,9 +592,18 @@ func interact_in_town() -> void:
 		return
 	if town_nearby == "north_gate":
 		depart_from_town()
-	elif town_nearby != "" and hud != null:
+	elif town_nearby == "furnace" and hud != null:
 		town_modal_open = true
+		town_modal_kind = "bag"
 		hud.open_bag()
+	elif town_nearby == "oil_shop" and hud != null:
+		town_modal_open = true
+		town_modal_kind = "oil_shop"
+		hud.open_town_modal("oil_shop")
+	elif town_nearby == "paper_shop" and hud != null:
+		town_modal_open = true
+		town_modal_kind = "paper_shop"
+		hud.open_town_modal("paper_shop")
 
 func toggle_selected_mode() -> void:
 	selected_mode = "prototype" if selected_mode == "full_vigil" else "full_vigil"
@@ -717,6 +772,9 @@ func get_snapshot() -> Dictionary:
 		"alert_alpha": clampf(alert_timer / 0.5, 0.0, 1.0),
 		"town_nearby": town_nearby,
 		"town_modal_open": town_modal_open,
+		"town_modal_kind": town_modal_kind,
+		"selected_oil": selected_oil,
+		"selected_charm": selected_charm,
 		"subtitle": subtitle_text,
 		"subtitle_alpha": _subtitle_alpha(),
 	}

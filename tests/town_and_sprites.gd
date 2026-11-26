@@ -47,16 +47,28 @@ func _run() -> void:
 	scene.step(0.05)
 	_check(scene.town_nearby == "furnace", "standing near furnace must detect furnace interaction")
 
-	# Walk near Old Oil Shop
+	# Walk near Old Oil Shop & pick Tung Oil blend
 	scene.player.pos = scene.town_spots.oil_shop + Vector2(0.0, 40.0)
 	scene.step(0.05)
 	_check(scene.town_nearby == "oil_shop", "standing near oil_shop must detect oil_shop interaction")
+	_check(scene.select_oil_blend("tung_oil"), "selecting tung_oil at Old Oil Shop must succeed")
+	_check(scene.selected_oil == "tung_oil", "selected_oil must update to tung_oil")
 
-	# Walk north through North Iron Gate => depart into graveyard vigil
+	# Walk near Paper-Craft Shop & buy Paper Effigy Charm
+	scene.player.pos = scene.town_spots.paper_shop + Vector2(0.0, 40.0)
+	scene.step(0.05)
+	_check(scene.town_nearby == "paper_shop", "standing near paper_shop must detect paper_shop interaction")
+	scene.save_data.coins = 30
+	_check(scene.buy_paper_charm("paper_ward"), "buying paper_ward at Paper-Craft Shop must succeed")
+	_check(int(scene.save_data.coins) == 15, "paper_ward must deduct 15 coins")
+
+	# Walk north through North Iron Gate => depart into graveyard vigil with Oil + Charm applied!
 	scene.player.pos = Vector2(0.0, -195.0)
 	scene.step(0.05)
 	_check(scene.phase == scene.Phase.PLAYING, "walking through North Iron Gate must start graveyard vigil")
 	_check(scene.run_mode == "full_vigil", "departing in full_vigil mode must start full_vigil")
+	_check(scene.encore_available, "paper_ward charm must arm encore revival upon departure")
+	_check(scene.player.damage_mult > 1.1, "tung_oil blend must boost damage multiplier upon departure")
 
 	scene.queue_free()
 	await process_frame

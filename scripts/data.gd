@@ -162,6 +162,17 @@ const META_UPGRADES := [
 	{"id": "spirit_pouch", "name": "聚灵", "en_name": "Spirit Pouch", "desc": "缝扎彩故铺灵囊，墨魄汲取半径 +22/级。", "en_desc": "Gem draw radius +22/lv.", "max_level": 4, "costs": [10, 22, 38, 58]},
 ]
 
+const OIL_BLENDS := [
+	{"id": "pine_oil", "name": "松脂清油", "en_name": "Pine-Resin Oil", "tag": "稳健守规", "desc": "人间灯圈 +28，灯油燃耗 -15%。", "en_desc": "Mortal light +28, oil drain -15%."},
+	{"id": "tung_oil", "name": "桐油烈芯", "en_name": "Fierce Tung Wick", "tag": "高攻速杀", "desc": "全形态攻击威力 +15%，灯油燃耗 +10%。", "en_desc": "All attack dmg +15%, oil drain +10%."},
+	{"id": "spirit_wax", "name": "冥蜡冷芯", "en_name": "Spirit-Wax Core", "tag": "高频变脸", "desc": "翻界冷却 -0.45 秒，行步速度 +12。", "en_desc": "Flip cooldown -0.45s, move speed +12."},
+]
+
+const PAPER_CHARMS := [
+	{"id": "paper_ward", "name": "纸扎替身符", "en_name": "Paper Effigy Charm", "cost": 15, "desc": "本夜自带一次气绝半血复起并震退周敌。", "en_desc": "Start tonight with 1 cheat-death revival."},
+	{"id": "calm_talisman", "name": "镇魂安神符", "en_name": "Soul-Calming Ward", "cost": 12, "desc": "本夜破戒宽限 +0.45 秒，白纸差役触伤 -4。", "en_desc": "Taboo grace +0.45s, Bailiff damage -4 tonight."},
+]
+
 const WHITE_STRANGER_LINES := [
 	"……请问，往生祠往哪边走？",
 	"你……看见我丢的那只鞋了吗？",
@@ -230,3 +241,9 @@ static func full_upgrade_pool() -> Array:
 
 static func meta_upgrades() -> Array:
 	return META_UPGRADES.duplicate(true)
+
+static func oil_blends() -> Array:
+	return OIL_BLENDS.duplicate(true)
+
+static func paper_charms() -> Array:
+	return PAPER_CHARMS.duplicate(true)
