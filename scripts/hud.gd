@@ -307,8 +307,8 @@ func _layout_buttons() -> void:
 	_place(mute_button, 1368, 84, 44, 44)
 	_place(lang_button, 1368, 136, 44, 36)
 	_place(pause_button, 1368, 32, 44, 44)
-	_place(restart_button, 558, 600, 154, 52)
-	_place(title_button, 728, 600, 154, 52)
+	_place(restart_button, 554, 600, 154, 52)
+	_place(title_button, 732, 600, 154, 52)
 	var card_x := [254.0, 578.0, 902.0]
 	for i in range(upgrade_buttons.size()):
 		_place(upgrade_buttons[i], card_x[i], 290, 284, 344)
@@ -362,8 +362,11 @@ func _draw_parchment_panel(rect: Rect2, palette: Dictionary, bg: Color = Color("
 
 func _draw_title() -> void:
 	var palette := InkData.palette()
-	draw_rect(Rect2(0.0, 0.0, 620.0, 900.0), Color(palette.ink_deep, 0.62))
-	draw_rect(Rect2(620.0, 0.0, 140.0, 900.0), Color(palette.ink_deep, 0.25))
+	# Smooth horizontal ink readability fade on left half (no hard vertical seam)
+	for s in range(20):
+		var t := float(s) / 20.0
+		var a := pow(1.0 - t, 1.65) * 0.72
+		draw_rect(Rect2(float(s) * 44.0, 0.0, 45.0, 900.0), Color(palette.ink_deep, a))
 	var bank := int(current_snapshot.get("bank_coins", 0))
 	_draw_parchment_panel(Rect2(1210, 30, 202, 48), palette)
 	draw_circle(Vector2(1236, 54), 9.0, palette.amber)
@@ -389,9 +392,9 @@ func _draw_bag_modal() -> void:
 	_dim()
 	_draw_parchment_panel(Rect2(260, 160, 920, 560), palette, Color("#E5DEC9"))
 	var h_title := InkData.GAME_META.hub_title_en if _is_en() else InkData.GAME_META.hub_title_zh
-	draw_string(title_font, Vector2(536 if not _is_en() else 480, 226), h_title, HORIZONTAL_ALIGNMENT_LEFT, -1, 42, palette.ink_night)
+	draw_string(title_font, Vector2(260, 226), h_title, HORIZONTAL_ALIGNMENT_CENTER, 920, 42, palette.ink_night)
 	var h_desc := InkData.GAME_META.hub_desc_en if _is_en() else InkData.GAME_META.hub_desc_zh
-	draw_string(body_font, Vector2(468, 258), h_desc, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, palette.grey_dark)
+	draw_string(body_font, Vector2(260, 258), h_desc, HORIZONTAL_ALIGNMENT_CENTER, 920, 14, palette.grey_dark)
 	var bank := int(current_snapshot.get("bank_coins", 0))
 	var stats: Dictionary = current_snapshot.get("save_stats", {})
 	var stat_line := _tr(
@@ -569,10 +572,10 @@ func _draw_pause() -> void:
 	var palette := InkData.palette()
 	_dim()
 	_draw_parchment_panel(Rect2(500, 280, 440, 300), palette)
-	draw_string(title_font, Vector2(628, 372), _tr("守夜暂歇", "Vigil Paused"), HORIZONTAL_ALIGNMENT_LEFT, -1, 44, palette.ink_night)
+	draw_string(title_font, Vector2(500, 372), _tr("守夜暂歇", "Vigil Paused"), HORIZONTAL_ALIGNMENT_CENTER, 440, 44, palette.ink_night)
 	draw_line(Vector2(560, 396), Vector2(880, 396), Color(palette.grey_dark, 0.45), 1.2)
-	draw_string(body_font, Vector2(598, 444), _tr("Esc / Enter 继续守更", "Esc / Enter to Resume"), HORIZONTAL_ALIGNMENT_LEFT, -1, 17, palette.grey_dark)
-	draw_string(body_font, Vector2(578, 482), _tr("Space 翻界  ·  Q 切换生/旦", "Space Flip  ·  Q Sheng/Dan"), HORIZONTAL_ALIGNMENT_LEFT, -1, 15, palette.grey_mid)
+	draw_string(body_font, Vector2(500, 444), _tr("Esc / Enter 继续守更", "Esc / Enter to Resume"), HORIZONTAL_ALIGNMENT_CENTER, 440, 17, palette.grey_dark)
+	draw_string(body_font, Vector2(500, 482), _tr("Space 翻界  ·  Q 切换生/旦", "Space Flip  ·  Q Sheng/Dan"), HORIZONTAL_ALIGNMENT_CENTER, 440, 15, palette.grey_mid)
 
 func _draw_upgrade_emblem(id: String, center: Vector2, palette: Dictionary) -> void:
 	draw_circle(center, 26.0, Color(palette.ink_night, 0.08))
@@ -615,8 +618,8 @@ func _draw_level_up() -> void:
 	var palette := InkData.palette()
 	_dim()
 	_draw_parchment_panel(Rect2(204, 152, 1032, 540), palette, Color("#E5DEC9"))
-	draw_string(title_font, Vector2(616, 224), _tr("灵息渐盛", "Spirit Rises"), HORIZONTAL_ALIGNMENT_LEFT, -1, 46, palette.ink_night)
-	draw_string(body_font, Vector2(612, 256), _tr("择一名物续行墨夜", "Choose a relic for the night"), HORIZONTAL_ALIGNMENT_LEFT, -1, 16, palette.grey_dark)
+	draw_string(title_font, Vector2(204, 224), _tr("灵息渐盛", "Spirit Rises"), HORIZONTAL_ALIGNMENT_CENTER, 1032, 46, palette.ink_night)
+	draw_string(body_font, Vector2(204, 256), _tr("择一名物续行墨夜", "Choose a relic for the night"), HORIZONTAL_ALIGNMENT_CENTER, 1032, 16, palette.grey_dark)
 	var xs := [254.0, 578.0, 902.0]
 	var levels: Dictionary = current_snapshot.get("upgrade_levels", {})
 	for i in range(current_choices.size()):

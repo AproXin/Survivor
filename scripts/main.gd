@@ -691,7 +691,7 @@ func spawn_boss() -> int:
 	boss_spawned = true
 	boss_phase = 1
 	var p_pos: Vector2 = player.pos
-	var pos: Vector2 = p_pos + Vector2(0.0, -360.0)
+	var pos: Vector2 = p_pos + Vector2(290.0, -70.0)
 	_add_trauma(0.75)
 	play_sfx("violation")
 	boss_quote = InkData.BOSS_LINES.intro

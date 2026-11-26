@@ -7,6 +7,7 @@ var visual_time := 0.0
 var body_font: Font = ThemeDB.fallback_font
 var number_font: Font = ThemeDB.fallback_font
 var title_font: Font = ThemeDB.fallback_font
+var radial_glow_tex: GradientTexture2D
 
 func setup(target: InkMain) -> void:
 	sim = target
@@ -16,8 +17,24 @@ func setup(target: InkMain) -> void:
 		number_font = load("res://assets/fonts/JetBrainsMono[wght].ttf")
 	if ResourceLoader.exists("res://assets/fonts/MaShanZheng-Regular.ttf"):
 		title_font = load("res://assets/fonts/MaShanZheng-Regular.ttf")
+	var grad := Gradient.new()
+	grad.offsets = PackedFloat32Array([0.0, 0.35, 0.72, 1.0])
+	grad.colors = PackedColorArray([Color(1, 1, 1, 1.0), Color(1, 1, 1, 0.48), Color(1, 1, 1, 0.12), Color(1, 1, 1, 0.0)])
+	radial_glow_tex = GradientTexture2D.new()
+	radial_glow_tex.gradient = grad
+	radial_glow_tex.width = 128
+	radial_glow_tex.height = 128
+	radial_glow_tex.fill = GradientTexture2D.FILL_RADIAL
+	radial_glow_tex.fill_from = Vector2(0.5, 0.5)
+	radial_glow_tex.fill_to = Vector2(1.0, 0.5)
 	scenery = make_scenery(20261125)
 	queue_redraw()
+
+func _draw_soft_glow(pos: Vector2, radius: float, color: Color) -> void:
+	if radial_glow_tex == null:
+		draw_circle(pos, radius, color)
+		return
+	draw_texture_rect(radial_glow_tex, Rect2(pos - Vector2(radius, radius), Vector2(radius * 2.0, radius * 2.0)), false, color)
 
 func _process(delta: float) -> void:
 	visual_time += delta
@@ -80,14 +97,12 @@ func _draw() -> void:
 
 # --- Title Screen Live Atmospheric Diorama ---
 func _draw_title_diorama(palette: Dictionary, vs: Vector2) -> void:
-	# Subtle deep ink night sky gradient bands
 	draw_rect(Rect2(Vector2.ZERO, vs), palette.ink_deep)
-	draw_rect(Rect2(Vector2(vs.x * 0.32, 0.0), Vector2(vs.x * 0.68, vs.y * 0.65)), Color(palette.ink_night, 0.72))
-	# Full moon upper right
+	_draw_soft_glow(Vector2(vs.x * 0.76, vs.y * 0.26), 460.0, Color(palette.ink_slate, 0.42))
+	# Full moon upper right with silky watercolor halo
 	var moon_pos := Vector2(vs.x * 0.76, vs.y * 0.22)
-	draw_circle(moon_pos, 128.0, Color(palette.bone, 0.04))
-	draw_circle(moon_pos, 88.0, Color(palette.bone, 0.09))
-	draw_circle(moon_pos, 58.0, Color(palette.bone, 0.86))
+	_draw_soft_glow(moon_pos, 165.0, Color(palette.bone, 0.22))
+	draw_circle(moon_pos, 56.0, Color(palette.bone, 0.88))
 	draw_circle(moon_pos + Vector2(18.0, -10.0), 14.0, Color(palette.grey_mid, 0.20))
 	draw_circle(moon_pos + Vector2(-16.0, 16.0), 10.0, Color(palette.grey_mid, 0.16))
 	draw_circle(moon_pos + Vector2(4.0, 22.0), 7.0, Color(palette.grey_dark, 0.14))
@@ -129,11 +144,10 @@ func _draw_title_diorama(palette: Dictionary, vs: Vector2) -> void:
 	var sway := sin(visual_time * 1.4) * 10.0
 	var lantern_pos := anchor + Vector2(sway, 86.0)
 	draw_line(anchor, lantern_pos + Vector2(0.0, -24.0), palette.grey_mid, 2.0)
-	# Warm lantern glow pools
+	# Silky radial warm lantern glow (zero concentric banding)
 	var pulse := 1.0 + sin(visual_time * 5.2) * 0.04
-	draw_circle(lantern_pos, 170.0 * pulse, Color(palette.amber, 0.05))
-	draw_circle(lantern_pos, 96.0 * pulse, Color(palette.amber, 0.11))
-	draw_circle(lantern_pos, 46.0 * pulse, Color(palette.amber_bright, 0.22))
+	_draw_soft_glow(lantern_pos, 220.0 * pulse, Color(palette.amber, 0.28))
+	_draw_soft_glow(lantern_pos, 86.0 * pulse, Color(palette.amber_bright, 0.34))
 	_draw_hex_lantern(lantern_pos, 1.85, sway * 0.2, palette)
 	# Rising golden ember sparks around the lantern
 	for i in range(10):
@@ -625,8 +639,8 @@ func _draw_player(palette: Dictionary) -> void:
 	draw_line(arm_start, lantern_pos + Vector2(0.0, -15.0), palette.ink_slate, 3.5)
 	if not sim.hazards.blackout_active:
 		var flicker := 1.0 + sin(visual_time * 8.0) * 0.06
-		draw_circle(lantern_pos, 48.0 * flicker, Color(palette.amber, 0.10))
-		draw_circle(lantern_pos, 26.0 * flicker, Color(palette.amber_bright, 0.20))
+		_draw_soft_glow(lantern_pos, 72.0 * flicker, Color(palette.amber, 0.26))
+		_draw_soft_glow(lantern_pos, 32.0 * flicker, Color(palette.amber_bright, 0.32))
 	_draw_hex_lantern(lantern_pos, 1.05, -sim.player.vel.x * 0.015, palette)
 
 # --- Expressive Enemies ---
@@ -844,18 +858,17 @@ func _draw_combat_vfx(palette: Dictionary) -> void:
 
 func _draw_moon(palette: Dictionary, viewport_size: Vector2) -> void:
 	var moon_pos := viewport_size * Vector2(0.76, 0.16) - sim.camera * 0.035
-	draw_circle(moon_pos, 96.0, Color(palette.bone, 0.05))
-	draw_circle(moon_pos, 64.0, Color(palette.bone, 0.13))
-	draw_circle(moon_pos, 46.0, Color(palette.bone, 0.78))
+	_draw_soft_glow(moon_pos, 128.0, Color(palette.bone, 0.24))
+	draw_circle(moon_pos, 46.0, Color(palette.bone, 0.80))
 	draw_circle(moon_pos + Vector2(15.0, -7.0), 12.0, Color(palette.grey_mid, 0.20))
 	draw_circle(moon_pos + Vector2(-12.0, 14.0), 8.0, Color(palette.grey_mid, 0.16))
 
 func _draw_foreground_mist(palette: Dictionary, viewport_size: Vector2) -> void:
-	var mist_alpha := 0.022 + sim.realm_blend * 0.016
+	var mist_alpha := 0.055 + sim.realm_blend * 0.035
 	for i in range(6):
 		var x := fmod(visual_time * (10.0 + float(i) * 1.8) + float(i) * 270.0, viewport_size.x + 520.0) - 260.0
 		var y := viewport_size.y * (0.22 + float(i % 3) * 0.28)
-		draw_circle(Vector2(x, y), 165.0 + float(i) * 14.0, Color(palette.grey_light, mist_alpha))
+		_draw_soft_glow(Vector2(x, y), 210.0 + float(i) * 18.0, Color(palette.grey_light, mist_alpha))
 
 func set_light_uniforms() -> void:
 	var overlay = get_parent().get_node_or_null("ScreenLayer/LightOverlay")
@@ -882,7 +895,7 @@ func set_light_uniforms() -> void:
 		blackout_warn_flicker = sin(visual_time * 26.0) * 18.0
 	mat.set_shader_parameter("light_center", light_center / viewport_size)
 	mat.set_shader_parameter("light_radius", maxf(90.0, light_radius + blackout_warn_flicker))
-	mat.set_shader_parameter("darkness", 0.84 if sim.hazards.blackout_active else (0.54 if sim.realm == "mortal" else 0.66))
+	mat.set_shader_parameter("darkness", 0.82 if sim.hazards.blackout_active else (0.46 if sim.realm == "mortal" else 0.56))
 	mat.set_shader_parameter("fog_amount", 0.18 if sim.realm == "mortal" else 0.28)
 	mat.set_shader_parameter("realm_blend", sim.realm_blend)
 	mat.set_shader_parameter("flip_wave", sim.flip_wave)
