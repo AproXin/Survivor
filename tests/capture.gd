@@ -7,8 +7,12 @@ func _initialize() -> void:
 
 func _run(scene: InkMain) -> void:
 	DirAccess.make_dir_recursive_absolute("res://docs/screenshots")
-	await _frames(12)
+	await _frames(14)
 	await scene.get_node("WorldView").capture_screenshot("res://docs/screenshots/title.png")
+	scene.hud.open_bag()
+	await _frames(8)
+	await scene.get_node("WorldView").capture_screenshot("res://docs/screenshots/bag.png")
+	scene.hud.close_bag()
 	scene.start_run()
 	await _frames(90)
 	await scene.get_node("WorldView").capture_screenshot("res://docs/screenshots/mortal.png")
@@ -19,6 +23,9 @@ func _run(scene: InkMain) -> void:
 	await _frames(10)
 	await scene.get_node("WorldView").capture_screenshot("res://docs/screenshots/levelup.png")
 	scene.choose_upgrade(0)
+	scene.spawn_boss()
+	await _frames(20)
+	await scene.get_node("WorldView").capture_screenshot("res://docs/screenshots/boss.png")
 	scene.toggle_pause()
 	await _frames(10)
 	await scene.get_node("WorldView").capture_screenshot("res://docs/screenshots/pause.png")
