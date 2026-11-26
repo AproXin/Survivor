@@ -5,7 +5,7 @@ signal hud_changed(snapshot: Dictionary)
 signal level_up(choices: Array)
 signal run_finished(summary: Dictionary)
 
-enum Phase { TITLE, PLAYING, PAUSED, LEVELUP, ENDED }
+enum Phase { TITLE, PLAYING, PAUSED, LEVELUP, ENDED, TOWN }
 
 const SAVE_PATH := "user://ink_night_save.json"
 
@@ -118,6 +118,16 @@ var particles: Array[Dictionary] = []
 var slashes: Array[Dictionary] = []
 var floaters: Array[Dictionary] = []
 var afterimages: Array[Dictionary] = []
+var dying_corpses: Array[Dictionary] = []
+var town_bounds := Rect2(-440.0, -240.0, 880.0, 480.0)
+var town_spots := {
+	"furnace": Vector2(0.0, 20.0),
+	"oil_shop": Vector2(-245.0, 30.0),
+	"paper_shop": Vector2(245.0, 30.0),
+	"north_gate": Vector2(0.0, -210.0),
+}
+var town_nearby := ""
+var town_modal_open := false
 var upgrade_levels: Dictionary = {}
 var rules: Array = InkData.fixed_rules()
 var cold_lights: Array[Dictionary] = []
@@ -332,6 +342,7 @@ func _ensure_input_actions() -> void:
 		"upgrade_1": [KEY_1, KEY_KP_1],
 		"upgrade_2": [KEY_2, KEY_KP_2],
 		"upgrade_3": [KEY_3, KEY_KP_3],
+		"interact": [KEY_E],
 	}
 	for raw_action in bindings:
 		var action := StringName(raw_action)
@@ -345,6 +356,7 @@ func _ensure_input_actions() -> void:
 	var joy_buttons := {
 		"flip": JOY_BUTTON_A,
 		"face": JOY_BUTTON_X,
+		"interact": JOY_BUTTON_Y,
 		"pause": JOY_BUTTON_START,
 		"confirm": JOY_BUTTON_A,
 	}
@@ -460,6 +472,9 @@ func _reset_run_state() -> void:
 	slashes.clear()
 	floaters.clear()
 	afterimages.clear()
+	dying_corpses.clear()
+	town_nearby = ""
+	town_modal_open = false
 	upgrade_levels.clear()
 	for up in InkData.full_upgrade_pool():
 		upgrade_levels[str(up.id)] = 0
@@ -503,9 +518,37 @@ func start_full_vigil() -> void:
 
 func start_selected_mode() -> void:
 	if selected_mode == "full_vigil":
+		enter_town()
+	else:
+		start_run()
+
+func enter_town() -> void:
+	_reset_run_state()
+	_apply_meta_bonuses()
+	phase = Phase.TOWN
+	realm = "mortal"
+	player.pos = Vector2(0.0, 130.0)
+	camera = Vector2(0.0, 20.0)
+	town_nearby = ""
+	town_modal_open = false
+	_push_subtitle("渡墨镇 · 祖火未熄，整备后向北出镇北铁门。" if lang == "zh" else "Dumo Town · The ancestral fire burns. Head north through the Iron Gate.", 5.0)
+	_emit_hud()
+
+func depart_from_town() -> void:
+	town_modal_open = false
+	if selected_mode == "full_vigil":
 		start_full_vigil()
 	else:
 		start_run()
+
+func interact_in_town() -> void:
+	if phase != Phase.TOWN:
+		return
+	if town_nearby == "north_gate":
+		depart_from_town()
+	elif town_nearby != "" and hud != null:
+		town_modal_open = true
+		hud.open_bag()
 
 func toggle_selected_mode() -> void:
 	selected_mode = "prototype" if selected_mode == "full_vigil" else "full_vigil"
@@ -534,7 +577,37 @@ func _set_rule_progress(rule_id: String, value: float) -> void:
 			rule.progress = clampf(value, 0.0, 1.0)
 			return
 
+func _step_town(dt: float) -> void:
+	if town_modal_open:
+		player.vel = Vector2.ZERO
+		return
+	var move := Input.get_vector("move_left", "move_right", "move_up", "move_down")
+	var speed := 185.0
+	player.vel = move * speed
+	var p_pos: Vector2 = player.pos + player.vel * dt
+	p_pos.x = clampf(p_pos.x, town_bounds.position.x, town_bounds.end.x)
+	p_pos.y = clampf(p_pos.y, town_bounds.position.y, town_bounds.end.y)
+	player.pos = p_pos
+	if absf(move.x) > 0.01:
+		player.facing = signf(move.x)
+	if move.length_squared() > 0.01:
+		player.walk += speed * dt
+	camera = camera.lerp(p_pos * 0.45, 1.0 - exp(-6.0 * dt))
+	town_nearby = ""
+	var best_d := 115.0
+	for spot_id in town_spots:
+		var sp: Vector2 = town_spots[spot_id]
+		var d: float = p_pos.distance_to(sp)
+		if d <= best_d:
+			best_d = d
+			town_nearby = str(spot_id)
+	if p_pos.y <= -185.0 and absf(p_pos.x) <= 95.0:
+		depart_from_town()
+
 func step(dt: float) -> void:
+	if phase == Phase.TOWN:
+		_step_town(dt)
+		return
 	if phase != Phase.PLAYING:
 		return
 	if run_mode == "prototype":
@@ -642,6 +715,8 @@ func get_snapshot() -> Dictionary:
 		"active_cue": active_cue,
 		"alert": alert_text,
 		"alert_alpha": clampf(alert_timer / 0.5, 0.0, 1.0),
+		"town_nearby": town_nearby,
+		"town_modal_open": town_modal_open,
 		"subtitle": subtitle_text,
 		"subtitle_alpha": _subtitle_alpha(),
 	}
@@ -809,6 +884,13 @@ func damage_enemy(index: int, amount: float) -> void:
 		if not was_boss and not first_elite_killed:
 			first_elite_killed = true
 			_push_narrative("first_elite")
+	dying_corpses.append({
+		"kind": str(enemy.kind),
+		"pos": enemy.pos,
+		"facing": 1.0 if (p_pos.x >= float(enemy.pos.x)) else -1.0,
+		"age": 0.0,
+		"duration": 0.42,
+	})
 	kills += 1
 	enemies.remove_at(index)
 	if was_boss:
@@ -1085,6 +1167,10 @@ func update_effects(dt: float) -> void:
 		afterimages[i].life -= dt
 		if afterimages[i].life <= 0.0:
 			afterimages.remove_at(i)
+	for i in range(dying_corpses.size() - 1, -1, -1):
+		dying_corpses[i].age = float(dying_corpses[i].age) + dt
+		if float(dying_corpses[i].age) >= float(dying_corpses[i].duration):
+			dying_corpses.remove_at(i)
 
 func setup_taboos() -> void:
 	rules = InkData.fixed_rules()
@@ -1525,10 +1611,22 @@ func trigger_face_input() -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("pause"):
-		toggle_pause()
+		if phase == Phase.TOWN:
+			if town_modal_open and hud != null:
+				town_modal_open = false
+				hud.close_bag()
+			else:
+				return_to_title()
+		else:
+			toggle_pause()
+	elif event.is_action_pressed("interact"):
+		if phase == Phase.TOWN:
+			interact_in_town()
 	elif event.is_action_pressed("confirm"):
 		if phase == Phase.TITLE:
 			start_selected_mode()
+		elif phase == Phase.TOWN and not town_modal_open:
+			depart_from_town()
 		elif phase == Phase.PAUSED:
 			toggle_pause()
 	elif event.is_action_pressed("flip"):

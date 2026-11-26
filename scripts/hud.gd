@@ -161,6 +161,8 @@ func show_snapshot(snapshot: Dictionary) -> void:
 	if p == InkMain.Phase.TITLE:
 		if modal_kind != "bag":
 			modal_kind = "title"
+	elif p == InkMain.Phase.TOWN:
+		modal_kind = "bag" if bool(snapshot.get("town_modal_open", false)) else "town"
 	elif p == InkMain.Phase.PLAYING:
 		modal_kind = ""
 	elif p == InkMain.Phase.PAUSED:
@@ -214,7 +216,11 @@ func open_bag() -> void:
 	queue_redraw()
 
 func close_bag() -> void:
-	modal_kind = "title"
+	if sim and sim.phase == InkMain.Phase.TOWN:
+		sim.town_modal_open = false
+		modal_kind = "town"
+	else:
+		modal_kind = "title"
 	_update_button_visibility()
 	queue_redraw()
 
@@ -244,14 +250,15 @@ func choose_upgrade(index: int) -> void:
 
 func _update_button_visibility() -> void:
 	var is_title := modal_kind == "title"
+	var is_town := modal_kind == "town"
 	var is_bag := modal_kind == "bag"
 	var is_game := modal_kind == "" or modal_kind == "pause" or modal_kind == "levelup" or modal_kind == "result"
 	start_button.visible = is_title
 	bag_button.visible = is_title
 	mode_button.visible = is_title
 	close_bag_button.visible = is_bag
-	mute_button.visible = is_title or is_bag or is_game
-	lang_button.visible = is_title or is_bag
+	mute_button.visible = is_title or is_town or is_bag or is_game
+	lang_button.visible = is_title or is_town or is_bag
 	pause_button.visible = is_game and modal_kind != "result"
 	restart_button.visible = modal_kind == "result"
 	title_button.visible = modal_kind == "result"
@@ -259,7 +266,7 @@ func _update_button_visibility() -> void:
 		button.visible = modal_kind == "levelup"
 	start_button.text = _tr("执灯入夜", "Light the Lamp")
 	bag_button.text = _tr("渡墨镇 · 祖火", "Dumo Town")
-	close_bag_button.text = _tr("返回标题", "Back")
+	close_bag_button.text = _tr("返回渡墨镇", "Back to Town") if (sim and sim.phase == InkMain.Phase.TOWN) else _tr("返回标题", "Back")
 	restart_button.text = _tr("再入墨夜", "Vigil Again")
 	title_button.text = _tr("返回标题", "Title")
 	lang_button.text = "中" if _is_en() else "EN"
@@ -328,8 +335,13 @@ func _draw() -> void:
 	match modal_kind:
 		"title":
 			_draw_title()
+		"town":
+			_draw_town_hud()
 		"bag":
-			_draw_title()
+			if sim and sim.phase == InkMain.Phase.TOWN:
+				_draw_town_hud()
+			else:
+				_draw_title()
 			_draw_bag_modal()
 		"":
 			_draw_game_hud()
@@ -343,6 +355,37 @@ func _draw() -> void:
 			_draw_game_hud()
 			_draw_result()
 	draw_set_transform(Vector2.ZERO)
+
+func _draw_town_hud() -> void:
+	var palette := InkData.palette()
+	_draw_parchment_panel(Rect2(26, 26, 268, 92), palette)
+	draw_string(title_font, Vector2(44, 62), _tr("渡墨镇 · 安全区", "Dumo Town · Safe"), HORIZONTAL_ALIGNMENT_LEFT, -1, 24, palette.ink_night)
+	var bank := int(current_snapshot.get("bank_coins", 0))
+	draw_string(mono_font, Vector2(44, 96), _tr("香火资  %d 钱  ·  阴邪不侵", "Coins %d  ·  Warded") % bank, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, palette.grey_dark)
+	var nearby := str(current_snapshot.get("town_nearby", ""))
+	var prompt := _tr("WASD 游历渡墨镇  ·  向北出镇北铁门入乱葬岗  ·  [Enter] 径直出城  ·  [Esc] 回标题", "WASD Explore Town  ·  Walk North through Gate  ·  [Enter] Depart  ·  [Esc] Title")
+	match nearby:
+		"furnace":
+			prompt = _tr("[E] 参拜辟邪祖火 · 研习修为", "[E] Ancestral Furnace · Train")
+		"oil_shop":
+			prompt = _tr("[E] 老油坊 · 添秘芯修习", "[E] Old Oil Shop · Train")
+		"paper_shop":
+			prompt = _tr("[E] 扎彩故铺 · 缝灵囊修习", "[E] Paper-Craft Shop · Train")
+		"north_gate":
+			prompt = _tr("[E] / ↑ 领签出镇北铁门 · 入乱葬岗", "[E] / ↑ Step through North Gate")
+	var pw := body_font.get_string_size(prompt, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x + 48.0
+	var px := 720.0 - pw * 0.5
+	draw_rect(Rect2(px, 826, pw, 44), Color(palette.ink_deep, 0.88))
+	draw_rect(Rect2(px, 826, pw, 44), palette.amber if nearby != "" else palette.grey_mid, false, 1.8)
+	draw_string(body_font, Vector2(px + 24.0, 855), prompt, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, palette.amber_bright if nearby != "" else palette.bone)
+	var sub := str(current_snapshot.get("subtitle", ""))
+	var sub_alpha := float(current_snapshot.get("subtitle_alpha", 0.0))
+	if sub != "" and sub_alpha > 0.01:
+		var sw := body_font.get_string_size(sub, HORIZONTAL_ALIGNMENT_LEFT, -1, 18).x
+		var sx := 1412.0 - sw - 28.0
+		draw_rect(Rect2(sx, 774, sw + 28.0, 40), Color(palette.ink_deep, 0.72 * sub_alpha))
+		draw_line(Vector2(sx, 774), Vector2(sx, 814), Color(palette.amber, 0.70 * sub_alpha), 2.2)
+		draw_string(body_font, Vector2(sx + 14.0, 801), sub, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color(palette.bone_dark, sub_alpha))
 
 func _draw_parchment_panel(rect: Rect2, palette: Dictionary, bg: Color = Color("#E6DEC8")) -> void:
 	draw_rect(Rect2(rect.position + Vector2(0.0, 5.0), rect.size), Color(palette.ink_deep, 0.48))

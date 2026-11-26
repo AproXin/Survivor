@@ -8,6 +8,7 @@ var body_font: Font = ThemeDB.fallback_font
 var number_font: Font = ThemeDB.fallback_font
 var title_font: Font = ThemeDB.fallback_font
 var radial_glow_tex: GradientTexture2D
+var sprite_bank: InkSpriteBank
 
 func setup(target: InkMain) -> void:
 	sim = target
@@ -17,6 +18,8 @@ func setup(target: InkMain) -> void:
 		number_font = load("res://assets/fonts/JetBrainsMono[wght].ttf")
 	if ResourceLoader.exists("res://assets/fonts/MaShanZheng-Regular.ttf"):
 		title_font = load("res://assets/fonts/MaShanZheng-Regular.ttf")
+	sprite_bank = InkSpriteBank.new()
+	sprite_bank.load_manifest()
 	var grad := Gradient.new()
 	grad.offsets = PackedFloat32Array([0.0, 0.35, 0.72, 1.0])
 	grad.colors = PackedColorArray([Color(1, 1, 1, 1.0), Color(1, 1, 1, 0.48), Color(1, 1, 1, 0.12), Color(1, 1, 1, 0.0)])
@@ -29,6 +32,20 @@ func setup(target: InkMain) -> void:
 	radial_glow_tex.fill_to = Vector2(1.0, 0.5)
 	scenery = make_scenery(20261125)
 	queue_redraw()
+
+func _try_draw_sprite(key: String, pos: Vector2, state: String, anim_time: float, facing: float, tint: Color = Color.WHITE) -> bool:
+	if sprite_bank == null or not sprite_bank.has_sheet(key):
+		return false
+	var sheet: Dictionary = sprite_bank.get_sheet(key)
+	var tex: Texture2D = sheet.texture
+	var region: Rect2 = sprite_bank.get_frame_region(key, state, anim_time)
+	var draw_sz := float(sheet.frame_size) * float(sheet.scale)
+	var off_y := float(sheet.offset_y)
+	var dst := Rect2(pos.x - draw_sz * 0.5, pos.y - draw_sz * 0.5 + off_y, draw_sz, draw_sz)
+	if facing < 0.0:
+		dst = Rect2(pos.x + draw_sz * 0.5, pos.y - draw_sz * 0.5 + off_y, -draw_sz, draw_sz)
+	draw_texture_rect_region(tex, dst, region, tint)
+	return true
 
 func _draw_soft_glow(pos: Vector2, radius: float, color: Color) -> void:
 	if radial_glow_tex == null:
@@ -79,6 +96,9 @@ func _draw() -> void:
 	if sim.phase == sim.Phase.TITLE:
 		_draw_title_diorama(palette, viewport_size)
 		return
+	if sim.phase == sim.Phase.TOWN:
+		_draw_town(palette, viewport_size)
+		return
 	var cam_pos: Vector2 = sim.camera + sim.shake_offset
 	var view_origin := viewport_size * 0.5 - cam_pos
 	draw_set_transform(view_origin)
@@ -86,6 +106,7 @@ func _draw() -> void:
 	_draw_taboo_zones(palette)
 	_draw_gems(palette, cam_pos, viewport_size)
 	_draw_afterimages(palette)
+	_draw_dying_corpses(palette)
 	_draw_y_sorted_world(palette, cam_pos, viewport_size)
 	_draw_combat_vfx(palette)
 	draw_set_transform(Vector2.ZERO)
@@ -94,6 +115,93 @@ func _draw() -> void:
 	if sim.flip_freeze > 0.0:
 		var flash_alpha: float = clampf(sim.flip_freeze / InkData.player_base().flip_freeze_sec, 0.0, 1.0) * 0.24
 		draw_rect(Rect2(Vector2.ZERO, viewport_size), Color(palette.bone_bright, flash_alpha))
+
+func _draw_dying_corpses(palette: Dictionary) -> void:
+	for c in sim.dying_corpses:
+		var kind: String = str(c.kind)
+		var pos: Vector2 = c.pos
+		var age: float = float(c.age)
+		var dur: float = maxf(0.01, float(c.duration))
+		var alpha := 1.0 - clampf(age / dur, 0.0, 1.0)
+		if not _try_draw_sprite(kind, pos, "death", age, float(c.facing), Color(1, 1, 1, alpha)):
+			draw_circle(pos, 16.0 * (1.0 + age * 1.4), Color(palette.ink_slate, alpha * 0.35))
+
+func _draw_town(palette: Dictionary, viewport_size: Vector2) -> void:
+	var cam_pos: Vector2 = sim.camera
+	draw_set_transform(viewport_size * 0.5 - cam_pos)
+	var bounds: Rect2 = sim.town_bounds.grow(64.0)
+	# Bluestone courtyard tiles
+	draw_rect(bounds, palette.ink_night)
+	draw_rect(sim.town_bounds.grow(16.0), palette.ink_slate)
+	for tx in range(-420, 421, 60):
+		draw_line(Vector2(float(tx), -240.0), Vector2(float(tx), 240.0), Color(palette.ink_night, 0.45), 1.4)
+	for ty in range(-240, 241, 60):
+		draw_line(Vector2(-440.0, float(ty)), Vector2(440.0, float(ty)), Color(palette.ink_night, 0.45), 1.4)
+	# Central ceremonial path from south to North Iron Gate
+	draw_rect(Rect2(-76.0, -260.0, 152.0, 500.0), Color(palette.grey_dark, 0.38))
+	# Perimeter bluestone walls (leaving opening at North Iron Gate)
+	draw_rect(Rect2(-470.0, -255.0, 380.0, 26.0), palette.grey_dark)
+	draw_rect(Rect2(90.0, -255.0, 380.0, 26.0), palette.grey_dark)
+	draw_rect(Rect2(-470.0, 240.0, 940.0, 24.0), palette.grey_dark)
+	draw_rect(Rect2(-470.0, -255.0, 26.0, 519.0), palette.grey_dark)
+	draw_rect(Rect2(444.0, -255.0, 26.0, 519.0), palette.grey_dark)
+	# North Iron Gate & Spirit Screen (镇北铁门 · 辟邪照壁)
+	var gate: Vector2 = sim.town_spots.north_gate
+	_draw_soft_glow(gate + Vector2(0.0, -40.0), 170.0, Color(palette.sage_dark, 0.32))
+	draw_rect(Rect2(gate + Vector2(-95.0, -54.0), Vector2(20.0, 62.0)), palette.grey_mid)
+	draw_rect(Rect2(gate + Vector2(75.0, -54.0), Vector2(20.0, 62.0)), palette.grey_mid)
+	draw_rect(Rect2(gate + Vector2(-108.0, -68.0), Vector2(216.0, 18.0)), palette.ink_deep)
+	draw_string(title_font, gate + Vector2(-62.0, -76.0), "镇北铁门", HORIZONTAL_ALIGNMENT_LEFT, -1, 24, palette.bone)
+	var arrow_bob := sin(visual_time * 3.2) * 4.0
+	draw_string(body_font, gate + Vector2(-58.0, 18.0 + arrow_bob), "↑ 出城入乱葬岗 ↑", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, palette.amber_bright if sim.town_nearby == "north_gate" else palette.bone_dark)
+	# West: Old Oil Shop (老油坊)
+	var oil: Vector2 = sim.town_spots.oil_shop
+	draw_rect(Rect2(oil + Vector2(-74.0, -64.0), Vector2(148.0, 84.0)), palette.grey_dark)
+	draw_colored_polygon(PackedVector2Array([oil + Vector2(-88, -62), oil + Vector2(0, -104), oil + Vector2(88, -62)]), palette.ink_deep)
+	draw_rect(Rect2(oil + Vector2(-36.0, -52.0), Vector2(72.0, 24.0)), palette.ink_night)
+	draw_string(body_font, oil + Vector2(-24.0, -34.0), "老油坊", HORIZONTAL_ALIGNMENT_LEFT, -1, 16, palette.amber_bright if sim.town_nearby == "oil_shop" else palette.bone)
+	_draw_hex_lantern(oil + Vector2(62.0, -32.0), 0.9, sin(visual_time * 2.0) * 2.0, palette)
+	# East: Paper-Craft Shop (扎彩故铺)
+	var paper: Vector2 = sim.town_spots.paper_shop
+	draw_rect(Rect2(paper + Vector2(-74.0, -64.0), Vector2(148.0, 84.0)), palette.grey_dark)
+	draw_colored_polygon(PackedVector2Array([paper + Vector2(-88, -62), paper + Vector2(0, -104), paper + Vector2(88, -62)]), palette.ink_deep)
+	draw_rect(Rect2(paper + Vector2(-42.0, -52.0), Vector2(84.0, 24.0)), palette.ink_night)
+	draw_string(body_font, paper + Vector2(-32.0, -34.0), "扎彩故铺", HORIZONTAL_ALIGNMENT_LEFT, -1, 16, palette.amber_bright if sim.town_nearby == "paper_shop" else palette.bone)
+	_draw_hex_lantern(paper + Vector2(-62.0, -32.0), 0.9, -sin(visual_time * 2.0) * 2.0, palette)
+	# Center: Ancestral Bronze Furnace (辟邪祖火青铜炉) Y-sorted with player
+	var furnace: Vector2 = sim.town_spots.furnace
+	if sim.player.pos.y < furnace.y:
+		_draw_player(palette)
+		_draw_ancestral_furnace(furnace, palette)
+	else:
+		_draw_ancestral_furnace(furnace, palette)
+		_draw_player(palette)
+	draw_set_transform(Vector2.ZERO)
+	_draw_moon(palette, viewport_size)
+
+func _draw_ancestral_furnace(pos: Vector2, palette: Dictionary) -> void:
+	var pulse := 1.0 + sin(visual_time * 5.5) * 0.06
+	_draw_soft_glow(pos + Vector2(0.0, -24.0), 185.0 * pulse, Color(palette.amber, 0.34))
+	_draw_soft_glow(pos + Vector2(0.0, -30.0), 68.0 * pulse, Color(palette.amber_bright, 0.42))
+	# Stone altar ring
+	draw_circle(pos + Vector2(0.0, 8.0), 48.0, Color(palette.grey_dark, 0.65))
+	draw_arc(pos + Vector2(0.0, 8.0), 48.0, 0.0, TAU, 36, palette.amber_dark if sim.town_nearby == "furnace" else palette.grey_mid, 2.2, true)
+	# Bronze tripod cauldron
+	draw_rect(Rect2(pos + Vector2(-24.0, -24.0), Vector2(48.0, 30.0)), palette.grey_dark)
+	draw_rect(Rect2(pos + Vector2(-28.0, -28.0), Vector2(56.0, 8.0)), palette.grey_mid)
+	draw_line(pos + Vector2(-18.0, 6.0), pos + Vector2(-22.0, 18.0), palette.ink_deep, 5.0)
+	draw_line(pos + Vector2(18.0, 6.0), pos + Vector2(22.0, 18.0), palette.ink_deep, 5.0)
+	# Ancestral flame
+	var flame := PackedVector2Array([
+		pos + Vector2(-14.0, -26.0),
+		pos + Vector2(-6.0, -48.0 * pulse),
+		pos + Vector2(0.0, -60.0 * pulse),
+		pos + Vector2(8.0, -46.0 * pulse),
+		pos + Vector2(14.0, -26.0),
+	])
+	draw_colored_polygon(flame, palette.amber)
+	draw_circle(pos + Vector2(0.0, -36.0), 9.0 * pulse, palette.amber_bright)
+	draw_string(body_font, pos + Vector2(-32.0, 36.0), "辟邪祖火", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, palette.amber_bright if sim.town_nearby == "furnace" else palette.bone)
 
 # --- Title Screen Live Atmospheric Diorama ---
 func _draw_title_diorama(palette: Dictionary, vs: Vector2) -> void:
@@ -555,6 +663,10 @@ func _draw_player(palette: Dictionary) -> void:
 	var pos: Vector2 = sim.player.pos
 	var vel: Vector2 = sim.player.vel
 	var moving: bool = vel.length_squared() > 1.0
+	var p_key := "player_mortal" if sim.realm == "mortal" else ("player_sheng" if sim.face == "sheng" else "player_dan")
+	var p_state := "hit" if sim.invuln > 0.35 else "walk"
+	if _try_draw_sprite(p_key, pos, p_state, sim.player.walk * 0.04 if moving else visual_time * 0.4, float(sim.player.facing)):
+		return
 	var bob := sin(sim.player.walk * 0.09) * 2.6 if moving else sin(visual_time * 2.8) * 0.8
 	var stride := sin(sim.player.walk * 0.09) * 5.0 if moving else 0.0
 	var facing: float = sim.player.facing
@@ -682,6 +794,15 @@ func _draw_enemy(enemy: Dictionary, palette: Dictionary) -> void:
 	var anim_phase: float = float(enemy.get("anim_phase", 0.0))
 	var is_elite := bool(enemy.get("is_elite", false))
 	var kind: String = str(enemy.kind)
+	var e_facing := 1.0 if (float(sim.player.pos.x) >= pos.x) else -1.0
+	if _try_draw_sprite(kind, pos, "hit" if flash else "walk", visual_time + anim_phase, e_facing, Color(1.4, 1.4, 1.4, 1.0) if flash else Color.WHITE):
+		if (is_elite or kind == "punisher") and kind != "boss_magistrate":
+			var bw := 44.0
+			var ratio := clampf(float(enemy.hp) / maxf(1.0, float(enemy.max_hp)), 0.0, 1.0)
+			var bar_pos := pos + Vector2(-bw * 0.5, -58.0)
+			draw_rect(Rect2(bar_pos, Vector2(bw, 5.0)), palette.ink_deep)
+			draw_rect(Rect2(bar_pos + Vector2(1.0, 1.0), Vector2((bw - 2.0) * ratio, 3.0)), palette.vermilion)
+		return
 	match kind:
 		"ghost", "elite_ghost":
 			var s := 1.42 if is_elite else 1.0
@@ -884,6 +1005,17 @@ func set_light_uniforms() -> void:
 		mat.set_shader_parameter("is_title", 1.0)
 		mat.set_shader_parameter("light_center", Vector2(0.72, 0.44))
 		mat.set_shader_parameter("light_radius", 340.0)
+		return
+	if sim.phase == sim.Phase.TOWN:
+		mat.set_shader_parameter("is_title", 0.0)
+		var f_center: Vector2 = sim.town_spots.furnace - sim.camera + viewport_size * 0.5
+		mat.set_shader_parameter("light_center", f_center / viewport_size)
+		mat.set_shader_parameter("light_radius", 440.0)
+		mat.set_shader_parameter("darkness", 0.22)
+		mat.set_shader_parameter("fog_amount", 0.06)
+		mat.set_shader_parameter("realm_blend", 0.0)
+		mat.set_shader_parameter("flip_wave", 0.0)
+		mat.set_shader_parameter("danger_pulse", 0.0)
 		return
 	mat.set_shader_parameter("is_title", 0.0)
 	var cam_pos: Vector2 = sim.camera + sim.shake_offset
