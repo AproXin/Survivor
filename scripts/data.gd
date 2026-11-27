@@ -25,29 +25,112 @@ const PLAYER_BASE := {
 	"pickup_radius": 68.0,
 	"hit_invuln_sec": 0.55,
 	"flip_cooldown_sec": 3.0,
-	"flip_freeze_sec": 0.52,
+	"flip_freeze_sec": 0.60,
+	"switch_anim_sec": 0.60,
+	"switch_cooldown_sec": 0.75,
 	"flip_blast_radius": 155.0,
 	"flip_blast_damage": 24.0,
-	"lantern_interval": 0.72,
-	"lantern_damage": 12.0,
-	"lantern_range": 310.0,
-	"sheng_interval": 0.36,
-	"sheng_damage": 16.0,
-	"sheng_range": 215.0,
-	"dan_interval": 0.92,
-	"dan_damage": 14.0,
-	"dan_radius": 108.0,
+	"lantern_interval": 0.95,
+	"lantern_damage": 24.0,
+	"lantern_range": 105.0,
+	"lantern_cone_deg": 120.0,
+	"lantern_slow_mult": 0.85,
+	"lantern_slow_sec": 0.60,
+	"sheng_interval": 0.50,
+	"sheng_damage": 13.0,
+	"sheng_range": 135.0,
+	"sheng_width": 50.0,
+	"sheng_pierce": 3,
+	"dan_interval": 1.10,
+	"dan_damage": 28.0,
+	"dan_radius": 125.0,
+	"dan_cone_deg": 220.0,
+	"dan_knockback": 24.0,
+}
+
+const COMBAT_BASELINE := {
+	"mortal": {
+		"name_zh": "提灯少年 · 灯火照魂",
+		"role_zh": "扇形范围 / 减速控场",
+		"damage": 24.0,
+		"interval": 0.95,
+		"dps": 25.3,
+		"range": 105.0,
+		"cone_deg": 120.0,
+		"slow_pct": 15.0,
+		"slow_sec": 0.60,
+	},
+	"sheng": {
+		"name_zh": "武生 · 净面快剑",
+		"role_zh": "高频输出 / 直线穿透",
+		"damage": 13.0,
+		"interval": 0.50,
+		"dps": 26.0,
+		"range": 135.0,
+		"width": 50.0,
+		"pierce": 3,
+	},
+	"dan": {
+		"name_zh": "青衣旦 · 水袖回风",
+		"role_zh": "大弧度横扫 / 群体击退",
+		"damage": 28.0,
+		"interval": 1.10,
+		"dps": 25.5,
+		"range": 125.0,
+		"cone_deg": 220.0,
+		"knockback_px": 24.0,
+	},
+	"switch_anim_sec": 0.60,
+	"switch_blocks_move": false,
 }
 
 const ENEMY_TABLE := {
-	"ghost": {"name": "游魂", "hp": 16.0, "speed": 64.0, "damage": 6.0, "xp": 2.0, "coins": 0, "radius": 17.0, "is_elite": false, "is_boss": false},
-	"jiangshi": {"name": "行尸", "hp": 48.0, "speed": 50.0, "damage": 11.0, "xp": 4.0, "coins": 1, "radius": 20.0, "is_elite": false, "is_boss": false},
-	"wisp_caster": {"name": "鬼火灵", "hp": 28.0, "speed": 72.0, "damage": 9.0, "xp": 4.0, "coins": 1, "radius": 16.0, "is_elite": false, "is_boss": false},
-	"elite_ghost": {"name": "红眼大幽魂", "hp": 140.0, "speed": 70.0, "damage": 13.0, "xp": 14.0, "coins": 5, "radius": 28.0, "is_elite": true, "is_boss": false},
-	"elite_jiangshi": {"name": "红眼印章尸", "hp": 195.0, "speed": 52.0, "damage": 16.0, "xp": 18.0, "coins": 7, "radius": 29.0, "is_elite": true, "is_boss": false},
-	"punisher": {"name": "白纸差役", "hp": 520.0, "speed": 145.0, "damage": 16.0, "xp": 0.0, "coins": 0, "radius": 26.0, "is_elite": false, "is_boss": false},
-	"boss_magistrate": {"name": "纸扎判官", "hp": 720.0, "speed": 78.0, "damage": 18.0, "xp": 60.0, "coins": 28, "radius": 38.0, "is_elite": true, "is_boss": true},
+	"ghost": {"name": "游魂", "hp": 16.0, "speed": 64.0, "damage": 6.0, "xp": 2.0, "coins": 0, "radius": 17.0, "is_elite": false, "is_boss": false, "biome": "night"},
+	"jiangshi": {"name": "行尸", "hp": 48.0, "speed": 50.0, "damage": 11.0, "xp": 4.0, "coins": 1, "radius": 20.0, "is_elite": false, "is_boss": false, "biome": "night"},
+	"wisp_caster": {"name": "鬼火灵", "hp": 28.0, "speed": 72.0, "damage": 9.0, "xp": 4.0, "coins": 1, "radius": 16.0, "is_elite": false, "is_boss": false, "biome": "night"},
+	"elite_ghost": {"name": "红眼大幽魂", "hp": 140.0, "speed": 70.0, "damage": 13.0, "xp": 14.0, "coins": 5, "radius": 28.0, "is_elite": true, "is_boss": false, "biome": "night"},
+	"elite_jiangshi": {"name": "红眼印章尸", "hp": 195.0, "speed": 52.0, "damage": 16.0, "xp": 18.0, "coins": 7, "radius": 29.0, "is_elite": true, "is_boss": false, "biome": "night"},
+	"punisher": {"name": "白纸差役", "hp": 520.0, "speed": 145.0, "damage": 16.0, "xp": 0.0, "coins": 0, "radius": 26.0, "is_elite": false, "is_boss": false, "biome": "spectral"},
+	"boss_magistrate": {"name": "纸扎判官", "hp": 720.0, "speed": 78.0, "damage": 18.0, "xp": 60.0, "coins": 28, "radius": 38.0, "is_elite": true, "is_boss": true, "biome": "spectral"},
+	"wolf": {"name": "山狼", "hp": 22.0, "speed": 94.0, "damage": 7.0, "xp": 3.0, "coins": 0, "radius": 16.0, "is_elite": false, "is_boss": false, "biome": "day"},
+	"boar": {"name": "野猪", "hp": 52.0, "speed": 62.0, "damage": 12.0, "xp": 5.0, "coins": 1, "radius": 21.0, "is_elite": false, "is_boss": false, "biome": "day"},
+	"treant": {"name": "树妖", "hp": 64.0, "speed": 44.0, "damage": 10.0, "xp": 6.0, "coins": 2, "radius": 24.0, "is_elite": false, "is_boss": false, "biome": "day"},
+	"shanxiao": {"name": "山魈", "hp": 185.0, "speed": 68.0, "damage": 15.0, "xp": 18.0, "coins": 6, "radius": 30.0, "is_elite": true, "is_boss": false, "biome": "day"},
 }
+
+const DUAL_REALM_LANDMARKS := [
+	{
+		"id": "bridge",
+		"pos": Vector2(440.0, 340.0),
+		"radius": 130.0,
+		"mortal_name": "古镇石桥",
+		"mortal_en": "Old Stone Bridge",
+		"spectral_name": "冥河纸桥",
+		"spectral_en": "Styx Paper Bridge",
+		"spectral_rule_hint": "锣响切莫窥澜 · 冥河倒影显形",
+	},
+	{
+		"id": "market",
+		"pos": Vector2(-420.0, 360.0),
+		"radius": 135.0,
+		"mortal_name": "镇口集市",
+		"mortal_en": "Town Market Lane",
+		"spectral_name": "鬼市纸铺",
+		"spectral_en": "Ghost Paper Market",
+		"spectral_rule_hint": "诡界收割墨魄与香火资加成",
+	},
+	{
+		"id": "shrine",
+		"pos": Vector2(0.0, -420.0),
+		"radius": 125.0,
+		"mortal_name": "老祠残碑",
+		"mortal_en": "Old Shrine Stele",
+		"spectral_name": "阴祠灵位",
+		"spectral_en": "Nether Spirit Altar",
+		"spectral_rule_hint": "无字碑化作灵位，驻足积煞加速",
+	},
+]
+
 
 # 乱葬岗九大禁忌：戒律主句 + 执念微语 + 英文对照（对齐 37 号终审稿）
 const FIXED_RULES := [
@@ -247,3 +330,10 @@ static func oil_blends() -> Array:
 
 static func paper_charms() -> Array:
 	return PAPER_CHARMS.duplicate(true)
+
+static func combat_baseline() -> Dictionary:
+	return COMBAT_BASELINE.duplicate(true)
+
+static func dual_realm_landmarks() -> Array:
+	return DUAL_REALM_LANDMARKS.duplicate(true)
+

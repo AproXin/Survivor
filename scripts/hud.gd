@@ -353,6 +353,27 @@ func _update_button_visibility() -> void:
 			else:
 				charm_buttons[i].text = _tr("请符 (%d 钱)" % cost, "Buy (%d)" % cost)
 				charm_buttons[i].disabled = bank < cost
+	_sync_gamepad_modal_focus()
+
+var _last_focused_modal: String = ""
+
+func _sync_gamepad_modal_focus() -> void:
+	if modal_kind == _last_focused_modal:
+		return
+	_last_focused_modal = modal_kind
+	match modal_kind:
+		"title":
+			InkGamepadFocus.wire_focus_chain([start_button, bag_button, mode_button], true, true)
+		"bag":
+			InkGamepadFocus.wire_grid_focus(meta_buttons, 2, close_bag_button)
+		"oil_shop":
+			InkGamepadFocus.wire_grid_focus(oil_buttons, 3, close_bag_button)
+		"paper_shop":
+			InkGamepadFocus.wire_grid_focus(charm_buttons, 2, close_bag_button)
+		"levelup":
+			InkGamepadFocus.wire_focus_chain(upgrade_buttons, true, true)
+		"result":
+			InkGamepadFocus.wire_focus_chain([restart_button, title_button], true, true)
 
 func _scale() -> float:
 	if size.x <= 0.0 or size.y <= 0.0:

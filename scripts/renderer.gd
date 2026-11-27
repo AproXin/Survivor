@@ -33,17 +33,29 @@ func setup(target: InkMain) -> void:
 	scenery = make_scenery(20261125)
 	queue_redraw()
 
-func _try_draw_sprite(key: String, pos: Vector2, state: String, anim_time: float, facing: float, tint: Color = Color.WHITE) -> bool:
+func _try_draw_sprite(key: String, pos: Vector2, state: String, anim_time: float, facing: float, tint: Color = Color.WHITE, move_dir: Vector2 = Vector2.ZERO) -> bool:
 	if sprite_bank == null or not sprite_bank.has_sheet(key):
 		return false
 	var sheet: Dictionary = sprite_bank.get_sheet(key)
 	var tex: Texture2D = sheet.texture
-	var region: Rect2 = sprite_bank.get_frame_region(key, state, anim_time)
-	var draw_sz := float(sheet.frame_size) * float(sheet.scale)
-	var off_y := float(sheet.offset_y)
-	var dst := Rect2(pos.x - draw_sz * 0.5, pos.y - draw_sz * 0.5 + off_y, draw_sz, draw_sz)
-	if facing < 0.0:
-		dst = Rect2(pos.x + draw_sz * 0.5, pos.y - draw_sz * 0.5 + off_y, -draw_sz, draw_sz)
+	var dir_name: String = ""
+	var flip_x: bool = facing < 0.0
+	if move_dir.length_squared() > 0.001 and sprite_bank.has_directional_tags(key):
+		var d_info: Dictionary = InkSpriteBank.dir_from_vector(move_dir, bool(sheet.get("eight_way", false)))
+		dir_name = str(d_info.get("dir", ""))
+		flip_x = bool(d_info.get("flip_x", false))
+		if dir_name == "w" or dir_name == "nw" or dir_name == "sw":
+			if not sprite_bank.has_tag(key, state + "_" + dir_name):
+				flip_x = true
+	var fdata: Dictionary = sprite_bank.get_frame_data(key, state, anim_time, dir_name)
+	var region: Rect2 = fdata.get("region", Rect2())
+	var frame_w: float = region.size.x if region.size.x > 0.0 else float(sheet.frame_size)
+	var scale_val: float = float(sheet.scale)
+	var draw_sz: float = float(sheet.frame_size) * scale_val
+	var off_y: float = float(sheet.offset_y)
+	var pivot_x: float = float(fdata.get("pivot_x", frame_w * 0.5))
+	var anchor_offset_x: float = ((frame_w - pivot_x) if flip_x else pivot_x) * scale_val
+	var dst := Rect2(pos.x - anchor_offset_x, pos.y - draw_sz * 0.5 + off_y, -draw_sz if flip_x else draw_sz, draw_sz)
 	draw_texture_rect_region(tex, dst, region, tint)
 	return true
 
@@ -384,6 +396,42 @@ func _draw_taboo_zones(palette: Dictionary) -> void:
 			var prog: float = clampf(float(sim.hazards.stele_timer) / (3.0 + float(sim.player.taboo_grace_bonus)), 0.0, 1.0)
 			draw_arc(sim.player.pos, 32.0, -PI * 0.5, -PI * 0.5 + TAU * prog, 28, palette.vermilion_bright, 3.5, true)
 	# Boss telegraphed Vermilion Seal AoEs (朱笔点卯)
+	# Same-Site Dual-Realm Landmarks (Mortal <-> Spectral Distortion)
+	if sim.run_mode == "full_vigil":
+		var is_spec_lm: bool = sim.realm == "spectral"
+		for item in sim.dual_landmarks:
+			var lm: Dictionary = item
+			var lp: Vector2 = lm.get("pos", Vector2.ZERO)
+			var lr: float = float(lm.get("radius", 130.0))
+			var lid: String = str(lm.get("id", ""))
+			var ring_col: Color = palette.vermilion if is_spec_lm else palette.sage_light
+			draw_arc(lp, lr, 0.0, TAU, 36, Color(ring_col, 0.24), 1.6, true)
+			if lid == "bridge":
+				var deck_col: Color = palette.bone if is_spec_lm else palette.grey_mid
+				draw_rect(Rect2(lp + Vector2(-46.0, -14.0), Vector2(92.0, 28.0)), Color(deck_col, 0.55))
+				draw_rect(Rect2(lp + Vector2(-46.0, -14.0), Vector2(92.0, 28.0)), palette.ink_deep, false, 1.8)
+			elif lid == "market":
+				var stall_col: Color = palette.bone_dark if is_spec_lm else palette.amber_dark
+				draw_rect(Rect2(lp + Vector2(-34.0, -26.0), Vector2(68.0, 20.0)), Color(stall_col, 0.52))
+				draw_rect(Rect2(lp + Vector2(-34.0, -26.0), Vector2(68.0, 20.0)), palette.ink_deep, false, 1.6)
+			elif lid == "shrine":
+				var altar_col: Color = palette.vermilion_dark if is_spec_lm else palette.ink_slate
+				draw_rect(Rect2(lp + Vector2(-24.0, -28.0), Vector2(48.0, 40.0)), Color(altar_col, 0.55))
+				draw_rect(Rect2(lp + Vector2(-24.0, -28.0), Vector2(48.0, 40.0)), palette.bone_dark, false, 1.5)
+			var label_txt: String = str(lm.get("spectral_name", "")) if is_spec_lm else str(lm.get("mortal_name", ""))
+			draw_string(body_font, lp + Vector2(-36.0, -lr * 0.42), label_txt, HORIZONTAL_ALIGNMENT_CENTER, 72.0, 13, Color(palette.bone_bright if is_spec_lm else palette.bone, 0.78))
+		# Spectral Ghost Funeral Procession (送葬纸人鬼队)
+		if bool(sim.funeral_procession.get("active", false)) and is_spec_lm:
+			var fp: Vector2 = sim.funeral_procession.get("pos", Vector2.ZERO)
+			var fr: float = float(sim.funeral_procession.get("radius", 76.0))
+			draw_circle(fp, fr, Color(palette.vermilion_dark, 0.22))
+			draw_arc(fp, fr, 0.0, TAU, 32, Color(palette.vermilion, 0.72), 2.2, true)
+			for p_i in range(-2, 3):
+				var pp: Vector2 = fp + Vector2(float(p_i) * 26.0, sin(visual_time * 5.0 + float(p_i)) * 4.0)
+				draw_rect(Rect2(pp + Vector2(-6.0, -18.0), Vector2(12.0, 24.0)), palette.bone)
+				draw_circle(pp + Vector2(0.0, -22.0), 5.5, palette.bone_bright)
+				draw_circle(pp + Vector2(0.0, -22.0), 1.8, palette.vermilion)
+			draw_string(body_font, fp + Vector2(-42.0, -44.0), "送葬鬼队", HORIZONTAL_ALIGNMENT_CENTER, 84.0, 14, palette.vermilion_bright)
 	for aoe in sim.boss_aoes:
 		var ap: Vector2 = aoe.pos
 		var ar: float = float(aoe.radius)
@@ -663,9 +711,29 @@ func _draw_player(palette: Dictionary) -> void:
 	var pos: Vector2 = sim.player.pos
 	var vel: Vector2 = sim.player.vel
 	var moving: bool = vel.length_squared() > 1.0
-	var p_key := "player_mortal" if sim.realm == "mortal" else ("player_sheng" if sim.face == "sheng" else "player_dan")
-	var p_state := "hit" if sim.invuln > 0.35 else "walk"
-	if _try_draw_sprite(p_key, pos, p_state, sim.player.walk * 0.04 if moving else visual_time * 0.4, float(sim.player.facing)):
+	var p_key: String = "player_mortal" if sim.realm == "mortal" else ("player_sheng" if sim.face == "sheng" else "player_dan")
+	var p_state: String = "idle"
+	var p_anim_t: float = visual_time
+	if sim.invuln > 0.35:
+		p_state = "hit"
+		p_anim_t = maxf(0.0, 0.55 - sim.invuln)
+	elif sim.player_flip_anim > 0.0:
+		p_state = "flip"
+		p_anim_t = maxf(0.0, 0.60 - sim.player_flip_anim)
+	elif sim.player_attack_anim > 0.0:
+		p_state = "attack"
+		p_anim_t = maxf(0.0, 0.48 - sim.player_attack_anim)
+	elif moving:
+		p_state = "move"
+		p_anim_t = sim.player.walk * 0.0055
+	else:
+		p_state = "idle"
+		p_anim_t = visual_time
+	if sim.switch_anim_timer > 0.0:
+		var sw_ratio: float = clampf(sim.switch_anim_timer / 0.60, 0.0, 1.0)
+		draw_arc(pos + Vector2(0.0, -10.0), 26.0 + (1.0 - sw_ratio) * 24.0, 0.0, TAU, 28, Color(palette.amber_bright, sw_ratio * 0.62), 2.4, true)
+	var p_dir: Vector2 = sim.player.get("facing_dir", Vector2(float(sim.player.facing), 0.0))
+	if _try_draw_sprite(p_key, pos, p_state, p_anim_t, float(sim.player.facing), Color.WHITE, p_dir):
 		return
 	var bob := sin(sim.player.walk * 0.09) * 2.6 if moving else sin(visual_time * 2.8) * 0.8
 	var stride := sin(sim.player.walk * 0.09) * 5.0 if moving else 0.0
@@ -794,8 +862,12 @@ func _draw_enemy(enemy: Dictionary, palette: Dictionary) -> void:
 	var anim_phase: float = float(enemy.get("anim_phase", 0.0))
 	var is_elite := bool(enemy.get("is_elite", false))
 	var kind: String = str(enemy.kind)
-	var e_facing := 1.0 if (float(sim.player.pos.x) >= pos.x) else -1.0
-	if _try_draw_sprite(kind, pos, "hit" if flash else "walk", visual_time + anim_phase, e_facing, Color(1.4, 1.4, 1.4, 1.0) if flash else Color.WHITE):
+	var e_facing: float = 1.0 if (float(sim.player.pos.x) >= pos.x) else -1.0
+	var is_attacking: bool = float(enemy.get("charge_active", 0.0)) > 0.0 or float(enemy.get("charge_windup", 0.0)) > 0.0 or float(enemy.get("pounce_timer", 0.0)) > 0.0
+	var e_state: String = "hit" if flash else ("attack" if is_attacking else "walk")
+	if _try_draw_sprite(kind, pos, e_state, visual_time + anim_phase, e_facing, Color(1.4, 1.4, 1.4, 1.0) if flash else Color.WHITE, sim.player.pos - pos):
+		if float(enemy.get("slow_timer", 0.0)) > 0.0:
+			draw_arc(pos + Vector2(0.0, 12.0), 19.0, 0.0, TAU, 18, Color(palette.amber, 0.72), 1.8, true)
 		if (is_elite or kind == "punisher") and kind != "boss_magistrate":
 			var bw := 44.0
 			var ratio := clampf(float(enemy.hp) / maxf(1.0, float(enemy.max_hp)), 0.0, 1.0)
@@ -895,6 +967,45 @@ func _draw_enemy(enemy: Dictionary, palette: Dictionary) -> void:
 				draw_rect(Rect2(p + Vector2(-qw * 0.5 - 10.0, -112.0), Vector2(qw + 20.0, 26.0)), Color(palette.ink_deep, 0.88 * qa))
 				draw_rect(Rect2(p + Vector2(-qw * 0.5 - 10.0, -112.0), Vector2(qw + 20.0, 26.0)), Color(palette.vermilion, 0.85 * qa), false, 1.5)
 				draw_string(body_font, p + Vector2(-qw * 0.5, -94.0), sim.boss_quote, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(palette.bone_bright, qa))
+		"wolf":
+			var stride_w: float = sin(visual_time * 9.0 + anim_phase) * 4.0
+			draw_circle(pos + Vector2(0.0, 10.0), 14.0, Color(palette.ink_deep, 0.42))
+			draw_colored_polygon(PackedVector2Array([
+				pos + Vector2(-18.0, 2.0),
+				pos + Vector2(-8.0, -10.0),
+				pos + Vector2(14.0, -8.0),
+				pos + Vector2(18.0 + stride_w * 0.4, 4.0),
+				pos + Vector2(-14.0 - stride_w * 0.4, 8.0),
+			]), palette.bone_bright if flash else palette.grey_mid)
+			draw_circle(pos + Vector2(12.0 * e_facing, -6.0), 2.2, palette.amber_bright)
+		"boar":
+			var charging: bool = float(enemy.get("charge_active", 0.0)) > 0.0
+			draw_circle(pos + Vector2(0.0, 14.0), 19.0, Color(palette.ink_deep, 0.48))
+			draw_circle(pos, 18.0, palette.bone_bright if flash else palette.grey_dark)
+			draw_arc(pos, 18.0, 0.0, TAU, 20, palette.amber if charging else palette.ink_deep, 2.2, true)
+			draw_line(pos + Vector2(10.0 * e_facing, 4.0), pos + Vector2(22.0 * e_facing, -4.0), palette.bone_bright, 3.2)
+		"treant":
+			var sway_t: float = sin(visual_time * 2.5 + anim_phase) * 3.0
+			draw_circle(pos + Vector2(0.0, 18.0), 22.0, Color(palette.ink_deep, 0.45))
+			draw_rect(Rect2(pos + Vector2(-14.0, -24.0), Vector2(28.0, 42.0)), palette.bone_bright if flash else palette.sage_dark)
+			draw_circle(pos + Vector2(sway_t, -28.0), 19.0, palette.sage_mid)
+			draw_circle(pos + Vector2(-5.0, -12.0), 2.5, palette.amber_bright)
+			draw_circle(pos + Vector2(5.0, -12.0), 2.5, palette.amber_bright)
+		"shanxiao":
+			var stomp: float = absf(sin(visual_time * 4.0 + anim_phase)) * 5.0
+			var sp: Vector2 = pos + Vector2(0.0, -stomp)
+			draw_circle(pos + Vector2(0.0, 26.0), 30.0, Color(palette.vermilion, 0.16))
+			draw_colored_polygon(PackedVector2Array([
+				sp + Vector2(-24.0, -28.0),
+				sp + Vector2(24.0, -28.0),
+				sp + Vector2(28.0, 22.0),
+				sp + Vector2(-28.0, 22.0),
+			]), palette.bone_bright if flash else palette.ink_slate)
+			draw_circle(sp + Vector2(0.0, -34.0), 14.0, palette.grey_dark)
+			draw_circle(sp + Vector2(-5.0, -35.0), 2.8, palette.vermilion_bright)
+			draw_circle(sp + Vector2(5.0, -35.0), 2.8, palette.vermilion_bright)
+			draw_line(sp + Vector2(-22.0, -14.0), sp + Vector2(-36.0, 16.0), palette.grey_mid, 7.0)
+			draw_line(sp + Vector2(22.0, -14.0), sp + Vector2(36.0, 16.0), palette.grey_mid, 7.0)
 		"punisher":
 			draw_circle(pos + Vector2(0.0, 22.0), 22.0, Color(palette.vermilion, 0.16))
 			draw_colored_polygon(PackedVector2Array([
@@ -911,6 +1022,8 @@ func _draw_enemy(enemy: Dictionary, palette: Dictionary) -> void:
 			draw_circle(pos + Vector2(4.0, -36.0), 2.4, palette.vermilion)
 			draw_line(pos + Vector2(-12.0, -12.0), pos + Vector2(-26.0, 8.0), palette.bone_dark, 5.0)
 			draw_line(pos + Vector2(12.0, -12.0), pos + Vector2(26.0, 8.0), palette.bone_dark, 5.0)
+	if float(enemy.get("slow_timer", 0.0)) > 0.0:
+		draw_arc(pos + Vector2(0.0, 14.0), float(enemy.radius) + 6.0, 0.0, TAU, 18, Color(palette.amber_bright, 0.55), 1.8, true)
 	# Elite / Punisher HP bar (Boss has dedicated top HUD bar)
 	if (is_elite or kind == "punisher") and kind != "boss_magistrate":
 		var bw := 44.0
@@ -953,16 +1066,26 @@ func _draw_combat_vfx(palette: Dictionary) -> void:
 		elif face_kind == "gonglu":
 			var r: float = float(slash.radius) * (0.25 + u * 0.80)
 			draw_arc(pos, r, 0.0, TAU, 44, Color(palette.amber, alpha * 0.85), 5.0 * alpha + 1.5, true)
+		elif face_kind == "lantern_cone":
+			var ang_l: float = float(slash.get("angle", 0.0))
+			var cone_h: float = float(slash.get("cone_rad", deg_to_rad(120.0))) * 0.5
+			var r_l: float = float(slash.radius) * (0.45 + u * 0.65)
+			draw_arc(pos, r_l, ang_l - cone_h, ang_l + cone_h, 24, Color(palette.amber_bright, alpha * 0.90), 8.5 * alpha + 2.0, true)
+			draw_arc(pos, r_l * 0.72, ang_l - cone_h * 0.85, ang_l + cone_h * 0.85, 20, Color(palette.amber, alpha * 0.55), 5.0 * alpha + 1.0, true)
 		elif face_kind == "sheng":
 			var ang: float = float(slash.get("angle", 0.0))
-			var r: float = float(slash.radius) * (0.75 + u * 0.35)
-			draw_arc(pos, r, ang - 1.15, ang + 1.15, 22, Color(palette.bone_bright, alpha * 0.95), 7.5 * alpha + 1.5, true)
-			draw_arc(pos, r * 0.82, ang - 0.9, ang + 0.9, 18, Color(palette.ink_slate, alpha * 0.65), 3.0, true)
+			var r: float = float(slash.radius)
+			var dir_s: Vector2 = Vector2(cos(ang), sin(ang))
+			var tip_s: Vector2 = pos + dir_s * (r * (0.35 + u * 0.70))
+			var start_s: Vector2 = pos + dir_s * (r * maxf(0.0, u * 0.45 - 0.1))
+			draw_line(start_s, tip_s, Color(palette.grey_light, alpha * 0.55), 14.0 * alpha + 2.0)
+			draw_line(start_s, tip_s, Color(palette.bone_bright, alpha * 0.96), 5.0 * alpha + 1.5)
 		else:
-			var ang: float = float(slash.get("angle", 0.0)) + u * 2.8
+			var ang: float = float(slash.get("angle", 0.0))
+			var half_d: float = float(slash.get("cone_rad", deg_to_rad(220.0))) * 0.5
 			var r: float = float(slash.radius) * (0.82 + u * 0.22)
-			draw_arc(pos, r, ang, ang + PI * 1.45, 32, Color(palette.bone_bright, alpha * 0.88), 8.0 * alpha + 2.0, true)
-			draw_arc(pos, r * 0.86, ang + PI, ang + PI * 2.3, 28, Color(palette.bone, alpha * 0.62), 5.0 * alpha + 1.0, true)
+			draw_arc(pos, r, ang - half_d, ang + half_d, 32, Color(palette.bone_bright, alpha * 0.88), 8.0 * alpha + 2.0, true)
+			draw_arc(pos, r * 0.84, ang - half_d * 0.85, ang + half_d * 0.85, 26, Color(palette.bone, alpha * 0.62), 5.0 * alpha + 1.0, true)
 	for pt in sim.particles:
 		var max_l: float = maxf(0.01, float(pt.get("max_life", 0.35)))
 		var alpha := clampf(float(pt.life) / max_l, 0.0, 1.0)
@@ -1030,6 +1153,7 @@ func set_light_uniforms() -> void:
 	mat.set_shader_parameter("darkness", 0.82 if sim.hazards.blackout_active else (0.46 if sim.realm == "mortal" else 0.56))
 	mat.set_shader_parameter("fog_amount", 0.18 if sim.realm == "mortal" else 0.28)
 	mat.set_shader_parameter("realm_blend", sim.realm_blend)
+	mat.set_shader_parameter("daylight_blend", sim.daylight_blend)
 	mat.set_shader_parameter("flip_wave", sim.flip_wave)
 	mat.set_shader_parameter("danger_pulse", sim.danger_pulse)
 	# Pass up to 4 nearest visible cold stone-lantern lights to shader

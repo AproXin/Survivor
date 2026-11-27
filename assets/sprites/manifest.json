@@ -1,7 +1,7 @@
 {
-  "player_mortal": { "path": "res://assets/sprites/player_mortal.png", "size": 96, "fps": 8.0, "scale": 1.0, "offset_y": -18.0 },
-  "player_sheng": { "path": "res://assets/sprites/player_sheng.png", "size": 96, "fps": 10.0, "scale": 1.0, "offset_y": -18.0 },
-  "player_dan": { "path": "res://assets/sprites/player_dan.png", "size": 96, "fps": 9.0, "scale": 1.0, "offset_y": -18.0 },
+  "player_mortal": { "path": "res://assets/sprites/player_mortal.png", "cel_path": "res://assets/sprites/player_mortal_cel.png", "aseprite_json": "res://assets/sprites/player_mortal_cel.json", "size": 96, "fps": 10.0, "scale": 1.0, "offset_y": -18.0 },
+  "player_sheng": { "path": "res://assets/sprites/player_sheng.png", "cel_path": "res://assets/sprites/player_sheng_cel.png", "aseprite_json": "res://assets/sprites/player_sheng_cel.json", "size": 96, "fps": 10.0, "scale": 1.0, "offset_y": -18.0 },
+  "player_dan": { "path": "res://assets/sprites/player_dan.png", "cel_path": "res://assets/sprites/player_dan_cel.png", "aseprite_json": "res://assets/sprites/player_dan_cel.json", "size": 96, "fps": 9.0, "scale": 1.0, "offset_y": -18.0 },
   "boss_magistrate": { "path": "res://assets/sprites/boss_magistrate.png", "size": 96, "fps": 7.0, "scale": 1.35, "offset_y": -26.0 },
   "ghost": { "path": "res://assets/sprites/ghost.png", "size": 64, "fps": 8.0, "scale": 1.0, "offset_y": -8.0 },
   "jiangshi": { "path": "res://assets/sprites/jiangshi.png", "size": 64, "fps": 7.0, "scale": 1.0, "offset_y": -14.0 },

@@ -63,6 +63,22 @@ var gonglu_timer := 5.0
 var shadow_haste_timer := 0.0
 var encore_available := false
 var rolled_choices: Array = []
+var day_phase: String = "night"
+var daylight_blend: float = 0.0
+var day_elite_spawned: bool = false
+var switch_anim_timer: float = 0.0
+var switch_cooldown: float = 0.0
+var player_attack_anim: float = 0.0
+var player_flip_anim: float = 0.0
+var dual_landmarks: Array = InkData.dual_realm_landmarks()
+var funeral_procession: Dictionary = {
+	"active": false,
+	"pos": Vector2.ZERO,
+	"dir": Vector2.RIGHT,
+	"timer": 16.0,
+	"duration": 0.0,
+	"radius": 76.0,
+}
 
 var save_data := {
 	"coins": 0,
@@ -80,6 +96,7 @@ var player := {
 	"max_hp": 85.0,
 	"fuel": 100.0,
 	"facing": 1.0,
+	"facing_dir": Vector2(0.0, 1.0),
 	"walk": 0.0,
 	"pickup_radius": 68.0,
 	"speed_bonus": 0.0,
@@ -160,16 +177,26 @@ var hazards := {
 
 @onready var world_view: InkRenderer = $WorldView
 @onready var hud: InkHud = $ScreenLayer/Hud
+var ambient_soundscape: InkAmbientSoundscape = null
+var gamepad_focus: InkGamepadFocus = null
 
 func _ready() -> void:
 	rng.randomize()
 	_load_save()
 	_ensure_input_actions()
+	InkGamepadFocus.register_joypad_actions()
 	_reset_run_state()
 	world_view.setup(self)
 	_sync_cold_lights_from_scenery()
 	hud.setup(self)
 	_setup_audio()
+	ambient_soundscape = InkAmbientSoundscape.new()
+	ambient_soundscape.name = "AmbientSoundscape"
+	add_child(ambient_soundscape)
+	ambient_soundscape.set_muted(muted)
+	gamepad_focus = InkGamepadFocus.new()
+	gamepad_focus.name = "GamepadFocus"
+	add_child(gamepad_focus)
 	hud_changed.connect(hud.show_snapshot)
 	level_up.connect(hud.show_level_up)
 	run_finished.connect(hud.show_result)
@@ -178,6 +205,10 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	step(delta)
 	_update_visual_juice(delta)
+	if ambient_soundscape != null:
+		var phase_str: String = "TOWN" if phase == Phase.TOWN else ("PLAYING" if phase == Phase.PLAYING else "TITLE")
+		var boss_on: bool = boss_spawned and not boss_defeated
+		ambient_soundscape.update_state(phase_str, realm_blend, bool(hazards.get("blackout_active", false)), boss_on, boss_on and boss_phase >= 2, danger_pulse)
 	hud_timer += delta
 	if hud_timer >= 0.08:
 		hud_timer = 0.0
@@ -474,6 +505,22 @@ func _reset_run_state() -> void:
 	shadow_haste_timer = 0.0
 	encore_available = false
 	rolled_choices = []
+	day_phase = "night"
+	daylight_blend = 0.0
+	day_elite_spawned = false
+	switch_anim_timer = 0.0
+	switch_cooldown = 0.0
+	player_attack_anim = 0.0
+	player_flip_anim = 0.0
+	dual_landmarks = InkData.dual_realm_landmarks()
+	funeral_procession = {
+		"active": false,
+		"pos": Vector2.ZERO,
+		"dir": Vector2.RIGHT,
+		"timer": 16.0,
+		"duration": 0.0,
+		"radius": 76.0,
+	}
 	player = {
 		"pos": Vector2.ZERO,
 		"vel": Vector2.ZERO,
@@ -481,6 +528,7 @@ func _reset_run_state() -> void:
 		"max_hp": 85.0,
 		"fuel": 100.0,
 		"facing": 1.0,
+		"facing_dir": Vector2(0.0, 1.0),
 		"walk": 0.0,
 		"pickup_radius": 68.0,
 		"speed_bonus": 0.0,
@@ -557,6 +605,8 @@ func start_full_vigil() -> void:
 	run_mode = "full_vigil"
 	_reset_run_state()
 	_apply_meta_bonuses()
+	day_phase = "day"
+	daylight_blend = 1.0
 	phase = Phase.PLAYING
 	setup_random_taboos()
 	_push_narrative("intro_0")
@@ -646,6 +696,7 @@ func _step_town(dt: float) -> void:
 	if absf(move.x) > 0.01:
 		player.facing = signf(move.x)
 	if move.length_squared() > 0.01:
+		player.facing_dir = move.normalized()
 		player.walk += speed * dt
 	camera = camera.lerp(p_pos * 0.45, 1.0 - exp(-6.0 * dt))
 	town_nearby = ""
@@ -671,9 +722,14 @@ func step(dt: float) -> void:
 		time_sec += dt
 	flip_cooldown = maxf(0.0, flip_cooldown - dt)
 	flip_freeze = maxf(0.0, flip_freeze - dt)
+	switch_anim_timer = maxf(0.0, switch_anim_timer - dt)
+	switch_cooldown = maxf(0.0, switch_cooldown - dt)
+	player_attack_anim = maxf(0.0, player_attack_anim - dt)
+	player_flip_anim = maxf(0.0, player_flip_anim - dt)
 	invuln = maxf(0.0, invuln - dt)
 	attack_timer = maxf(0.0, attack_timer - dt)
 	shadow_haste_timer = maxf(0.0, shadow_haste_timer - dt)
+	_update_day_cycle(dt)
 	var drain_rate: float = 1.25 if run_mode == "prototype" else 0.72
 	player.fuel = maxf(0.0, player.fuel - dt * drain_rate * float(player.fuel_drain_mult))
 	if player.fuel <= 0.0:
@@ -690,10 +746,12 @@ func step(dt: float) -> void:
 	if absf(move.x) > 0.01:
 		player.facing = signf(move.x)
 	if move.length_squared() > 0.01:
+		player.facing_dir = move.normalized()
 		player.walk += speed * dt
 	var look_ahead: Vector2 = move * 34.0
 	camera = camera.lerp(player.pos + look_ahead, 1.0 - exp(-7.5 * dt))
 	update_taboos(dt)
+	_update_funeral_procession(dt)
 	if flip_freeze <= 0.0:
 		update_combat(dt)
 	update_waves(dt)
@@ -717,6 +775,70 @@ func step(dt: float) -> void:
 	else:
 		if not boss_spawned and time_sec >= InkData.FULL_VIGIL_BOSS_TIME:
 			spawn_boss()
+
+func _update_day_cycle(dt: float) -> void:
+	if run_mode != "full_vigil":
+		day_phase = "night"
+		daylight_blend = 0.0
+		return
+	var target_blend: float = 0.0
+	if time_sec < 24.0:
+		day_phase = "day"
+		target_blend = 1.0
+	elif time_sec < 36.0:
+		if day_phase == "day":
+			_push_alert("暮色渐沉 · 山林野兽退散，邪祟将至", "Dusk falls — beasts retreat as the night stirs.", 3.0)
+		day_phase = "dusk"
+		target_blend = clampf(1.0 - (time_sec - 24.0) / 12.0, 0.0, 1.0)
+	else:
+		if day_phase != "night":
+			_push_alert("入夜三更 · 提灯守戒，勿忘九忌", "Night descends — guard the flame and keep the taboos.", 3.0)
+		day_phase = "night"
+		target_blend = 0.0
+	daylight_blend = lerpf(daylight_blend, target_blend, 1.0 - exp(-4.0 * dt))
+
+func get_active_dual_landmark() -> Dictionary:
+	var p_pos: Vector2 = player.pos
+	for item in dual_landmarks:
+		var lm: Dictionary = item
+		var lm_pos: Vector2 = lm.get("pos", Vector2.ZERO)
+		var lm_r: float = float(lm.get("radius", 130.0))
+		if p_pos.distance_to(lm_pos) <= lm_r:
+			return lm
+	return {}
+
+func _update_funeral_procession(dt: float) -> void:
+	if run_mode != "full_vigil":
+		return
+	var active: bool = bool(funeral_procession.get("active", false))
+	if not active:
+		if realm == "spectral":
+			var t_left: float = float(funeral_procession.get("timer", 16.0)) - dt
+			funeral_procession["timer"] = t_left
+			if t_left <= 0.0:
+				var p_pos: Vector2 = player.pos
+				var side: float = -1.0 if rng.randf() < 0.5 else 1.0
+				funeral_procession["active"] = true
+				funeral_procession["pos"] = p_pos + Vector2(side * 460.0, rng.randf_range(-110.0, 110.0))
+				funeral_procession["dir"] = Vector2(-side, 0.0)
+				funeral_procession["duration"] = 7.5
+				funeral_procession["timer"] = 24.0
+				_push_alert("诡界异象 · 送葬纸人鬼队过境，切莫阻道！", "Spectral Omen: Paper Funeral Procession passing — stay clear!", 3.2)
+				play_sfx("violation")
+	else:
+		var dur: float = float(funeral_procession.get("duration", 0.0)) - dt
+		funeral_procession["duration"] = dur
+		var fpos: Vector2 = funeral_procession.get("pos", Vector2.ZERO)
+		var fdir: Vector2 = funeral_procession.get("dir", Vector2.RIGHT)
+		fpos += fdir * 132.0 * dt
+		funeral_procession["pos"] = fpos
+		if realm == "spectral":
+			var p_pos: Vector2 = player.pos
+			var fr: float = float(funeral_procession.get("radius", 76.0))
+			if p_pos.distance_to(fpos) <= fr:
+				damage_player(12.0)
+		if dur <= 0.0:
+			funeral_procession["active"] = false
 
 func get_boss_snapshot() -> Dictionary:
 	for enemy in enemies:
@@ -777,6 +899,11 @@ func get_snapshot() -> Dictionary:
 		"selected_charm": selected_charm,
 		"subtitle": subtitle_text,
 		"subtitle_alpha": _subtitle_alpha(),
+		"day_phase": day_phase,
+		"daylight_blend": daylight_blend,
+		"switch_anim_timer": switch_anim_timer,
+		"funeral_active": bool(funeral_procession.get("active", false)),
+		"active_landmark": get_active_dual_landmark(),
 	}
 
 func _emit_hud() -> void:
@@ -806,6 +933,11 @@ func spawn_enemy(kind: String, pos: Vector2) -> int:
 		"is_boss": bool(archetype.get("is_boss", false)),
 		"hit_flash": 0.0,
 		"knockback": Vector2.ZERO,
+		"slow_timer": 0.0,
+		"slow_mult": 1.0,
+		"charge_timer": rng.randf_range(1.8, 3.0),
+		"charge_active": 0.0,
+		"charge_dir": Vector2.ZERO,
 		"anim_phase": rng.randf_range(0.0, TAU),
 		"cast_timer": rng.randf_range(1.6, 2.8),
 		"aoe_timer": 3.4,
@@ -860,6 +992,13 @@ func find_nearest_enemies(max_range: float, max_count: int) -> Array[int]:
 	return out
 
 func update_waves(dt: float) -> void:
+	if run_mode == "full_vigil" and not day_elite_spawned and time_sec >= 20.0 and day_phase != "night" and enemies.size() < 98:
+		day_elite_spawned = true
+		var d_angle: float = rng.randf_range(0.0, TAU)
+		var dp_pos: Vector2 = player.pos
+		var d_pos: Vector2 = dp_pos + Vector2(cos(d_angle), sin(d_angle)) * 460.0
+		spawn_enemy("shanxiao", d_pos)
+		_push_alert("山林精英 · 山魈跃林而至！", "Forest Elite: Shanxiao leaps from the mist!", 2.8)
 	if not elite_spawned and time_sec >= 30.0 and enemies.size() < 98:
 		elite_spawned = true
 		var angle := rng.randf_range(0.0, TAU)
@@ -879,10 +1018,27 @@ func update_waves(dt: float) -> void:
 		var pos: Vector2 = p_pos + Vector2(cos(angle), sin(angle)) * radius
 		var roll := rng.randf()
 		var kind := "ghost"
-		if run_mode == "full_vigil" and time_sec >= 18.0 and roll > 0.82:
-			kind = "wisp_caster"
-		elif roll > 0.70:
-			kind = "jiangshi"
+		if run_mode == "full_vigil" and day_phase == "day" and realm == "mortal":
+			if roll > 0.72:
+				kind = "treant"
+			elif roll > 0.42:
+				kind = "boar"
+			else:
+				kind = "wolf"
+		elif run_mode == "full_vigil" and day_phase == "dusk" and realm == "mortal":
+			if roll > 0.75:
+				kind = "boar"
+			elif roll > 0.50:
+				kind = "wolf"
+			elif roll > 0.25:
+				kind = "jiangshi"
+			else:
+				kind = "ghost"
+		else:
+			if run_mode == "full_vigil" and time_sec >= 18.0 and roll > 0.82:
+				kind = "wisp_caster"
+			elif roll > 0.70:
+				kind = "jiangshi"
 		spawn_enemy(kind, pos)
 
 func _spawn_ink_burst(pos: Vector2, color: Color, count: int, speed_scale: float = 1.0) -> void:
@@ -900,7 +1056,7 @@ func _spawn_ink_burst(pos: Vector2, color: Color, count: int, speed_scale: float
 			"color": color,
 		})
 
-func damage_enemy(index: int, amount: float) -> void:
+func damage_enemy(index: int, amount: float, knockback_force: float = 145.0) -> void:
 	if index < 0 or index >= enemies.size():
 		return
 	var enemy := enemies[index]
@@ -910,7 +1066,7 @@ func damage_enemy(index: int, amount: float) -> void:
 	var away: Vector2 = enemy.pos - p_pos
 	if away.length_squared() > 0.01:
 		var kb_scale := 0.25 if bool(enemy.get("is_boss", false)) else (0.55 if bool(enemy.get("is_elite", false)) else 1.0)
-		enemy.knockback = away.normalized() * 145.0 * kb_scale
+		enemy.knockback = away.normalized() * maxf(145.0, knockback_force) * kb_scale
 	var pal := InkData.palette()
 	var is_heavy := amount >= 20.0
 	floaters.append({
@@ -930,7 +1086,17 @@ func damage_enemy(index: int, amount: float) -> void:
 	var was_boss := bool(enemy.get("is_boss", false))
 	if enemy.xp > 0.0:
 		gems.append({"pos": enemy.pos, "value": enemy.xp, "life": 24.0})
-	var coin_drop := int(enemy.get("coins", 0))
+	var coin_drop: int = int(enemy.get("coins", 0))
+	if realm == "spectral":
+		for lm_item in dual_landmarks:
+			if typeof(lm_item) == TYPE_DICTIONARY and str(lm_item.get("id", "")) == "market":
+				var market_pos: Vector2 = lm_item.get("pos", Vector2(-99999.0, -99999.0))
+				var market_rad: float = float(lm_item.get("radius", 160.0))
+				if enemy.pos.distance_to(market_pos) <= market_rad:
+					coin_drop += 1
+					if enemy.xp > 0.0:
+						gems.append({"pos": enemy.pos + Vector2(10.0, -6.0), "value": maxf(1.0, enemy.xp * 0.25), "life": 20.0})
+				break
 	if coin_drop > 0:
 		coins += coin_drop
 	if realm == "spectral":
@@ -1041,48 +1207,123 @@ func update_combat(dt: float) -> void:
 	var dmg_mult := float(player.damage_mult)
 	var global_b := float(player.global_damage_bonus)
 	if realm == "mortal":
-		attack_timer = base.lantern_interval
-		var lantern_lvl := int(upgrade_levels.get("lantern_fire", 0))
-		var bolt_count := 1 + mini(2, maxi(0, lantern_lvl - 1))
-		var targets := find_nearest_enemies(float(base.lantern_range) + float(player.lantern_range_bonus), bolt_count)
-		if not targets.is_empty():
-			var lantern_origin: Vector2 = player.pos + Vector2(20.0 * player.facing, -12.0)
-			var dmg := (float(base.lantern_damage) + float(player.lantern_damage_bonus) + global_b) * dmg_mult
-			targets.sort()
-			targets.reverse()
-			for idx in targets:
-				if idx < enemies.size():
-					var target_pos: Vector2 = enemies[idx].pos
-					projectiles.append({"from": lantern_origin, "to": target_pos, "life": 0.22, "max_life": 0.22, "damage": dmg, "target": idx})
-					damage_enemy(idx, dmg)
-			play_sfx("lantern")
-	elif face == "sheng":
-		attack_timer = maxf(0.12, float(base.sheng_interval) + float(player.sheng_interval_bonus))
-		var sword_lvl := int(upgrade_levels.get("sword", 0))
-		var strike_count := 2 if sword_lvl >= 3 else 1
-		var targets := find_nearest_enemies(float(base.sheng_range), strike_count)
-		if not targets.is_empty():
-			var dmg := (float(base.sheng_damage) + float(player.sheng_damage_bonus) + float(player.spectral_damage_bonus) + global_b) * dmg_mult
+		# 提灯少年 · 灯火照魂: 24 dmg / 0.95s / 105px / 120° fan cone / 15% slow for 0.6s
+		attack_timer = float(base.get("lantern_interval", 0.95))
+		var cone_range: float = float(base.get("lantern_range", 105.0)) + float(player.lantern_range_bonus)
+		var half_cone: float = deg_to_rad(float(base.get("lantern_cone_deg", 120.0)) * 0.5)
+		var slow_mult: float = float(base.get("lantern_slow_mult", 0.85))
+		var slow_sec: float = float(base.get("lantern_slow_sec", 0.60))
+		var nearest_idx: int = find_nearest_enemy(cone_range + 40.0)
+		if nearest_idx >= 0:
 			var p_pos: Vector2 = player.pos
-			targets.sort()
-			targets.reverse()
-			for idx in targets:
-				if idx < enemies.size():
-					var target_pos: Vector2 = enemies[idx].pos
-					var dir_angle: float = (target_pos - p_pos).angle()
-					slashes.append({"pos": target_pos, "radius": 58.0, "angle": dir_angle, "life": 0.20, "max_life": 0.20, "face": "sheng"})
-					damage_enemy(idx, dmg)
-			play_sfx("sword")
+			var aim_pos: Vector2 = enemies[nearest_idx].pos
+			var aim_dir: Vector2 = (aim_pos - p_pos).normalized()
+			var aim_angle: float = aim_dir.angle()
+			var dmg: float = (float(base.get("lantern_damage", 24.0)) + float(player.lantern_damage_bonus) + global_b) * dmg_mult
+			var hit_indices: Array[int] = []
+			for i in range(enemies.size()):
+				var e_pos: Vector2 = enemies[i].pos
+				var delta_v: Vector2 = e_pos - p_pos
+				var dist: float = delta_v.length()
+				if dist <= cone_range + float(enemies[i].radius):
+					var ang_diff: float = absf(angle_difference(aim_angle, delta_v.angle())) if dist > 0.1 else 0.0
+					if ang_diff <= half_cone:
+						hit_indices.append(i)
+			if not hit_indices.is_empty():
+				player_attack_anim = 0.48
+				slashes.append({
+					"pos": p_pos,
+					"radius": cone_range,
+					"angle": aim_angle,
+					"cone_rad": half_cone * 2.0,
+					"life": 0.28,
+					"max_life": 0.28,
+					"face": "lantern_cone",
+				})
+				var lantern_origin: Vector2 = p_pos + Vector2(20.0 * float(player.facing), -12.0)
+				hit_indices.sort()
+				hit_indices.reverse()
+				for idx in hit_indices:
+					if idx < enemies.size():
+						enemies[idx]["slow_timer"] = maxf(float(enemies[idx].get("slow_timer", 0.0)), slow_sec)
+						enemies[idx]["slow_mult"] = slow_mult
+						projectiles.append({"from": lantern_origin, "to": enemies[idx].pos, "life": 0.20, "max_life": 0.20, "damage": dmg, "target": idx})
+						damage_enemy(idx, dmg)
+				play_sfx("lantern")
+	elif face == "sheng":
+		# 武生 · 净面快剑: 13 dmg / 0.50s / 135px length / 50px width / straight pierce up to 3 enemies
+		attack_timer = maxf(0.18, float(base.get("sheng_interval", 0.50)) + float(player.sheng_interval_bonus))
+		var sword_lvl: int = int(upgrade_levels.get("sword", 0))
+		var sword_range: float = float(base.get("sheng_range", 135.0))
+		var half_width: float = float(base.get("sheng_width", 50.0)) * 0.5
+		var pierce_max: int = int(base.get("sheng_pierce", 3)) + (1 if sword_lvl >= 3 else 0)
+		var nearest_idx: int = find_nearest_enemy(sword_range + 30.0)
+		if nearest_idx >= 0:
+			var p_pos: Vector2 = player.pos
+			var target_pos: Vector2 = enemies[nearest_idx].pos
+			var dir: Vector2 = (target_pos - p_pos).normalized()
+			var dir_angle: float = dir.angle()
+			var dmg: float = (float(base.get("sheng_damage", 13.0)) + float(player.sheng_damage_bonus) + float(player.spectral_damage_bonus) + global_b) * dmg_mult
+			var line_hits: Array[Dictionary] = []
+			for i in range(enemies.size()):
+				var rel: Vector2 = Vector2(enemies[i].pos) - p_pos
+				var proj: float = rel.dot(dir)
+				var er: float = float(enemies[i].radius)
+				if proj >= -er * 0.4 and proj <= sword_range + er:
+					var perp: float = absf(rel.cross(dir))
+					if perp <= half_width + er * 0.65:
+						line_hits.append({"idx": i, "proj": proj})
+			line_hits.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return float(a.proj) < float(b.proj))
+			var chosen: Array[int] = []
+			for k in range(mini(pierce_max, line_hits.size())):
+				chosen.append(int(line_hits[k].idx))
+			if not chosen.is_empty():
+				player_attack_anim = 0.36
+				slashes.append({
+					"pos": p_pos,
+					"radius": sword_range,
+					"width": half_width * 2.0,
+					"angle": dir_angle,
+					"life": 0.20,
+					"max_life": 0.20,
+					"face": "sheng",
+				})
+				chosen.sort()
+				chosen.reverse()
+				for idx in chosen:
+					if idx < enemies.size():
+						damage_enemy(idx, dmg)
+				play_sfx("sword")
 	else:
-		attack_timer = maxf(0.45, float(base.dan_interval) + float(player.dan_interval_bonus))
-		var dan_r := float(base.dan_radius) + float(player.dan_radius_bonus)
-		var dmg := (float(base.dan_damage) + float(player.dan_damage_bonus) + float(player.spectral_damage_bonus) + global_b) * dmg_mult
-		slashes.append({"pos": player.pos, "radius": dan_r, "angle": rng.randf_range(0.0, TAU), "life": 0.32, "max_life": 0.32, "face": "dan"})
-		play_sfx("sleeve")
+		# 青衣旦 · 水袖回风: 28 dmg / 1.10s / 125px / 220° sweeping arc / 24px outward knockback
+		attack_timer = maxf(0.45, float(base.get("dan_interval", 1.10)) + float(player.dan_interval_bonus))
+		var dan_r: float = float(base.get("dan_radius", 125.0)) + float(player.dan_radius_bonus)
+		var half_arc: float = deg_to_rad(float(base.get("dan_cone_deg", 220.0)) * 0.5)
+		var kb_px: float = float(base.get("dan_knockback", 24.0))
+		var dmg: float = (float(base.get("dan_damage", 28.0)) + float(player.dan_damage_bonus) + float(player.spectral_damage_bonus) + global_b) * dmg_mult
 		var p_pos: Vector2 = player.pos
+		var nearest_idx: int = find_nearest_enemy(dan_r + 36.0)
+		var aim_angle: float = 0.0 if float(player.facing) >= 0.0 else PI
+		if nearest_idx >= 0:
+			aim_angle = (Vector2(enemies[nearest_idx].pos) - p_pos).angle()
+		player_attack_anim = 0.48
+		slashes.append({
+			"pos": p_pos,
+			"radius": dan_r,
+			"angle": aim_angle,
+			"cone_rad": half_arc * 2.0,
+			"life": 0.34,
+			"max_life": 0.34,
+			"face": "dan",
+		})
+		play_sfx("sleeve")
 		for i in range(enemies.size() - 1, -1, -1):
-			if p_pos.distance_to(enemies[i].pos) <= dan_r + float(enemies[i].radius):
-				damage_enemy(i, dmg)
+			var delta_v: Vector2 = Vector2(enemies[i].pos) - p_pos
+			var dist: float = delta_v.length()
+			if dist <= dan_r + float(enemies[i].radius):
+				var ang_diff: float = absf(angle_difference(aim_angle, delta_v.angle())) if dist > 0.1 else 0.0
+				if ang_diff <= half_arc:
+					damage_enemy(i, dmg, kb_px * 10.0)
 
 func update_enemies(dt: float) -> void:
 	var cell_size := 52.0
@@ -1101,7 +1342,11 @@ func update_enemies(dt: float) -> void:
 	var p_pos: Vector2 = player.pos
 	for i in range(count - 1, -1, -1):
 		var enemy := enemies[i]
-		enemy.hit_flash = maxf(0.0, enemy.hit_flash - dt)
+		enemy.hit_flash = maxf(0.0, float(enemy.hit_flash) - dt)
+		var st: float = maxf(0.0, float(enemy.get("slow_timer", 0.0)) - dt)
+		enemy["slow_timer"] = st
+		var spd_mult: float = float(enemy.get("slow_mult", 0.85)) if st > 0.0 else 1.0
+		var eff_speed: float = float(enemy.speed) * spd_mult
 		var pos: Vector2 = enemy.pos
 		var direction: Vector2 = p_pos - pos
 		var distance: float = direction.length()
@@ -1123,7 +1368,7 @@ func update_enemies(dt: float) -> void:
 		if kind == "wisp_caster":
 			var move_factor := 1.0 if distance > 220.0 else (-0.35 if distance < 140.0 else 0.1)
 			if distance > 0.01:
-				enemy.pos += (direction.normalized() * float(enemy.speed) * move_factor + enemy.knockback + sep) * dt
+				enemy.pos += (direction.normalized() * eff_speed * move_factor + enemy.knockback + sep) * dt
 				enemy.knockback = enemy.knockback.lerp(Vector2.ZERO, 1.0 - exp(-10.0 * dt))
 			enemy.cast_timer = float(enemy.cast_timer) - dt
 			if float(enemy.cast_timer) <= 0.0 and distance < 460.0:
@@ -1136,10 +1381,66 @@ func update_enemies(dt: float) -> void:
 					"life": 3.2,
 					"color": InkData.palette().sage_light,
 				})
+		elif kind == "wolf":
+			# Daytime mountain wolf: agile flanking curve
+			if distance > 0.01:
+				var nd: Vector2 = direction.normalized()
+				var flank: Vector2 = Vector2(-nd.y, nd.x) * (0.38 if sin(time_sec * 2.2 + float(enemy.anim_phase)) >= 0.0 else -0.38)
+				var move_dir: Vector2 = (nd + flank * (1.0 if distance > 85.0 else 0.1)).normalized()
+				enemy.pos += (move_dir * eff_speed + enemy.knockback + sep) * dt
+				enemy.knockback = enemy.knockback.lerp(Vector2.ZERO, 1.0 - exp(-10.0 * dt))
+		elif kind == "boar":
+			# Daytime wild boar: periodic straight-line charge
+			var c_act: float = float(enemy.get("charge_active", 0.0))
+			if c_act > 0.0:
+				enemy["charge_active"] = c_act - dt
+				var cdir: Vector2 = enemy.get("charge_dir", direction.normalized())
+				enemy.pos += (cdir * eff_speed * 2.35 + enemy.knockback) * dt
+				enemy.knockback = enemy.knockback.lerp(Vector2.ZERO, 1.0 - exp(-10.0 * dt))
+			else:
+				var c_cd: float = float(enemy.get("charge_timer", 2.4)) - dt
+				enemy["charge_timer"] = c_cd
+				if c_cd <= 0.0 and distance > 60.0 and distance < 290.0:
+					enemy["charge_dir"] = direction.normalized()
+					enemy["charge_active"] = 0.65
+					enemy["charge_timer"] = 2.7
+				elif distance > 0.01:
+					enemy.pos += (direction.normalized() * eff_speed + enemy.knockback + sep) * dt
+					enemy.knockback = enemy.knockback.lerp(Vector2.ZERO, 1.0 - exp(-10.0 * dt))
+		elif kind == "treant":
+			# Daytime forest treant: slow advance + periodic root shockwave
+			if distance > 0.01:
+				enemy.pos += (direction.normalized() * eff_speed + enemy.knockback + sep) * dt
+				enemy.knockback = enemy.knockback.lerp(Vector2.ZERO, 1.0 - exp(-10.0 * dt))
+			enemy.cast_timer = float(enemy.cast_timer) - dt
+			if float(enemy.cast_timer) <= 0.0 and distance < 210.0:
+				enemy.cast_timer = 3.6
+				boss_aoes.append({
+					"pos": p_pos,
+					"radius": 62.0,
+					"charge": 0.95,
+					"max_charge": 0.95,
+					"damage": 10.0,
+				})
+		elif kind == "shanxiao":
+			# Daytime mountain elite Shanxiao: heavy pursuit + leaping ground slam AoE
+			if distance > 0.01:
+				enemy.pos += (direction.normalized() * eff_speed + enemy.knockback + sep * 0.5) * dt
+				enemy.knockback = enemy.knockback.lerp(Vector2.ZERO, 1.0 - exp(-10.0 * dt))
+			enemy.aoe_timer = float(enemy.aoe_timer) - dt
+			if float(enemy.aoe_timer) <= 0.0 and distance < 320.0:
+				enemy.aoe_timer = 3.2
+				boss_aoes.append({
+					"pos": p_pos + Vector2(player.vel) * 0.25,
+					"radius": 78.0,
+					"charge": 1.05,
+					"max_charge": 1.05,
+					"damage": 15.0,
+				})
 		elif bool(enemy.get("is_boss", false)):
 			# Paper Judge Boss AI: pursues, casts ink arcs, and drops telegraphed Vermilion Seals
 			if distance > 0.01:
-				enemy.pos += (direction.normalized() * float(enemy.speed) + enemy.knockback) * dt
+				enemy.pos += (direction.normalized() * eff_speed + enemy.knockback) * dt
 				enemy.knockback = enemy.knockback.lerp(Vector2.ZERO, 1.0 - exp(-10.0 * dt))
 			enemy.cast_timer = float(enemy.cast_timer) - dt
 			if float(enemy.cast_timer) <= 0.0:
@@ -1169,7 +1470,7 @@ func update_enemies(dt: float) -> void:
 				})
 		else:
 			if distance > 0.01:
-				enemy.pos += (direction.normalized() * float(enemy.speed) + enemy.knockback + sep) * dt
+				enemy.pos += (direction.normalized() * eff_speed + enemy.knockback + sep) * dt
 				enemy.knockback = enemy.knockback.lerp(Vector2.ZERO, 1.0 - exp(-10.0 * dt))
 		if distance <= float(enemy.radius) + 16.0:
 			damage_player(float(enemy.damage))
@@ -1321,6 +1622,10 @@ func update_taboos(dt: float) -> void:
 				hazards.white_stranger["line_idx"] = li
 				hazards.white_stranger.line = InkData.WHITE_STRANGER_LINES[li]
 			hazards.white_stranger["line_timer"] = lt
+			if realm == "spectral":
+				var drift_dir: Vector2 = (p_pos - hazards.white_stranger.pos)
+				if drift_dir.length_squared() > 1.0:
+					hazards.white_stranger.pos += drift_dir.normalized() * 24.0 * dt
 			if p_pos.distance_to(hazards.white_stranger.pos) <= 90.0:
 				hazards.white_stranger.active = false
 				hazards.white_stranger.timer = 22.0
@@ -1368,9 +1673,16 @@ func update_taboos(dt: float) -> void:
 			if float(nc.timer) <= 0.0:
 				nc.active = true
 				nc.timer = 6.0
-				var ang := rng.randf_range(0.0, TAU)
-				nc.pos = p_pos + Vector2(cos(ang), sin(ang)) * 220.0
-				_push_subtitle("有人在背后喊你的名字……莫入白圈。", 3.0)
+				if realm == "spectral":
+					var p_vel: Vector2 = player.get("vel", Vector2.ZERO)
+					var facing_dir: Vector2 = p_vel.normalized() if p_vel.length_squared() > 0.01 else Vector2(float(player.get("facing", 1.0)), 0.0)
+					var behind_dir: Vector2 = (-facing_dir).normalized() if facing_dir.length_squared() > 0.01 else Vector2.LEFT
+					nc.pos = p_pos + behind_dir * 185.0
+					_push_subtitle("诡界背后传来熟人唤名……万勿转身踏入白圈。", 3.0)
+				else:
+					var ang: float = rng.randf_range(0.0, TAU)
+					nc.pos = p_pos + Vector2(cos(ang), sin(ang)) * 220.0
+					_push_subtitle("有人在背后喊你的名字……莫入白圈。", 3.0)
 		else:
 			if p_pos.distance_to(nc.pos) <= float(nc.radius):
 				nc.active = false
@@ -1620,7 +1932,9 @@ func flip_realm() -> bool:
 	})
 	realm = "spectral" if realm == "mortal" else "mortal"
 	flip_cooldown = maxf(1.2, float(InkData.player_base().flip_cooldown_sec) - float(player.flip_cooldown_reduce))
-	flip_freeze = InkData.player_base().flip_freeze_sec
+	flip_freeze = float(InkData.player_base().flip_freeze_sec)
+	switch_anim_timer = float(InkData.player_base().get("switch_anim_sec", 0.60))
+	player_flip_anim = 0.60
 	if float(player.flip_invuln_sec) > 0.0:
 		invuln = maxf(invuln, float(player.flip_invuln_sec))
 	if int(upgrade_levels.get("shadow_walker", 0)) > 0:
@@ -1631,6 +1945,11 @@ func flip_realm() -> bool:
 	if not first_flip_done:
 		first_flip_done = true
 		_push_narrative("first_flip")
+	var lm: Dictionary = get_active_dual_landmark()
+	if not lm.is_empty():
+		var lm_zh: String = str(lm.get("spectral_name", "")) if realm == "spectral" else str(lm.get("mortal_name", ""))
+		var lm_en: String = str(lm.get("spectral_en", "")) if realm == "spectral" else str(lm.get("mortal_en", ""))
+		_push_alert("同址异化 · " + lm_zh, "Realm Shift: " + lm_en, 2.4)
 	var blast_radius: float = InkData.player_base().flip_blast_radius
 	var blast_dmg: float = (float(InkData.player_base().flip_blast_damage) + float(player.flip_blast_bonus)) * float(player.damage_mult)
 	var p_pos: Vector2 = player.pos
@@ -1654,7 +1973,20 @@ func toggle_face() -> void:
 	if phase != Phase.PLAYING:
 		return
 	if realm == "spectral":
+		if switch_cooldown > 0.0:
+			return
+		afterimages.append({
+			"pos": player.pos,
+			"realm": realm,
+			"face": face,
+			"facing": player.facing,
+			"life": 0.42,
+			"max_life": 0.42,
+		})
 		face = "dan" if face == "sheng" else "sheng"
+		switch_anim_timer = float(InkData.player_base().get("switch_anim_sec", 0.60))
+		switch_cooldown = float(InkData.player_base().get("switch_cooldown_sec", 0.75))
+		player_flip_anim = 0.36
 		play_sfx("sleeve" if face == "dan" else "sword")
 		_spawn_ink_burst(player.pos, InkData.palette().bone_bright, 6, 0.7)
 	else:
@@ -1862,4 +2194,6 @@ func play_sfx(sfx_name: String) -> void:
 func toggle_mute() -> void:
 	muted = not muted
 	AudioServer.set_bus_mute(0, muted)
+	if ambient_soundscape != null:
+		ambient_soundscape.set_muted(muted)
 	_emit_hud()

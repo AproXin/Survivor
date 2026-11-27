@@ -9,12 +9,13 @@ func _run() -> void:
 	# 1. SpriteBank manifest & 96x96 / 64x64 protocol checks
 	var bank := InkSpriteBank.new()
 	bank.load_manifest()
-	_check(bank.specs.size() == 11, "sprite manifest must define 11 character/enemy specs")
+	_check(bank.specs.size() == 15, "sprite manifest must define 15 character/enemy specs (11 night + 4 day)")
 	_check(int(bank.get_spec("player_mortal").size) == 96, "player_mortal must be 96x96 tier")
 	_check(int(bank.get_spec("boss_magistrate").size) == 96, "boss_magistrate must be 96x96 tier")
 	_check(int(bank.get_spec("ghost").size) == 64, "ghost must be 64x64 tier")
 	_check(int(bank.get_spec("punisher").size) == 64, "punisher must be 64x64 tier")
-	_check(not bank.has_sheet("ghost"), "missing PNG must fall back gracefully without sheet")
+	_check(bank.sheets.size() == 15 and bank.has_sheet("ghost") and bank.has_sheet("wolf"), "all 15 real PNG sprite sheets must load")
+	_check(not bank.has_sheet("__missing_sprite__"), "missing PNG must fall back gracefully without sheet")
 
 	# Runtime 8-frame 96x96 strip (768x96) => 4 walk + 1 hit + 3 death
 	var img := Image.create(768, 96, false, Image.FORMAT_RGBA8)

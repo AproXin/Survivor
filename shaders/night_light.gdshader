@@ -9,6 +9,7 @@ uniform float darkness = 0.62;
 uniform float fog_amount = 0.16;
 uniform float time_sec = 0.0;
 uniform float realm_blend = 0.0;
+uniform float daylight_blend = 0.0;
 uniform float flip_wave = 0.0;
 uniform float danger_pulse = 0.0;
 uniform float is_title = 0.0;
@@ -84,14 +85,18 @@ void fragment() {
 		cold = max(cold, cold_contrib(SCREEN_UV, cold_light_2));
 		cold = max(cold, cold_contrib(SCREEN_UV, cold_light_3));
 
-		// Readable moonlit ambient floor so tombstones & bamboo remain legible like the style bible
-		float ambient_floor = clamp(1.0 - darkness * 0.72, 0.22, 0.55);
+		// Overcast ink-wash daylight lifts ambient floor when daylight_blend > 0 (mortal daytime ecology)
+		float day_eff = clamp(daylight_blend * (1.0 - realm_blend), 0.0, 1.0);
+		float night_floor = clamp(1.0 - darkness * 0.72, 0.22, 0.55);
+		float ambient_floor = mix(night_floor, 0.84, day_eff);
 		float total_light = clamp(max(lantern_light, cold * 0.78), 0.0, 1.0);
 		float illum = mix(ambient_floor, 1.12, total_light);
 
 		// Warm golden tint inside lantern pool (mortal warmer, spectral cooler bone-gold)
 		vec3 warm_tint = mix(vec3(1.16, 0.96, 0.70), vec3(1.02, 0.99, 0.90), realm_blend);
-		vec3 shadow_tint = mix(vec3(0.68, 0.78, 0.86), vec3(0.56, 0.72, 0.82), realm_blend);
+		vec3 night_shadow = mix(vec3(0.68, 0.78, 0.86), vec3(0.56, 0.72, 0.82), realm_blend);
+		vec3 day_tint = vec3(0.86, 0.92, 0.95);
+		vec3 shadow_tint = mix(night_shadow, day_tint, day_eff);
 		vec3 tint = mix(shadow_tint, warm_tint, lantern_light);
 
 		vec3 color = source * illum * tint;
