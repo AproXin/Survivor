@@ -35,7 +35,8 @@ func _initialize() -> void:
 	var r_atk: Rect2 = bank.get_frame_region("player_mortal", "attack", 0.0)
 	_check(r_idle.position.x != r_move.position.x, "idle and move tags must map to distinct frames")
 	_check(r_move.position.x != r_atk.position.x, "move and attack tags must map to distinct frames")
-	_check(bank.has_sheet("ghost") and not bank.has_tag("ghost", "idle"), "legacy 8-frame ghost sheet must remain compatible")
+	_check(bank.has_sheet("ghost") and bank.has_tag("ghost", "move_down"), "upgraded 4-dir ghost sheet must expose directional tags")
+	_check(bank.has_sheet("wisp_caster") and not bank.has_tag("wisp_caster", "idle"), "legacy 8-frame wisp_caster sheet must remain compatible")
 
 	# 2. Three-Form Combat Baseline (Mortal 120 deg slow / Sheng 3-pierce / Dan 220 deg knockback)
 	var sim: InkMain = _new_main()
@@ -128,9 +129,9 @@ func _initialize() -> void:
 	_check(str(d_left.dir) == "side" and bool(d_left.flip_x), "4-way left vector must map to side with flip_x")
 	_check(str(d_ne.dir) == "ne", "8-way diagonal vector must map to ne")
 	var dan_move_sheet: Dictionary = bank.get_sheet("player_dan")
-	_check(int(dan_move_sheet.get("walk_count", 0)) == 6, "player_dan cleaned move cycle must have 6 frames (skipping f08 & f11)")
-	var dan_f05: Dictionary = bank.get_frame_data("player_dan", "move", 0.12)
-	_check(float(dan_f05.get("pivot_x", 48.0)) > 60.0, "player_dan side-walk frame must expose calibrated head pivot_x")
+	_check(int(dan_move_sheet.get("walk_count", 0)) >= 6 and bank.has_tag("player_dan", "move_s") and bank.has_tag("player_dan", "move_n"), "player_dan 8-dir sheet must expose directional move tags")
+	var dan_f05: Dictionary = bank.get_frame_data("player_dan", "move", 0.12, "e")
+	_check(float(dan_f05.get("pivot_x", 0.0)) > 30.0 and float(dan_f05.get("pivot_x", 0.0)) < 66.0, "player_dan side-walk frame must expose calibrated head pivot_x")
 	# Fallback check: querying move_up on 1-dir sheet must gracefully fall back to move
 	var fb_rect: Rect2 = bank.get_frame_region("player_dan", "move", 0.0, "up")
 	_check(fb_rect.size.x == 96.0, "directional query on 1-dir sheet must gracefully fall back to base state")

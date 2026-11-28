@@ -57,7 +57,7 @@ func _try_draw_sprite(key: String, pos: Vector2, state: String, anim_time: float
 	var draw_sz: float = float(sheet.frame_size) * scale_val
 	var off_y: float = float(sheet.offset_y)
 	var pivot_x: float = float(fdata.get("pivot_x", frame_w * 0.5))
-	var dst_x: float = (pos.x + (frame_w - pivot_x) * scale_val) if flip_x else (pos.x - pivot_x * scale_val)
+	var dst_x: float = pos.x - (((frame_w - pivot_x) if flip_x else pivot_x) * scale_val)
 	var dst := Rect2(dst_x, pos.y - draw_sz * 0.5 + off_y, -draw_sz if flip_x else draw_sz, draw_sz)
 	draw_texture_rect_region(tex, dst, region, tint)
 	return true
