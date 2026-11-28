@@ -1,0 +1,117 @@
+{
+  "version": "3.0.0",
+  "protocol": "horizontal_strip_v1_45deg_top_down",
+  "palette_gate": "ink_night_18_colors",
+  "sprites": {
+    "player_mortal": {
+      "path": "res://assets/sprites/player_mortal.png",
+      "file": "player_mortal.png",
+      "label": "提灯少年（人间·45°俯视）",
+      "frame_size": 96,
+      "hframes": 8,
+      "fps": 8,
+      "colors_used": 16,
+      "palette_gate_passed": true
+    },
+    "player_sheng": {
+      "path": "res://assets/sprites/player_sheng.png",
+      "file": "player_sheng.png",
+      "label": "武生快剑（诡界生·45°俯视）",
+      "frame_size": 96,
+      "hframes": 8,
+      "fps": 10,
+      "colors_used": 16,
+      "palette_gate_passed": true
+    },
+    "player_dan": {
+      "path": "res://assets/sprites/player_dan.png",
+      "file": "player_dan.png",
+      "label": "青衣水袖（诡界旦·45°俯视）",
+      "frame_size": 96,
+      "hframes": 8,
+      "fps": 9,
+      "colors_used": 16,
+      "palette_gate_passed": true
+    },
+    "boss_magistrate": {
+      "path": "res://assets/sprites/boss_magistrate.png",
+      "file": "boss_magistrate.png",
+      "label": "纸扎判官（Boss·45°俯视）",
+      "frame_size": 96,
+      "hframes": 8,
+      "fps": 7,
+      "colors_used": 16,
+      "palette_gate_passed": true
+    },
+    "ghost": {
+      "path": "res://assets/sprites/ghost.png",
+      "file": "ghost.png",
+      "label": "游魂（45°俯视）",
+      "frame_size": 64,
+      "hframes": 8,
+      "fps": 8,
+      "colors_used": 16,
+      "palette_gate_passed": true
+    },
+    "jiangshi": {
+      "path": "res://assets/sprites/jiangshi.png",
+      "file": "jiangshi.png",
+      "label": "行尸（45°俯视）",
+      "frame_size": 64,
+      "hframes": 8,
+      "fps": 7,
+      "colors_used": 16,
+      "palette_gate_passed": true
+    },
+    "wisp_caster": {
+      "path": "res://assets/sprites/wisp_caster.png",
+      "file": "wisp_caster.png",
+      "label": "鬼火灵（45°俯视）",
+      "frame_size": 64,
+      "hframes": 8,
+      "fps": 9,
+      "colors_used": 16,
+      "palette_gate_passed": true
+    },
+    "elite_ghost": {
+      "path": "res://assets/sprites/elite_ghost.png",
+      "file": "elite_ghost.png",
+      "label": "红眼大幽魂（精英·45°俯视）",
+      "frame_size": 64,
+      "hframes": 8,
+      "fps": 8,
+      "colors_used": 16,
+      "palette_gate_passed": true
+    },
+    "elite_jiangshi": {
+      "path": "res://assets/sprites/elite_jiangshi.png",
+      "file": "elite_jiangshi.png",
+      "label": "红眼印章尸（精英·45°俯视）",
+      "frame_size": 64,
+      "hframes": 8,
+      "fps": 7,
+      "colors_used": 16,
+      "palette_gate_passed": true
+    },
+    "punisher": {
+      "path": "res://assets/sprites/punisher.png",
+      "file": "punisher.png",
+      "label": "白纸差役（破戒追猎·45°俯视）",
+      "frame_size": 64,
+      "hframes": 8,
+      "fps": 9,
+      "colors_used": 16,
+      "palette_gate_passed": true
+    },
+    "white_stranger": {
+      "path": "res://assets/sprites/white_stranger.png",
+      "file": "white_stranger.png",
+      "label": "白衣问路人（禁忌七·45°俯视）",
+      "frame_size": 64,
+      "hframes": 8,
+      "fps": 6,
+      "colors_used": 16,
+      "palette_gate_passed": true
+    }
+  }
+}

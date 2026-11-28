@@ -1,0 +1,87 @@
+{
+  "sheet": "player_dan_cel.png",
+  "dimensions": {
+    "width": 2784,
+    "height": 96,
+    "frameSize": 96,
+    "frameCount": 29
+  },
+  "passed": true,
+  "errors": [],
+  "vermilionPixels": 0,
+  "allowVermilion": false,
+  "duplicatePairs": 0,
+  "anchorSpec": {
+    "centerX": 48,
+    "footY": 90,
+    "safeMarginPx": 4
+  },
+  "tags": [
+    {
+      "name": "idle",
+      "from": 0,
+      "to": 3,
+      "frameCount": 4,
+      "footYMin": 90,
+      "footYMax": 90,
+      "footDriftPx": 0,
+      "avgMotionDelta": 0.251,
+      "minMotionDelta": 0.2088
+    },
+    {
+      "name": "move",
+      "from": 4,
+      "to": 11,
+      "frameCount": 8,
+      "footYMin": 89,
+      "footYMax": 90,
+      "footDriftPx": 1,
+      "avgMotionDelta": 0.3529,
+      "minMotionDelta": 0.2909
+    },
+    {
+      "name": "attack",
+      "from": 12,
+      "to": 17,
+      "frameCount": 6,
+      "footYMin": 90,
+      "footYMax": 90,
+      "footDriftPx": 0,
+      "avgMotionDelta": 0.3694,
+      "minMotionDelta": 0.2873
+    },
+    {
+      "name": "flip",
+      "from": 18,
+      "to": 23,
+      "frameCount": 6,
+      "footYMin": 90,
+      "footYMax": 90,
+      "footDriftPx": 0,
+      "avgMotionDelta": 0.3778,
+      "minMotionDelta": 0.2818
+    },
+    {
+      "name": "hit",
+      "from": 24,
+      "to": 25,
+      "frameCount": 2,
+      "footYMin": 90,
+      "footYMax": 90,
+      "footDriftPx": 0,
+      "avgMotionDelta": 0.3224,
+      "minMotionDelta": 0.3224
+    },
+    {
+      "name": "death",
+      "from": 26,
+      "to": 28,
+      "frameCount": 3,
+      "footYMin": 90,
+      "footYMax": 90,
+      "footDriftPx": 0,
+      "avgMotionDelta": 0.2266,
+      "minMotionDelta": 0.1785
+    }
+  ]
+}

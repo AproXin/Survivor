@@ -1,0 +1,76 @@
+{
+  "sheet": "enemy_shanxiao_cel.png",
+  "dimensions": {
+    "width": 1824,
+    "height": 96,
+    "frameSize": 96,
+    "frameCount": 19
+  },
+  "passed": true,
+  "errors": [],
+  "vermilionPixels": 32,
+  "allowVermilion": true,
+  "duplicatePairs": 0,
+  "anchorSpec": {
+    "centerX": 48,
+    "footY": 90,
+    "safeMarginPx": 4
+  },
+  "tags": [
+    {
+      "name": "idle",
+      "from": 0,
+      "to": 3,
+      "frameCount": 4,
+      "footYMin": 90,
+      "footYMax": 90,
+      "footDriftPx": 0,
+      "avgMotionDelta": 0.1737,
+      "minMotionDelta": 0.1464
+    },
+    {
+      "name": "move",
+      "from": 4,
+      "to": 9,
+      "frameCount": 6,
+      "footYMin": 89,
+      "footYMax": 90,
+      "footDriftPx": 1,
+      "avgMotionDelta": 0.2698,
+      "minMotionDelta": 0.2374
+    },
+    {
+      "name": "attack",
+      "from": 10,
+      "to": 13,
+      "frameCount": 4,
+      "footYMin": 90,
+      "footYMax": 90,
+      "footDriftPx": 0,
+      "avgMotionDelta": 0.2356,
+      "minMotionDelta": 0.0142
+    },
+    {
+      "name": "hit",
+      "from": 14,
+      "to": 15,
+      "frameCount": 2,
+      "footYMin": 90,
+      "footYMax": 90,
+      "footDriftPx": 0,
+      "avgMotionDelta": 0.3088,
+      "minMotionDelta": 0.3088
+    },
+    {
+      "name": "death",
+      "from": 16,
+      "to": 18,
+      "frameCount": 3,
+      "footYMin": 90,
+      "footYMax": 90,
+      "footDriftPx": 0,
+      "avgMotionDelta": 0.2271,
+      "minMotionDelta": 0.193
+    }
+  ]
+}
