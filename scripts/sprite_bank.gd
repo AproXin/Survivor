@@ -212,6 +212,9 @@ func register_aseprite_json(key: String, tex: Texture2D, ase_doc: Dictionary, sp
 		sheet["anchor_y"] = float(anchor.get("y", 90.0))
 
 	if not frame_rects.is_empty() and not tags_map.is_empty():
+		var first_rect: Rect2 = frame_rects[0]
+		if first_rect.size.y > 0.0:
+			sheet["frame_size"] = maxi(1, int(first_rect.size.y))
 		sheet["has_aseprite_tags"] = true
 		sheet["eight_way"] = has_eight_way
 		sheet["frame_rects"] = frame_rects

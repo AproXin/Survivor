@@ -483,6 +483,14 @@ func _draw_town_hud() -> void:
 			prompt = _tr("[E] 老油坊 · 调配当夜灯油（免费三选一）", "[E] Old Oil Shop · Nightly Lamp Oil")
 		"paper_shop":
 			prompt = _tr("[E] 扎彩故铺 · 阅九大阴戒录 / 请纸扎护身符", "[E] Paper-Craft Shop · Taboo Ledger & Charms")
+		"tea_pavilion":
+			prompt = _tr("[E] 月下茶亭戏台 · 饮茶回血 / 听戏班守夜旧闻", "[E] Moonlit Tea Pavilion · Rest & Hear Rumors")
+		"apothecary":
+			prompt = _tr("[E] 济世药铺 · 问诊补气 / 取青艾安神香", "[E] Apothecary Hall · Restore Vigor & Herbal Lore")
+		"ancient_well":
+			prompt = _tr("[E] 青苔古井 · 俯身照影静心", "[E] Mossy Stone Well · Gaze into Still Water")
+		"notice_board":
+			prompt = _tr("[E] 悬榜告示 · 查阅今夜守夜禁令", "[E] Notice Board · Read Night Watch Edicts")
 		"north_gate":
 			prompt = _tr("[E] / ↑ 领签出镇北铁门 · 入乱葬岗", "[E] / ↑ Step through North Gate")
 	var pw := body_font.get_string_size(prompt, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x + 48.0

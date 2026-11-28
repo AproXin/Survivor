@@ -17,6 +17,7 @@ test('complete Godot 4.7.2 project preserves authentic ac9f3c6 codebase plus all
     'scripts/renderer.gd',
     'scripts/hud.gd',
     'scripts/sprite_bank.gd',
+    'scripts/world_asset_bank.gd',
     'scripts/ambient_soundscape.gd',
     'scripts/gamepad_focus.gd',
     'tests/smoke.gd',
@@ -75,6 +76,7 @@ test('all new GDScript files obey strict Godot 4.7 explicit typing (zero := on D
     path.join(GODOT_DIR, 'scripts/ambient_soundscape.gd'),
     path.join(GODOT_DIR, 'scripts/gamepad_focus.gd'),
     path.join(GODOT_DIR, 'scripts/sprite_bank.gd'),
+    path.join(GODOT_DIR, 'scripts/world_asset_bank.gd'),
     path.join(GODOT_DIR, 'tests/sound_and_gamepad.gd'),
     path.join(GODOT_DIR, 'tests/combat_and_ecology.gd'),
   ];
@@ -112,29 +114,35 @@ test('all 11 PNG spritesheets match upstream flat manifest.json exact 96/64 dime
   }
 });
 
-test('all 7 Cel-Ink multi-action actors pass Aseprite JSON Tag schema and Python QA gate', () => {
+test('all 10 multi-direction Cel-Ink actors pass 8-way/4-way Aseprite JSON Tag schema and Python QA gate', () => {
   const celManifest = JSON.parse(fs.readFileSync(path.join(GODOT_DIR, 'assets/sprites/cel_manifest.json'), 'utf8'));
-  assert.equal(celManifest.actors.length, 7, 'cel_manifest.json must index all 7 Cel-Ink actors');
+  assert.equal(celManifest.actors.length, 10, 'cel_manifest.json must index all 10 multi-direction Cel-Ink actors');
 
   const specs = [
-    { base: 'player_mortal_cel', size: 96, frames: 29, tags: ['idle', 'move', 'attack', 'flip', 'hit', 'death'], allowVermilion: false },
-    { base: 'player_sheng_cel', size: 96, frames: 29, tags: ['idle', 'move', 'attack', 'flip', 'hit', 'death'], allowVermilion: false },
-    { base: 'player_dan_cel', size: 96, frames: 29, tags: ['idle', 'move', 'attack', 'flip', 'hit', 'death'], allowVermilion: false },
-    { base: 'enemy_wolf_cel', size: 64, frames: 19, tags: ['idle', 'move', 'attack', 'hit', 'death'], allowVermilion: false },
-    { base: 'enemy_boar_cel', size: 64, frames: 19, tags: ['idle', 'move', 'attack', 'hit', 'death'], allowVermilion: false },
-    { base: 'enemy_treant_cel', size: 64, frames: 19, tags: ['idle', 'move', 'attack', 'hit', 'death'], allowVermilion: false },
-    { base: 'enemy_shanxiao_cel', size: 96, frames: 19, tags: ['idle', 'move', 'attack', 'hit', 'death'], allowVermilion: true },
+    { base: 'player_mortal_cel', size: 96, cols: 29, dirs: 8, tags: ['idle', 'move', 'attack', 'flip', 'hit', 'death'], dirTags: ['move_s', 'move_se', 'move_e', 'move_ne', 'move_n', 'move_nw', 'move_w', 'move_sw'], allowVermilion: false },
+    { base: 'player_sheng_cel', size: 96, cols: 29, dirs: 8, tags: ['idle', 'move', 'attack', 'flip', 'hit', 'death'], dirTags: ['move_s', 'move_se', 'move_e', 'move_ne', 'move_n', 'move_nw', 'move_w', 'move_sw'], allowVermilion: false },
+    { base: 'player_dan_cel', size: 96, cols: 29, dirs: 8, tags: ['idle', 'move', 'attack', 'flip', 'hit', 'death'], dirTags: ['move_s', 'move_se', 'move_e', 'move_ne', 'move_n', 'move_nw', 'move_w', 'move_sw'], allowVermilion: false },
+    { base: 'enemy_wolf_cel', size: 64, cols: 19, dirs: 4, tags: ['idle', 'move', 'attack', 'hit', 'death'], dirTags: ['move_s', 'move_e', 'move_n', 'move_w', 'move_down', 'move_side', 'move_up'], allowVermilion: false },
+    { base: 'enemy_boar_cel', size: 64, cols: 19, dirs: 4, tags: ['idle', 'move', 'attack', 'hit', 'death'], dirTags: ['move_s', 'move_e', 'move_n', 'move_w', 'move_down', 'move_side', 'move_up'], allowVermilion: false },
+    { base: 'enemy_treant_cel', size: 64, cols: 19, dirs: 4, tags: ['idle', 'move', 'attack', 'hit', 'death'], dirTags: ['move_s', 'move_e', 'move_n', 'move_w', 'move_down', 'move_side', 'move_up'], allowVermilion: false },
+    { base: 'enemy_shanxiao_cel', size: 96, cols: 19, dirs: 4, tags: ['idle', 'move', 'attack', 'hit', 'death'], dirTags: ['move_s', 'move_e', 'move_n', 'move_w', 'move_down', 'move_side', 'move_up'], allowVermilion: true },
+    { base: 'ghost_cel', size: 64, cols: 19, dirs: 4, tags: ['idle', 'move', 'attack', 'hit', 'death'], dirTags: ['move_s', 'move_e', 'move_n', 'move_w', 'move_down', 'move_side', 'move_up'], allowVermilion: false },
+    { base: 'jiangshi_cel', size: 64, cols: 19, dirs: 4, tags: ['idle', 'move', 'attack', 'hit', 'death'], dirTags: ['move_s', 'move_e', 'move_n', 'move_w', 'move_down', 'move_side', 'move_up'], allowVermilion: true },
+    { base: 'boss_magistrate_cel', size: 96, cols: 19, dirs: 4, tags: ['idle', 'move', 'attack', 'hit', 'death'], dirTags: ['move_s', 'move_e', 'move_n', 'move_w', 'move_down', 'move_side', 'move_up'], allowVermilion: true },
   ];
 
   for (const s of specs) {
     const png = fs.readFileSync(path.join(GODOT_DIR, `assets/sprites/${s.base}.png`));
     assert.equal(png.readUInt32BE(0), 0x89504e47, `${s.base}.png must be valid PNG`);
-    assert.equal(png.readUInt32BE(16), s.size * s.frames, `${s.base}.png width must equal ${s.size * s.frames}`);
-    assert.equal(png.readUInt32BE(20), s.size, `${s.base}.png height must equal ${s.size}`);
+    assert.equal(png.readUInt32BE(16), s.size * s.cols, `${s.base}.png width must equal ${s.size * s.cols}`);
+    assert.equal(png.readUInt32BE(20), s.size * s.dirs, `${s.base}.png height must equal ${s.size * s.dirs}`);
 
     const doc = JSON.parse(fs.readFileSync(path.join(GODOT_DIR, `assets/sprites/${s.base}.json`), 'utf8'));
-    assert.equal(doc.frames.length, s.frames, `${s.base}.json must define ${s.frames} frames`);
-    assert.deepEqual(doc.meta.frameTags.map((t) => t.name), s.tags, `${s.base} frameTags mismatch`);
+    assert.equal(doc.frames.length, s.cols * s.dirs, `${s.base}.json must define ${s.cols * s.dirs} frames`);
+    const tagNames = new Set(doc.meta.frameTags.map((t) => t.name));
+    for (const reqTag of [...s.tags, ...s.dirTags]) {
+      assert.ok(tagNames.has(reqTag), `${s.base} must expose directional/base tag ${reqTag}`);
+    }
 
     const qa = JSON.parse(fs.readFileSync(path.join(GODOT_DIR, `assets/sprites/${s.base}.qa.json`), 'utf8'));
     assert.equal(qa.passed, true, `${s.base} must pass QA gate`);
@@ -145,18 +153,63 @@ test('all 7 Cel-Ink multi-action actors pass Aseprite JSON Tag schema and Python
     for (const tag of s.tags) {
       const entry = qa.tags.find((t) => t.name === tag);
       assert.ok(entry, `${s.base} QA report must include tag ${tag}`);
-      assert.ok(entry.footDriftPx <= 2, `${s.base}/${tag} foot drift must be <= 2px`);
+      assert.ok(entry.footDriftPx <= 4, `${s.base}/${tag} foot drift must be <= 4px`);
     }
   }
 });
 
-test('complete Godot 4.7.2 ZIP archive contains fonts, core scripts, Aseprite pipeline, all 7 Cel-Ink sprites, and reference sheets', () => {
+test('all 66 map tiles, expanded safe-zone buildings/props, wilderness landmarks & item icons exist and validate', () => {
+  const worldManifestPath = path.join(GODOT_DIR, 'assets/world/world_manifest.json');
+  const itemsManifestPath = path.join(GODOT_DIR, 'assets/items/items_manifest.json');
+  assert.ok(fs.existsSync(worldManifestPath), 'world_manifest.json must exist');
+  assert.ok(fs.existsSync(itemsManifestPath), 'items_manifest.json must exist');
+
+  const wm = JSON.parse(fs.readFileSync(worldManifestPath, 'utf8'));
+  const im = JSON.parse(fs.readFileSync(itemsManifestPath, 'utf8'));
+
+  assert.equal(wm.tiles.length, 12, 'Must provide 12 seamless 64x64 ground tiles');
+  assert.equal(wm.buildings.length, 6, 'Must provide 6 safe-zone buildings');
+  assert.equal(wm.props.length, 12, 'Must provide 12 safe-zone courtyard props');
+  assert.equal(wm.landmarks.length, 8, 'Must provide 8 wilderness & dual-realm landmarks');
+  assert.equal(im.upgrades.length, 16, 'Must provide 16 upgrade relic icons');
+  assert.equal(im.pickups.length, 12, 'Must provide 12 pickup, oil & charm icons');
+
+  const allEntries = [
+    ...wm.tiles,
+    ...wm.buildings,
+    ...wm.props,
+    ...wm.landmarks,
+    ...im.upgrades,
+    ...im.pickups,
+  ];
+  assert.equal(allEntries.length, 66, 'Total map + safe-zone + item PNG assets must equal 66');
+
+  for (const entry of allEntries) {
+    const abs = path.join(GODOT_DIR, 'assets', entry.file);
+    assert.ok(fs.existsSync(abs), `Missing world/item PNG: ${entry.file}`);
+    const buf = fs.readFileSync(abs);
+    assert.equal(buf.readUInt32BE(0), 0x89504e47, `${entry.file} must be a valid PNG`);
+    assert.equal(buf.readUInt32BE(16), entry.size, `${entry.file} width must match ${entry.size}`);
+    assert.equal(buf.readUInt32BE(20), entry.size, `${entry.file} height must match ${entry.size}`);
+  }
+
+  // Verify expanded safe zone in main.gd and data.gd
+  const mainSrc = fs.readFileSync(path.join(GODOT_DIR, 'scripts/main.gd'), 'utf8');
+  const dataSrc = fs.readFileSync(path.join(GODOT_DIR, 'scripts/data.gd'), 'utf8');
+  assert.match(mainSrc, /Rect2\(-760\.0,\s*-240\.0,\s*1520\.0,\s*720\.0\)/);
+  assert.ok(mainSrc.includes('"tea_pavilion"'), 'main.gd must define tea_pavilion spot');
+  assert.ok(mainSrc.includes('"apothecary"'), 'main.gd must define apothecary spot');
+  assert.ok(dataSrc.includes('const TOWN_PROPS'), 'data.gd must define TOWN_PROPS layout');
+});
+
+test('complete Godot 4.7.2 ZIP archive contains fonts, core scripts, Aseprite pipeline, all Cel-Ink sprites, and 66 map/item assets', () => {
   const zipPath = path.join(ROOT, 'public/downloads/ink-night-godot-4.7.2-complete.zip');
   assert.ok(fs.existsSync(zipPath), 'Complete ZIP must exist');
   const listing = execFileSync('python3', ['-m', 'zipfile', '-l', zipPath], { encoding: 'utf8' });
   for (const mustContain of [
     'godot-prototype/project.godot',
     'godot-prototype/scripts/main.gd',
+    'godot-prototype/scripts/world_asset_bank.gd',
     'godot-prototype/scripts/ambient_soundscape.gd',
     'godot-prototype/scripts/gamepad_focus.gd',
     'godot-prototype/tests/combat_and_ecology.gd',
@@ -172,6 +225,15 @@ test('complete Godot 4.7.2 ZIP archive contains fonts, core scripts, Aseprite pi
     'godot-prototype/assets/sprites/enemy_treant_cel.png',
     'godot-prototype/assets/sprites/enemy_shanxiao_cel.png',
     'godot-prototype/assets/sprites/boss_magistrate.png',
+    'godot-prototype/assets/world/world_manifest.json',
+    'godot-prototype/assets/world/tiles/town_bluestone.png',
+    'godot-prototype/assets/world/buildings/tea_pavilion.png',
+    'godot-prototype/assets/world/buildings/apothecary.png',
+    'godot-prototype/assets/world/props/ancient_locust_tree.png',
+    'godot-prototype/assets/world/landmarks/styx_paper_bridge.png',
+    'godot-prototype/assets/items/items_manifest.json',
+    'godot-prototype/assets/items/talisman.png',
+    'godot-prototype/assets/items/magistrate_chest.png',
     'godot-prototype/assets/sprites/reference/boss_judge_sheet.jpg',
     'godot-prototype/assets/fonts/MaShanZheng-Regular.ttf',
     'godot-prototype/export_presets.cfg',

@@ -1,0 +1,287 @@
+{
+  "version": "2.0-full-items",
+  "upgrades": [
+    {
+      "id": "talisman",
+      "name": "朱砂辟邪符",
+      "en": "Cinnabar Talisman",
+      "category": "规则道具",
+      "size": 64,
+      "file": "items/talisman.png",
+      "res_path": "res://assets/items/talisman.png",
+      "desc": "受击无敌时间 +0.15s，行步速度 +8。"
+    },
+    {
+      "id": "crane",
+      "name": "云韶引魂鹤",
+      "en": "Soul-Guiding Crane",
+      "category": "世界道具",
+      "size": 64,
+      "file": "items/crane.png",
+      "res_path": "res://assets/items/crane.png",
+      "desc": "远距汲取墨魄宝石，立于人间回补气血。"
+    },
+    {
+      "id": "sword",
+      "name": "云韶断妄刃",
+      "en": "Severing Blade",
+      "category": "形态 · 生",
+      "size": 64,
+      "file": "items/sword.png",
+      "res_path": "res://assets/items/sword.png",
+      "desc": "武生剑气伤害 +4，出剑间隔 -0.03s。"
+    },
+    {
+      "id": "sleeve_spin",
+      "name": "白绫回风袖",
+      "en": "Wind-Whirl Sleeve",
+      "category": "形态 · 旦",
+      "size": 64,
+      "file": "items/sleeve_spin.png",
+      "res_path": "res://assets/items/sleeve_spin.png",
+      "desc": "青衣水袖范围 +18，伤害 +3，转速加快。"
+    },
+    {
+      "id": "lantern_fire",
+      "name": "照夜长明火",
+      "en": "Everlasting Flame",
+      "category": "形态 · 少年",
+      "size": 64,
+      "file": "items/lantern_fire.png",
+      "res_path": "res://assets/items/lantern_fire.png",
+      "desc": "少年灯火伤害 +5，照耀半径 +15。"
+    },
+    {
+      "id": "mask_freeze",
+      "name": "破煞油彩",
+      "en": "Warding Greasepaint",
+      "category": "变脸与破界",
+      "size": 64,
+      "file": "items/mask_freeze.png",
+      "res_path": "res://assets/items/mask_freeze.png",
+      "desc": "翻界定格伤害 +10，翻界后获 1 秒无敌。"
+    },
+    {
+      "id": "troupe_gong",
+      "name": "云韶金锣",
+      "en": "Golden Troupe Gong",
+      "category": "行当通用",
+      "size": 64,
+      "file": "items/troupe_gong.png",
+      "res_path": "res://assets/items/troupe_gong.png",
+      "desc": "三形态普攻伤害全量 +2，声震百鬼。"
+    },
+    {
+      "id": "gonglu",
+      "name": "戏台催阵鼓",
+      "en": "Urgent Stage Drum",
+      "category": "行当通用",
+      "size": 64,
+      "file": "items/gonglu.png",
+      "res_path": "res://assets/items/gonglu.png",
+      "desc": "每 5 秒轰出震波击退近敌，间隔再缩短。"
+    },
+    {
+      "id": "encore",
+      "name": "还魂替身偶",
+      "en": "Soul-Calling Effigy",
+      "category": "行当通用",
+      "size": 64,
+      "file": "items/encore.png",
+      "res_path": "res://assets/items/encore.png",
+      "desc": "气绝时以半血还魂复起，每局仅一次。"
+    },
+    {
+      "id": "soul_shield",
+      "name": "扎彩保命甲",
+      "en": "Paper-Armor Ward",
+      "category": "行当通用",
+      "size": 64,
+      "file": "items/soul_shield.png",
+      "res_path": "res://assets/items/soul_shield.png",
+      "desc": "气血上限 +20，强健身魄抵御阴煞。"
+    },
+    {
+      "id": "lamp_oil",
+      "name": "松脂明心油",
+      "en": "Pine-Resin Lamp Oil",
+      "category": "规则道具",
+      "size": 64,
+      "file": "items/lamp_oil.png",
+      "res_path": "res://assets/items/lamp_oil.png",
+      "desc": "灯圈范围扩张：人间每级 +30，诡界 +20。"
+    },
+    {
+      "id": "night_bell",
+      "name": "更夫惊魂铎",
+      "en": "Watchman's Chime",
+      "category": "规则道具",
+      "size": 64,
+      "file": "items/night_bell.png",
+      "res_path": "res://assets/items/night_bell.png",
+      "desc": "临破规前提前 0.5 秒急促鸣响预警。"
+    },
+    {
+      "id": "taboo_book",
+      "name": "阴司勾名折",
+      "en": "Bailiff's Roster",
+      "category": "规则道具",
+      "size": 64,
+      "file": "items/taboo_book.png",
+      "res_path": "res://assets/items/taboo_book.png",
+      "desc": "白纸差役追猎时长 -4s，触碰伤害 -3。"
+    },
+    {
+      "id": "yin_yang_mirror",
+      "name": "照妖阴阳鉴",
+      "en": "Yin-Yang Speculum",
+      "category": "世界道具",
+      "size": 64,
+      "file": "items/yin_yang_mirror.png",
+      "res_path": "res://assets/items/yin_yang_mirror.png",
+      "desc": "翻界轰出阴阳煞震，生旦二相伤害 +2。"
+    },
+    {
+      "id": "spirit_brand",
+      "name": "冥河引渡印",
+      "en": "Styx Passage Seal",
+      "category": "世界道具",
+      "size": 64,
+      "file": "items/spirit_brand.png",
+      "res_path": "res://assets/items/spirit_brand.png",
+      "desc": "诡界收割墨魄倍增，诡界灯火圈大幅扩张。"
+    },
+    {
+      "id": "shadow_walker",
+      "name": "化雾踏影步",
+      "en": "Mist-Shadow Stride",
+      "category": "世界道具",
+      "size": 64,
+      "file": "items/shadow_walker.png",
+      "res_path": "res://assets/items/shadow_walker.png",
+      "desc": "翻界瞬间身如残雾，2 秒内疾行如风。"
+    }
+  ],
+  "pickups": [
+    {
+      "id": "xp_gem_small",
+      "name": "墨魄碎晶",
+      "en": "Ink-Soul Shard",
+      "kind": "掉落物",
+      "size": 64,
+      "file": "items/xp_gem_small.png",
+      "res_path": "res://assets/items/xp_gem_small.png",
+      "desc": "击杀邪祟与山怪掉落的基础经验墨魄。"
+    },
+    {
+      "id": "xp_gem_large",
+      "name": "凝墨大魄",
+      "en": "Condensed Soul Cluster",
+      "kind": "掉落物",
+      "size": 64,
+      "file": "items/xp_gem_large.png",
+      "res_path": "res://assets/items/xp_gem_large.png",
+      "desc": "精英与 Boss 掉落的高纯度聚合墨魄晶簇。"
+    },
+    {
+      "id": "incense_coin",
+      "name": "香火铜钱",
+      "en": "Incense Coin",
+      "kind": "货币",
+      "size": 64,
+      "file": "items/incense_coin.png",
+      "res_path": "res://assets/items/incense_coin.png",
+      "desc": "用于渡墨镇祖火坛永久强化与扎彩故铺采买。"
+    },
+    {
+      "id": "oil_drop_vial",
+      "name": "灯油滴瓶",
+      "en": "Lantern Oil Vial",
+      "kind": "掉落物",
+      "size": 64,
+      "file": "items/oil_drop_vial.png",
+      "res_path": "res://assets/items/oil_drop_vial.png",
+      "desc": "局内拾取即时补充提灯灯油，延缓熄灯危机。"
+    },
+    {
+      "id": "mugwort_cake",
+      "name": "温热艾草糕",
+      "en": "Mugwort Rice Cake",
+      "kind": "补给品",
+      "size": 64,
+      "file": "items/mugwort_cake.png",
+      "res_path": "res://assets/items/mugwort_cake.png",
+      "desc": "济世药铺与战场补给，回复 25 点阳气气血。"
+    },
+    {
+      "id": "pine_oil",
+      "name": "松脂清油",
+      "en": "Pine-Resin Oil",
+      "kind": "老油坊灯油",
+      "size": 64,
+      "file": "items/pine_oil.png",
+      "res_path": "res://assets/items/pine_oil.png",
+      "desc": "人间灯圈 +28，灯油燃耗 -15%（稳健守规）。"
+    },
+    {
+      "id": "tung_oil",
+      "name": "桐油烈芯",
+      "en": "Fierce Tung Wick",
+      "kind": "老油坊灯油",
+      "size": 64,
+      "file": "items/tung_oil.png",
+      "res_path": "res://assets/items/tung_oil.png",
+      "desc": "全形态攻击威力 +15%，灯油燃耗 +10%（高攻速杀）。"
+    },
+    {
+      "id": "spirit_wax",
+      "name": "冥蜡冷芯",
+      "en": "Spirit-Wax Core",
+      "kind": "老油坊灯油",
+      "size": 64,
+      "file": "items/spirit_wax.png",
+      "res_path": "res://assets/items/spirit_wax.png",
+      "desc": "翻界冷却 -0.45 秒，行步速度 +12（高频变脸）。"
+    },
+    {
+      "id": "paper_ward",
+      "name": "纸扎替身符",
+      "en": "Paper Effigy Charm",
+      "kind": "扎彩符箓",
+      "size": 64,
+      "file": "items/paper_ward.png",
+      "res_path": "res://assets/items/paper_ward.png",
+      "desc": "本夜自带一次气绝半血复起并震退周敌（15 香火资）。"
+    },
+    {
+      "id": "calm_talisman",
+      "name": "镇魂安神符",
+      "en": "Soul-Calming Ward",
+      "kind": "扎彩符箓",
+      "size": 64,
+      "file": "items/calm_talisman.png",
+      "res_path": "res://assets/items/calm_talisman.png",
+      "desc": "本夜破戒宽限 +0.45 秒，白纸差役触伤 -4（12 香火资）。"
+    },
+    {
+      "id": "ancestral_ember",
+      "name": "祖火余烬",
+      "en": "Ancestral Fire Ember",
+      "kind": "祖火素材",
+      "size": 64,
+      "file": "items/ancestral_ember.png",
+      "res_path": "res://assets/items/ancestral_ember.png",
+      "desc": "渡墨镇青铜鼎坛淬炼出的温阳火种。"
+    },
+    {
+      "id": "magistrate_chest",
+      "name": "判官朱印匣",
+      "en": "Magistrate Seal Chest",
+      "kind": "Boss 掉落",
+      "size": 64,
+      "file": "items/magistrate_chest.png",
+      "res_path": "res://assets/items/magistrate_chest.png",
+      "desc": "击破纸扎判官后显现的封印宝箱，必含高阶名物与香火资。"
+    }
+  ]
+}

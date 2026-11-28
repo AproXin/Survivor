@@ -47,6 +47,9 @@ ACTORS=(
   "enemy_boar_cel:"
   "enemy_treant_cel:"
   "enemy_shanxiao_cel:--allow-vermilion"
+  "ghost_cel:"
+  "jiangshi_cel:--allow-vermilion"
+  "boss_magistrate_cel:--allow-vermilion"
 )
 
 for entry in "${ACTORS[@]}"; do
@@ -69,4 +72,4 @@ for entry in "${ACTORS[@]}"; do
   fi
 done
 
-echo "[InkPipeline] All 7 Cel-Ink multi-action spritesheets passed QA gate."
+echo "[InkPipeline] All 10 multi-direction Cel-Ink spritesheets passed QA gate."

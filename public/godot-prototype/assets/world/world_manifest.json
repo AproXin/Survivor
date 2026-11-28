@@ -1,0 +1,385 @@
+{
+  "version": "2.0-expanded-safe-zone",
+  "safe_zone_bounds": {
+    "x": -760,
+    "y": -240,
+    "w": 1520,
+    "h": 720
+  },
+  "tiles": [
+    {
+      "id": "town_bluestone",
+      "name": "湿润青石方砖",
+      "en": "Wet Bluestone Flagstones",
+      "zone": "town",
+      "size": 64,
+      "file": "world/tiles/town_bluestone.png",
+      "res_path": "res://assets/world/tiles/town_bluestone.png",
+      "desc": "渡墨镇中庭与主街铺地，雨夜微润反光。"
+    },
+    {
+      "id": "town_avenue",
+      "name": "雕纹御道石阶",
+      "en": "Carved Ceremonial Avenue",
+      "zone": "town",
+      "size": 64,
+      "file": "world/tiles/town_avenue.png",
+      "res_path": "res://assets/world/tiles/town_avenue.png",
+      "desc": "连通南影壁、祖火坛与镇北铁门的中轴石道。"
+    },
+    {
+      "id": "town_timber_deck",
+      "name": "廊下松木板地",
+      "en": "Weathered Timber Veranda",
+      "zone": "town",
+      "size": 64,
+      "file": "world/tiles/town_timber_deck.png",
+      "res_path": "res://assets/world/tiles/town_timber_deck.png",
+      "desc": "茶亭戏台、老油坊与药铺檐下木质地台。"
+    },
+    {
+      "id": "town_moss_cobble",
+      "name": "苔藓庭院石阶",
+      "en": "Mossy Courtyard Cobbles",
+      "zone": "town",
+      "size": 64,
+      "file": "world/tiles/town_moss_cobble.png",
+      "res_path": "res://assets/world/tiles/town_moss_cobble.png",
+      "desc": "安全区南院古井与古槐树下青苔石砖。"
+    },
+    {
+      "id": "wild_grave_earth",
+      "name": "荒坟落叶黑土",
+      "en": "Damp Graveyard Earth",
+      "zone": "mortal",
+      "size": 64,
+      "file": "world/tiles/wild_grave_earth.png",
+      "res_path": "res://assets/world/tiles/wild_grave_earth.png",
+      "desc": "乱葬岗与荒郊主地表，散落干枯落叶。"
+    },
+    {
+      "id": "wild_dirt_road",
+      "name": "荒郊碎石土路",
+      "en": "Winding Country Dirt Road",
+      "zone": "mortal",
+      "size": 64,
+      "file": "world/tiles/wild_dirt_road.png",
+      "res_path": "res://assets/world/tiles/wild_dirt_road.png",
+      "desc": "贯穿乱葬岗南北与东西的荒郊古道。"
+    },
+    {
+      "id": "wild_mountain_grass",
+      "name": "山林青黛荒草",
+      "en": "Overgrown Mountain Grass",
+      "zone": "mortal",
+      "size": 64,
+      "file": "world/tiles/wild_mountain_grass.png",
+      "res_path": "res://assets/world/tiles/wild_mountain_grass.png",
+      "desc": "白昼山林外围草地，山狼与野猪常出没于此。"
+    },
+    {
+      "id": "wild_dark_pond",
+      "name": "暗潭幽水波纹",
+      "en": "Twilight Dark Pond Water",
+      "zone": "mortal",
+      "size": 64,
+      "file": "world/tiles/wild_dark_pond.png",
+      "res_path": "res://assets/world/tiles/wild_dark_pond.png",
+      "desc": "东南暗潭与古桥下的深幽水面。"
+    },
+    {
+      "id": "spectral_cracked_stone",
+      "name": "渗墨裂纹玄石",
+      "en": "Ink-Soaked Cracked Stone",
+      "zone": "spectral",
+      "size": 64,
+      "file": "world/tiles/spectral_cracked_stone.png",
+      "res_path": "res://assets/world/tiles/spectral_cracked_stone.png",
+      "desc": "翻入诡界后的墨蚀地表，深蓝近黑。"
+    },
+    {
+      "id": "spectral_styx_water",
+      "name": "冥河惨白阴水",
+      "en": "Spectral Styx River",
+      "zone": "spectral",
+      "size": 64,
+      "file": "world/tiles/spectral_styx_water.png",
+      "res_path": "res://assets/world/tiles/spectral_styx_water.png",
+      "desc": "诡界冥河纸桥下的惨白雾水，锣响切莫窥澜。"
+    },
+    {
+      "id": "spectral_paper_ash",
+      "name": "纸灰鬼市石砖",
+      "en": "Paper-Ash Ghost Market",
+      "zone": "spectral",
+      "size": 64,
+      "file": "world/tiles/spectral_paper_ash.png",
+      "res_path": "res://assets/world/tiles/spectral_paper_ash.png",
+      "desc": "诡界镇口集市异化后的纸灰石板路。"
+    },
+    {
+      "id": "spectral_blood_slate",
+      "name": "煞阵朱纹祭石",
+      "en": "Crimson-Veined Altar Slate",
+      "zone": "spectral",
+      "size": 64,
+      "file": "world/tiles/spectral_blood_slate.png",
+      "res_path": "res://assets/world/tiles/spectral_blood_slate.png",
+      "desc": "纸扎判官降临与阴祠灵位周围的朱纹玄石。"
+    }
+  ],
+  "buildings": [
+    {
+      "id": "north_gate",
+      "name": "镇北铁门牌坊",
+      "en": "North Iron Gate Archway",
+      "spot": "north_gate",
+      "size": 224,
+      "file": "world/buildings/north_gate.png",
+      "res_path": "res://assets/world/buildings/north_gate.png",
+      "desc": "渡墨镇北向界关，跨过铁门即步入乱葬岗守夜。"
+    },
+    {
+      "id": "oil_shop",
+      "name": "老油坊",
+      "en": "Old Oil Press Shop",
+      "spot": "oil_shop",
+      "size": 224,
+      "file": "world/buildings/oil_shop.png",
+      "res_path": "res://assets/world/buildings/oil_shop.png",
+      "desc": "西街老字号，可调配松脂清油、桐油烈芯与冥蜡冷芯。"
+    },
+    {
+      "id": "paper_shop",
+      "name": "扎彩故铺",
+      "en": "Paper-Craft Shop",
+      "spot": "paper_shop",
+      "size": 224,
+      "file": "world/buildings/paper_shop.png",
+      "res_path": "res://assets/world/buildings/paper_shop.png",
+      "desc": "东街扎彩老铺，购置纸扎替身符与镇魂安神符。"
+    },
+    {
+      "id": "tea_pavilion",
+      "name": "月下茶亭戏台",
+      "en": "Moonlit Tea Pavilion & Stage",
+      "spot": "tea_pavilion",
+      "size": 224,
+      "file": "world/buildings/tea_pavilion.png",
+      "res_path": "res://assets/world/buildings/tea_pavilion.png",
+      "desc": "西厢新扩安全区地标：歇脚饮茶、听守夜旧闻并演练生旦身法。"
+    },
+    {
+      "id": "apothecary",
+      "name": "济世药铺",
+      "en": "Apothecary Medicine Hall",
+      "spot": "apothecary",
+      "size": 224,
+      "file": "world/buildings/apothecary.png",
+      "res_path": "res://assets/world/buildings/apothecary.png",
+      "desc": "东厢新扩安全区地标：温补气血、配制艾糕并查看禁忌解惑。"
+    },
+    {
+      "id": "ancestral_furnace",
+      "name": "辟邪祖火青铜鼎坛",
+      "en": "Ancestral Bronze Furnace Altar",
+      "spot": "furnace",
+      "size": 192,
+      "file": "world/buildings/ancestral_furnace.png",
+      "res_path": "res://assets/world/buildings/ancestral_furnace.png",
+      "desc": "镇心长明祖火祭坛，消耗香火资永久强化熬身/行步/芯火/聚灵。"
+    }
+  ],
+  "props": [
+    {
+      "id": "ancient_locust_tree",
+      "name": "百年古槐树",
+      "en": "Ancient Locust Tree",
+      "size": 128,
+      "file": "world/props/ancient_locust_tree.png",
+      "res_path": "res://assets/world/props/ancient_locust_tree.png",
+      "desc": "镇中四角庇荫古槐，夜风吹拂枝叶婆娑。"
+    },
+    {
+      "id": "ancient_well",
+      "name": "青苔古井",
+      "en": "Mossy Stone Well",
+      "size": 96,
+      "file": "world/props/ancient_well.png",
+      "res_path": "res://assets/world/props/ancient_well.png",
+      "desc": "南院深井，井水清冽，可驻足照影静心。"
+    },
+    {
+      "id": "courtyard_lantern",
+      "name": "暖光石灯笼",
+      "en": "Warm Courtyard Lantern",
+      "size": 96,
+      "file": "world/props/courtyard_lantern.png",
+      "res_path": "res://assets/world/props/courtyard_lantern.png",
+      "desc": "中轴石道两侧的长明石灯，散发暖琥珀光晕。"
+    },
+    {
+      "id": "notice_board",
+      "name": "悬榜木牌",
+      "en": "Taboo Notice Board",
+      "size": 96,
+      "file": "world/props/notice_board.png",
+      "res_path": "res://assets/world/props/notice_board.png",
+      "desc": "张贴今夜乱葬岗禁忌告示与守夜悬赏。"
+    },
+    {
+      "id": "tea_table",
+      "name": "木茶桌圆凳",
+      "en": "Wooden Tea Table",
+      "size": 96,
+      "file": "world/props/tea_table.png",
+      "res_path": "res://assets/world/props/tea_table.png",
+      "desc": "茶亭前清茶小桌，备有青瓷茶壶与木凳。"
+    },
+    {
+      "id": "oil_barrels",
+      "name": "松脂油瓮堆",
+      "en": "Pine-Resin Oil Vats",
+      "size": 96,
+      "file": "world/props/oil_barrels.png",
+      "res_path": "res://assets/world/props/oil_barrels.png",
+      "desc": "老油坊门外陈放的松脂桶与陶土油坛。"
+    },
+    {
+      "id": "street_lamp_post",
+      "name": "挑灯木柱",
+      "en": "Hexagonal Lamp Post",
+      "size": 96,
+      "file": "world/props/street_lamp_post.png",
+      "res_path": "res://assets/world/props/street_lamp_post.png",
+      "desc": "街巷转角挑挂六角宫灯的高木灯柱。"
+    },
+    {
+      "id": "incense_burner",
+      "name": "青石香炉",
+      "en": "Stone Incense Burner",
+      "size": 96,
+      "file": "world/props/incense_burner.png",
+      "res_path": "res://assets/world/props/incense_burner.png",
+      "desc": "药铺与祖火坛前的雕纹石炉，青烟袅袅。"
+    },
+    {
+      "id": "bamboo_planter",
+      "name": "青竹石盆景",
+      "en": "Potted Ink Bamboo",
+      "size": 96,
+      "file": "world/props/bamboo_planter.png",
+      "res_path": "res://assets/world/props/bamboo_planter.png",
+      "desc": "装点檐下廊角的石盆墨竹。"
+    },
+    {
+      "id": "opera_rack",
+      "name": "戏班兵器架",
+      "en": "Opera Prop Rack",
+      "size": 96,
+      "file": "world/props/opera_rack.png",
+      "res_path": "res://assets/world/props/opera_rack.png",
+      "desc": "月下戏台旁的云韶班长枪与靠旗木架。"
+    },
+    {
+      "id": "stone_bench",
+      "name": "雕花青石凳",
+      "en": "Carved Stone Bench",
+      "size": 96,
+      "file": "world/props/stone_bench.png",
+      "res_path": "res://assets/world/props/stone_bench.png",
+      "desc": "南院庭园供行人歇息的雕花石长凳。"
+    },
+    {
+      "id": "spirit_screen",
+      "name": "辟邪青石影壁",
+      "en": "Carved Spirit Screen",
+      "size": 128,
+      "file": "world/props/spirit_screen.png",
+      "res_path": "res://assets/world/props/spirit_screen.png",
+      "desc": "镇南正中影壁，阻挡阴风直贯祖火中庭。"
+    }
+  ],
+  "landmarks": [
+    {
+      "id": "stone_bridge",
+      "name": "古镇石桥",
+      "en": "Old Stone Bridge",
+      "realm": "mortal",
+      "size": 160,
+      "file": "world/landmarks/stone_bridge.png",
+      "res_path": "res://assets/world/landmarks/stone_bridge.png",
+      "desc": "人间暗潭上的青石拱桥，入诡界后化作冥河纸桥。"
+    },
+    {
+      "id": "styx_paper_bridge",
+      "name": "冥河纸桥",
+      "en": "Styx Paper Bridge",
+      "realm": "spectral",
+      "size": 160,
+      "file": "world/landmarks/styx_paper_bridge.png",
+      "res_path": "res://assets/world/landmarks/styx_paper_bridge.png",
+      "desc": "诡界同址异化地标：纸扎白桥悬灯，锣响切莫窥澜。"
+    },
+    {
+      "id": "ghost_market_stall",
+      "name": "鬼市纸铺",
+      "en": "Ghost Paper Market",
+      "realm": "spectral",
+      "size": 160,
+      "file": "world/landmarks/ghost_market_stall.png",
+      "res_path": "res://assets/world/landmarks/ghost_market_stall.png",
+      "desc": "镇口集市翻入诡界后的幽灯鬼市，收割墨魄与香火资加成。"
+    },
+    {
+      "id": "gravestone_stele",
+      "name": "老祠无字残碑",
+      "en": "Weathered Gravestone Stele",
+      "realm": "mortal",
+      "size": 128,
+      "file": "world/landmarks/gravestone_stele.png",
+      "res_path": "res://assets/world/landmarks/gravestone_stele.png",
+      "desc": "乱葬岗古碑与无字残碑，切忌在碑前久留。"
+    },
+    {
+      "id": "nether_altar",
+      "name": "阴祠灵位祭坛",
+      "en": "Nether Spirit Altar",
+      "realm": "spectral",
+      "size": 144,
+      "file": "world/landmarks/nether_altar.png",
+      "res_path": "res://assets/world/landmarks/nether_altar.png",
+      "desc": "老祠残碑入诡界后的朱烛灵位台，驻足积煞加速。"
+    },
+    {
+      "id": "spirit_gate",
+      "name": "西南阴门牌楼",
+      "en": "Southwest Spirit Gate",
+      "realm": "spectral",
+      "size": 144,
+      "file": "world/landmarks/spirit_gate.png",
+      "res_path": "res://assets/world/landmarks/spirit_gate.png",
+      "desc": "荒郊幽冥木石阴门，闻三声叩门切莫靠近。"
+    },
+    {
+      "id": "bamboo_grove",
+      "name": "墨竹丛林",
+      "en": "Ink-Wash Bamboo Grove",
+      "realm": "mortal",
+      "size": 144,
+      "file": "world/landmarks/bamboo_grove.png",
+      "res_path": "res://assets/world/landmarks/bamboo_grove.png",
+      "desc": "乱葬岗与山林间随风摇曳的浓墨翠竹群。"
+    },
+    {
+      "id": "ruined_wall",
+      "name": "断垣残壁",
+      "en": "Ruined Courtyard Wall",
+      "realm": "mortal",
+      "size": 144,
+      "file": "world/landmarks/ruined_wall.png",
+      "res_path": "res://assets/world/landmarks/ruined_wall.png",
+      "desc": "西北荒村青苔断墙，破晓前切莫越垣入影。"
+    }
+  ]
+}

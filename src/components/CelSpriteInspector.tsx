@@ -1,12 +1,15 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Crosshair, Download, Pause, Play } from 'lucide-react';
+import { Compass, Crosshair, Download, Pause, Play, RotateCw } from 'lucide-react';
 
 interface CelActorMeta {
   key: string;
   name: string;
   role: string;
-  category: 'hero' | 'day_enemy' | 'day_elite';
+  category: 'hero' | 'day_enemy' | 'day_elite' | 'night_enemy' | 'boss';
   size: number;
+  directions?: string[];
+  direction_count?: number;
+  frames_per_dir?: number;
   file: string;
   json_file: string;
   qa_json: string;
@@ -78,9 +81,12 @@ const FALLBACK_ACTORS: CelActorMeta[] = [
   {
     key: 'player_mortal',
     name: '提灯少年',
-    role: '凡界主角 · 120° 减速灯火锥',
+    role: '凡界主角 · 8向 120° 减速灯火锥',
     category: 'hero',
     size: 96,
+    directions: ['s', 'se', 'e', 'ne', 'n', 'nw', 'w', 'sw'],
+    direction_count: 8,
+    frames_per_dir: 29,
     file: 'player_mortal_cel.png',
     json_file: 'player_mortal_cel.json',
     qa_json: 'player_mortal_cel.qa.json',
@@ -97,6 +103,26 @@ const TAG_NAMES_ZH: Record<string, string> = {
   death: '倒地',
 };
 
+const DIR_LABELS_ZH: Record<string, string> = {
+  n: '正北 (N)',
+  ne: '东北 (NE)',
+  e: '正东 (E)',
+  se: '东南 (SE)',
+  s: '正南 (S)',
+  sw: '西南 (SW)',
+  w: '正西 (W)',
+  nw: '西北 (NW)',
+};
+
+const COMPASS_GRID: Array<Array<string | 'CENTER'>> = [
+  ['nw', 'n', 'ne'],
+  ['w', 'CENTER', 'e'],
+  ['sw', 's', 'se'],
+];
+
+const CLOCKWISE_8 = ['s', 'sw', 'w', 'nw', 'n', 'ne', 'e', 'se'];
+const CLOCKWISE_4 = ['s', 'w', 'n', 'e'];
+
 export function CelSpriteInspector({
   onInspectScript,
 }: {
@@ -107,11 +133,13 @@ export function CelSpriteInspector({
 
   const [sheet, setSheet] = useState<AsepriteSheetData | null>(null);
   const [qa, setQa] = useState<CelQaReport | null>(null);
-  const [activeTag, setActiveTag] = useState<string>('move');
+  const [baseTag, setBaseTag] = useState<string>('move');
+  const [activeDir, setActiveDir] = useState<string>('s');
+  const [autoRotate, setAutoRotate] = useState<boolean>(false);
   const [speed, setSpeed] = useState<number>(1);
   const [playing, setPlaying] = useState<boolean>(true);
   const [showGuides, setShowGuides] = useState<boolean>(true);
-  const [currentFrameIdx, setCurrentFrameIdx] = useState<number>(4);
+  const [currentFrameIdx, setCurrentFrameIdx] = useState<number>(0);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const imgRef = useRef<HTMLImageElement | null>(null);
@@ -137,6 +165,31 @@ export function CelSpriteInspector({
     [actors, selectedActorKey],
   );
 
+  const availableDirs = useMemo(() => {
+    if (currentActor?.directions && currentActor.directions.length > 0) {
+      return currentActor.directions;
+    }
+    if (sheet) {
+      const detected = CLOCKWISE_8.filter((d) =>
+        sheet.meta.frameTags.some((t) => t.name === `move_${d}` || t.name === `idle_${d}`),
+      );
+      if (detected.length > 0) return detected;
+    }
+    return ['s'];
+  }, [currentActor, sheet]);
+
+  const rotationOrder = useMemo(() => {
+    const base = availableDirs.length >= 8 ? CLOCKWISE_8 : CLOCKWISE_4;
+    const filtered = base.filter((d) => availableDirs.includes(d));
+    return filtered.length > 0 ? filtered : availableDirs;
+  }, [availableDirs]);
+
+  useEffect(() => {
+    if (!availableDirs.includes(activeDir)) {
+      setActiveDir(availableDirs[0] ?? 's');
+    }
+  }, [availableDirs, activeDir]);
+
   useEffect(() => {
     if (!currentActor) return;
     let active = true;
@@ -148,14 +201,11 @@ export function CelSpriteInspector({
       .then((data) => {
         if (!active || !data) return;
         setSheet(data);
-        const preferred = data.meta.frameTags.find((t) => t.name === activeTag)
-          ? activeTag
-          : (data.meta.frameTags.find((t) => t.name === 'move')?.name ??
-            data.meta.frameTags[0]?.name ??
-            'idle');
-        setActiveTag(preferred);
-        const tag = data.meta.frameTags.find((t) => t.name === preferred) ?? data.meta.frameTags[0];
-        if (tag) setCurrentFrameIdx(tag.from);
+        const baseTags = data.meta.frameTags.filter((t) => !t.name.includes('_'));
+        const preferredBase = baseTags.find((t) => t.name === baseTag)
+          ? baseTag
+          : (baseTags.find((t) => t.name === 'move')?.name ?? baseTags[0]?.name ?? 'idle');
+        setBaseTag(preferredBase);
       })
       .catch(() => {});
 
@@ -179,14 +229,30 @@ export function CelSpriteInspector({
     };
   }, [currentActor]);
 
+  const baseTagList = useMemo(() => {
+    if (!sheet) return [];
+    const bare = sheet.meta.frameTags.filter((t) => !t.name.includes('_'));
+    return bare.length > 0 ? bare : sheet.meta.frameTags.slice(0, 6);
+  }, [sheet]);
+
+  const resolvedTagName = useMemo(() => {
+    if (!sheet) return baseTag;
+    const dirCandidate = `${baseTag}_${activeDir}`;
+    if (sheet.meta.frameTags.some((t) => t.name === dirCandidate)) {
+      return dirCandidate;
+    }
+    return baseTag;
+  }, [sheet, baseTag, activeDir]);
+
   const tagObj = useMemo(() => {
     if (!sheet) return null;
     return (
-      sheet.meta.frameTags.find((t) => t.name === activeTag) ??
+      sheet.meta.frameTags.find((t) => t.name === resolvedTagName) ??
+      sheet.meta.frameTags.find((t) => t.name === baseTag) ??
       sheet.meta.frameTags[0] ??
       null
     );
-  }, [sheet, activeTag]);
+  }, [sheet, resolvedTagName, baseTag]);
 
   useEffect(() => {
     if (!tagObj) return;
@@ -196,15 +262,24 @@ export function CelSpriteInspector({
   useEffect(() => {
     if (!sheet || !tagObj || !playing) return;
     const frame = sheet.frames[currentFrameIdx] ?? sheet.frames[tagObj.from];
-    const baseMs = Math.max(40, frame?.duration ?? 100);
+    const baseMs = Math.max(40, frame?.duration ?? 95);
     const delayMs = Math.max(30, Math.round(baseMs / speed));
     const timer = window.setTimeout(() => {
-      setCurrentFrameIdx((prev) =>
-        prev >= tagObj.to ? tagObj.from : prev + 1,
-      );
+      if (currentFrameIdx >= tagObj.to) {
+        if (autoRotate && rotationOrder.length > 1) {
+          setActiveDir((prev) => {
+            const idx = rotationOrder.indexOf(prev);
+            return rotationOrder[(idx + 1) % rotationOrder.length];
+          });
+        } else {
+          setCurrentFrameIdx(tagObj.from);
+        }
+      } else {
+        setCurrentFrameIdx((prev) => prev + 1);
+      }
     }, delayMs);
     return () => window.clearTimeout(timer);
-  }, [sheet, tagObj, playing, currentFrameIdx, speed]);
+  }, [sheet, tagObj, playing, currentFrameIdx, speed, autoRotate, rotationOrder]);
 
   useEffect(() => {
     if (!imgRef.current || !canvasRef.current || !sheet) return;
@@ -279,12 +354,26 @@ export function CelSpriteInspector({
   }, [imgVersion, sheet, currentFrameIdx, showGuides]);
 
   const activeFrame = sheet?.frames[currentFrameIdx] ?? null;
-  const activeTagQa = qa?.tags.find((t) => t.name === activeTag) ?? null;
+
+  const displayedQaTags = useMemo(() => {
+    if (!qa) return [];
+    const suffix = `_${activeDir}`;
+    const matched = qa.tags.filter((t) => t.name.endsWith(suffix));
+    if (matched.length > 0) return matched;
+    return qa.tags.filter((t) => !t.name.includes('_'));
+  }, [qa, activeDir]);
+
+  const activeTagQa =
+    qa?.tags.find((t) => t.name === resolvedTagName) ??
+    qa?.tags.find((t) => t.name === baseTag) ??
+    null;
+
   const maxFootDriftPx = qa
     ? qa.tags.reduce((acc, t) => Math.max(acc, t.footDriftPx), 0)
     : 0;
   const anchorX = qa?.anchorSpec.centerX ?? (currentActor.size === 96 ? 48 : 32);
   const anchorY = qa?.anchorSpec.footY ?? (currentActor.size === 96 ? 90 : 60);
+  const dirCount = currentActor.direction_count ?? availableDirs.length;
 
   return (
     <section
@@ -294,10 +383,10 @@ export function CelSpriteInspector({
       <div className="px-5 py-4 border-b border-[#243239] flex flex-wrap items-center justify-between gap-4">
         <div>
           <h3 className="text-base font-bold text-[#FAF6EA]">
-            45° 俯视角 Cel-Ink 多动作精灵检视器（三形态主角 + 白昼 4 怪 · 共 {actors.length} 套）
+            45° 俯视角多向流畅精灵检视器（主角 8 向 + 昼夜敌怪/Boss 4 向 · 共 {actors.length} 套）
           </h3>
           <p className="text-xs text-[#8A9A94] mt-1">
-            4× 超采样合成 + Aseprite JSON Tag 直连 <span className="font-mono text-[#EDE6D6]">InkSpriteBank</span> · 支持本地 <span className="font-mono text-[#EDE6D6]">$ASEPRITE</span> Lua/CLI 与 Python QA 自动验收
+            躯干质心锁点 + 周期步态相位 + 2D 多行图集直连 <span className="font-mono text-[#EDE6D6]">InkSpriteBank</span> · 支持 8/4 向罗盘实测与 360° 自动转向
           </p>
         </div>
 
@@ -324,6 +413,7 @@ export function CelSpriteInspector({
       <div className="px-5 py-3 bg-[#0C1215] border-b border-[#243239] flex flex-wrap items-center gap-2">
         {actors.map((actor) => {
           const active = actor.key === currentActor.key;
+          const dirs = actor.direction_count ?? actor.directions?.length ?? 4;
           return (
             <button
               key={actor.key}
@@ -337,8 +427,19 @@ export function CelSpriteInspector({
               }`}
             >
               {actor.name}
-              <span className={`ml-1.5 font-num text-[11px] ${active ? 'text-[#0E1418]/75' : 'text-[#7F8E8A]'}`}>
-                {actor.size}px
+              <span
+                className={`ml-1.5 font-num text-[11px] ${
+                  active ? 'text-[#0E1418]/80' : 'text-[#9CE0C2]'
+                }`}
+              >
+                {dirs}向
+              </span>
+              <span
+                className={`ml-1 font-num text-[11px] ${
+                  active ? 'text-[#0E1418]/70' : 'text-[#7F8E8A]'
+                }`}
+              >
+                · {actor.size}px
               </span>
             </button>
           );
@@ -346,8 +447,8 @@ export function CelSpriteInspector({
       </div>
 
       <div className="p-5 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left: Interactive Canvas Player */}
-        <div className="lg:col-span-5 space-y-4">
+        {/* Left: Interactive Canvas Player + 8/4-Way Compass */}
+        <div className="lg:col-span-6 space-y-4 min-w-0">
           <div className="flex flex-col sm:flex-row gap-4 items-start">
             <canvas
               ref={canvasRef}
@@ -361,58 +462,126 @@ export function CelSpriteInspector({
             <div className="flex-1 min-w-0 space-y-3">
               <div className="space-y-1">
                 <div className="text-xs font-semibold text-[#E8B34A] truncate">
-                  {currentActor.name} · {currentActor.role}
+                  {currentActor.name} · {dirCount} 方向 ({qa ? `${qa.dimensions.frameCount} 帧` : `${currentActor.size}px`})
                 </div>
                 <div className="font-mono text-sm text-[#FAF6EA] font-num">
-                  {activeTag} · 帧 #{currentFrameIdx}
+                  {resolvedTagName} · 帧 #{currentFrameIdx}
                   {activeFrame ? ` (${activeFrame.duration} ms)` : ''}
                 </div>
-                <div className="text-xs text-[#8A9A94] font-num whitespace-nowrap">
-                  锚点 x={anchorX} · 脚底线 y={anchorY}
+                <div className="text-xs text-[#8A9A94] font-num">
+                  朝向 {DIR_LABELS_ZH[activeDir] ?? activeDir.toUpperCase()} · 锚点 ({anchorX}, {anchorY})
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setPlaying((p) => !p)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#19242A] hover:bg-[#223139] border border-[#344750] text-xs font-semibold text-[#FAF6EA] cursor-pointer whitespace-nowrap"
+              {/* 3x3 Compass Direction Pad + Action Controls */}
+              <div className="flex flex-wrap items-start gap-3">
+                <div
+                  data-compass-pad="true"
+                  className="grid grid-cols-3 gap-1 bg-[#080C0E] p-1.5 border border-[#243239] shrink-0"
                 >
-                  {playing ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-                  <span>{playing ? '暂停' : '播放'}</span>
-                </button>
+                  {COMPASS_GRID.flat().map((cell) => {
+                    if (cell === 'CENTER') {
+                      return (
+                        <button
+                          key="center"
+                          type="button"
+                          data-auto-rotate="true"
+                          title={autoRotate ? '停止 360° 自动转向' : '开启 360° 自动转向'}
+                          onClick={() => setAutoRotate((v) => !v)}
+                          className={`w-8 h-7 flex items-center justify-center border text-[11px] font-bold cursor-pointer transition-colors ${
+                            autoRotate
+                              ? 'bg-[#9CE0C2] text-[#0E1418] border-[#9CE0C2]'
+                              : 'bg-[#141E23] text-[#B9B09A] border-[#2C3C44] hover:text-[#FAF6EA]'
+                          }`}
+                        >
+                          <RotateCw className={`w-3.5 h-3.5 ${autoRotate ? 'animate-spin' : ''}`} />
+                        </button>
+                      );
+                    }
+                    const enabled = availableDirs.includes(cell);
+                    const selected = activeDir === cell;
+                    return (
+                      <button
+                        key={cell}
+                        type="button"
+                        disabled={!enabled}
+                        data-dir-btn={cell}
+                        title={DIR_LABELS_ZH[cell] ?? cell.toUpperCase()}
+                        onClick={() => {
+                          setAutoRotate(false);
+                          setActiveDir(cell);
+                        }}
+                        className={`w-8 h-7 font-mono text-[10px] font-bold border transition-colors ${
+                          !enabled
+                            ? 'bg-[#0A0F12] text-[#35444A] border-[#172025] cursor-not-allowed'
+                            : selected
+                              ? 'bg-[#E8B34A] text-[#0E1418] border-[#E8B34A] cursor-pointer'
+                              : 'bg-[#10171B] text-[#B9B09A] border-[#26343B] hover:text-[#FAF6EA] hover:border-[#3E535D] cursor-pointer'
+                        }`}
+                      >
+                        {cell.toUpperCase()}
+                      </button>
+                    );
+                  })}
+                </div>
 
-                <button
-                  type="button"
-                  data-toggle-guides="true"
-                  onClick={() => setShowGuides((g) => !g)}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 border text-xs font-semibold cursor-pointer whitespace-nowrap ${
-                    showGuides
-                      ? 'bg-[#223139] border-[#E8B34A] text-[#FAF6EA]'
-                      : 'bg-[#10171B] border-[#344750] text-[#B9B09A]'
-                  }`}
-                >
-                  <Crosshair className="w-3.5 h-3.5 text-[#E8B34A]" />
-                  <span>{showGuides ? '隐藏锚点标线' : '显示锚点标线'}</span>
-                </button>
-              </div>
+                <div className="space-y-2 min-w-[132px] flex-1">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setPlaying((p) => !p)}
+                      className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-[#19242A] hover:bg-[#223139] border border-[#344750] text-xs font-semibold text-[#FAF6EA] cursor-pointer whitespace-nowrap"
+                    >
+                      {playing ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
+                      <span>{playing ? '暂停' : '播放'}</span>
+                    </button>
 
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs text-[#8A9A94] mr-1">倍速</span>
-                {[0.5, 1, 1.5].map((s) => (
+                    <button
+                      type="button"
+                      data-toggle-guides="true"
+                      onClick={() => setShowGuides((g) => !g)}
+                      className={`inline-flex items-center gap-1 px-2.5 py-1.5 border text-xs font-semibold cursor-pointer whitespace-nowrap ${
+                        showGuides
+                          ? 'bg-[#223139] border-[#E8B34A] text-[#FAF6EA]'
+                          : 'bg-[#10171B] border-[#344750] text-[#B9B09A]'
+                      }`}
+                    >
+                      <Crosshair className="w-3 h-3 text-[#E8B34A]" />
+                      <span>{showGuides ? '锚点开' : '锚点关'}</span>
+                    </button>
+                  </div>
+
                   <button
-                    key={s}
                     type="button"
-                    onClick={() => setSpeed(s)}
-                    className={`px-2.5 py-1 text-xs font-num font-semibold border cursor-pointer whitespace-nowrap ${
-                      speed === s
-                        ? 'bg-[#E8B34A] text-[#0E1418] border-[#E8B34A]'
-                        : 'bg-[#10171B] text-[#B9B09A] border-[#26343B] hover:text-[#FAF6EA]'
+                    onClick={() => setAutoRotate((v) => !v)}
+                    className={`w-full inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 border text-[11px] font-semibold cursor-pointer whitespace-nowrap transition-colors ${
+                      autoRotate
+                        ? 'bg-[#162C25] border-[#9CE0C2] text-[#9CE0C2]'
+                        : 'bg-[#0C1215] border-[#26343B] text-[#B9B09A] hover:text-[#FAF6EA]'
                     }`}
                   >
-                    {s}x
+                    <Compass className="w-3 h-3 shrink-0" />
+                    <span>{autoRotate ? '360° 转向播放中' : '360° 自动转向'}</span>
                   </button>
-                ))}
+
+                  <div className="flex items-center gap-1 flex-wrap">
+                    <span className="text-[11px] text-[#8A9A94] whitespace-nowrap mr-0.5">倍速</span>
+                    {[0.5, 1, 1.5].map((s) => (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => setSpeed(s)}
+                        className={`px-2 py-0.5 text-[11px] font-num font-semibold border cursor-pointer whitespace-nowrap ${
+                          speed === s
+                            ? 'bg-[#E8B34A] text-[#0E1418] border-[#E8B34A]'
+                            : 'bg-[#10171B] text-[#B9B09A] border-[#26343B] hover:text-[#FAF6EA]'
+                        }`}
+                      >
+                        {s}x
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
 
               {activeTagQa && (
@@ -422,10 +591,14 @@ export function CelSpriteInspector({
                     <span className="text-[#9CE0C2] font-semibold">
                       {activeTagQa.footDriftPx} px
                     </span>{' '}
-                    (y={activeTagQa.footYMin === activeTagQa.footYMax ? activeTagQa.footYMin : `${activeTagQa.footYMin}–${activeTagQa.footYMax}`})
+                    (y=
+                    {activeTagQa.footYMin === activeTagQa.footYMax
+                      ? activeTagQa.footYMin
+                      : `${activeTagQa.footYMin}–${activeTagQa.footYMax}`}
+                    )
                   </div>
                   <div className="whitespace-nowrap">
-                    帧间动作：{(activeTagQa.avgMotionDelta * 100).toFixed(1)}% · 最小{' '}
+                    帧间平滑幅值：{(activeTagQa.avgMotionDelta * 100).toFixed(1)}% · 最小{' '}
                     {(activeTagQa.minMotionDelta * 100).toFixed(1)}%
                   </div>
                 </div>
@@ -433,17 +606,17 @@ export function CelSpriteInspector({
             </div>
           </div>
 
-          {/* Tag Switcher Bar */}
+          {/* Base Action Tag Switcher Bar */}
           <div className="flex flex-wrap gap-1.5">
-            {(sheet?.meta.frameTags ?? []).map((tag) => {
-              const active = activeTag === tag.name;
+            {baseTagList.map((tag) => {
+              const active = baseTag === tag.name;
               const fCount = tag.to - tag.from + 1;
               return (
                 <button
                   key={tag.name}
                   type="button"
                   data-cel-tag={tag.name}
-                  onClick={() => setActiveTag(tag.name)}
+                  onClick={() => setBaseTag(tag.name)}
                   className={`px-3 py-1.5 text-xs font-semibold border cursor-pointer whitespace-nowrap transition-colors ${
                     active
                       ? 'bg-[#E8B34A] text-[#0E1418] border-[#E8B34A]'
@@ -457,8 +630,8 @@ export function CelSpriteInspector({
           </div>
         </div>
 
-        {/* Right: QA Gate Summary + Tag Metrics Table */}
-        <div className="lg:col-span-7 space-y-4">
+        {/* Right: QA Gate Summary + Active Direction Tag Metrics Table */}
+        <div className="lg:col-span-6 space-y-4 min-w-0">
           <div className="grid grid-cols-2 sm:grid-cols-4 border border-[#243239] bg-[#0B1013] divide-y sm:divide-y-0 sm:divide-x divide-[#243239]">
             <div className="p-3.5">
               <div className="text-[11px] text-[#8A9A94]">QA 闸门状态</div>
@@ -467,28 +640,38 @@ export function CelSpriteInspector({
               </div>
             </div>
             <div className="p-3.5">
-              <div className="text-[11px] text-[#8A9A94]">
-                {currentActor.allow_vermilion ? '精英红眼像素' : '朱红像素检测'}
-              </div>
+              <div className="text-[11px] text-[#8A9A94]">多向图集规模</div>
               <div className="mt-1 font-num text-sm font-bold text-[#FAF6EA]">
-                {qa ? `${qa.vermilionPixels} 像素` : '—'}
+                {qa
+                  ? `${dirCount}向 · ${qa.dimensions.frameCount} 帧`
+                  : `${dirCount}向`}
               </div>
             </div>
             <div className="p-3.5">
-              <div className="text-[11px] text-[#8A9A94]">连续重复帧</div>
+              <div className="text-[11px] text-[#8A9A94]">
+                {currentActor.allow_vermilion ? '朱红特征像素' : '朱红像素检测'}
+              </div>
               <div className="mt-1 font-num text-sm font-bold text-[#FAF6EA]">
-                {qa ? `${qa.duplicatePairs} 重复帧` : '—'}
+                {qa ? `${qa.vermilionPixels} px · ${qa.duplicatePairs} 重帧` : '—'}
               </div>
             </div>
             <div className="p-3.5">
               <div className="text-[11px] text-[#8A9A94]">最大脚底漂移</div>
               <div className="mt-1 font-num text-sm font-bold text-[#FAF6EA]">
-                {qa ? `脚底漂移 ${maxFootDriftPx}px` : '—'}
+                {qa ? `${maxFootDriftPx} px` : '—'}
               </div>
             </div>
           </div>
 
           <div className="border border-[#243239] overflow-x-auto">
+            <div className="px-3.5 py-2 bg-[#0B1013] border-b border-[#243239] flex items-center justify-between text-[11px] text-[#8A9A94]">
+              <span>
+                当前朝向：<strong className="text-[#E8B34A]">{DIR_LABELS_ZH[activeDir] ?? activeDir.toUpperCase()}</strong>
+              </span>
+              <span className="font-num">
+                图集 {qa ? `${qa.dimensions.width}×${qa.dimensions.height}` : '—'} · 共 {qa?.tags.length ?? 0} 组定向 Tag
+              </span>
+            </div>
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="bg-[#0C1215] border-b border-[#243239] text-[#8A9A94] whitespace-nowrap">
@@ -500,33 +683,33 @@ export function CelSpriteInspector({
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#1B262C] font-num">
-                {qa &&
-                  qa.tags.map((info) => {
-                    const selected = info.name === activeTag;
-                    return (
-                      <tr
-                        key={info.name}
-                        onClick={() => setActiveTag(info.name)}
-                        className={`cursor-pointer transition-colors ${
-                          selected
-                            ? 'bg-[#19242A] text-[#FAF6EA]'
-                            : 'bg-[#10171B] text-[#B9B09A] hover:bg-[#141E23]'
-                        }`}
-                      >
-                        <td className="px-3.5 py-2 font-mono text-[#E8B34A]">{info.name}</td>
-                        <td className="px-3.5 py-2">
-                          {info.from} – {info.to}
-                        </td>
-                        <td className="px-3.5 py-2 text-right">{info.frameCount}</td>
-                        <td className="px-3.5 py-2 text-right text-[#9CE0C2]">
-                          {info.footDriftPx} px
-                        </td>
-                        <td className="px-3.5 py-2 text-right">
-                          {(info.avgMotionDelta * 100).toFixed(1)}%
-                        </td>
-                      </tr>
-                    );
-                  })}
+                {displayedQaTags.map((info) => {
+                  const selected = info.name === resolvedTagName || info.name === baseTag;
+                  const rowBase = info.name.includes('_') ? info.name.split('_')[0] : info.name;
+                  return (
+                    <tr
+                      key={info.name}
+                      onClick={() => setBaseTag(rowBase)}
+                      className={`cursor-pointer transition-colors ${
+                        selected
+                          ? 'bg-[#19242A] text-[#FAF6EA]'
+                          : 'bg-[#10171B] text-[#B9B09A] hover:bg-[#141E23]'
+                      }`}
+                    >
+                      <td className="px-3.5 py-2 font-mono text-[#E8B34A]">{info.name}</td>
+                      <td className="px-3.5 py-2">
+                        {info.from} – {info.to}
+                      </td>
+                      <td className="px-3.5 py-2 text-right">{info.frameCount}</td>
+                      <td className="px-3.5 py-2 text-right text-[#9CE0C2]">
+                        {info.footDriftPx} px
+                      </td>
+                      <td className="px-3.5 py-2 text-right">
+                        {(info.avgMotionDelta * 100).toFixed(1)}%
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

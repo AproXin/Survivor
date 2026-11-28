@@ -1,0 +1,19 @@
+@import "tailwindcss";
+
+@layer base {
+  html,
+  body {
+    font-family: 'Noto Serif SC', 'PingFang SC', 'Hiragino Sans GB', serif;
+    background-color: #0b1013;
+    color: #ede6d6;
+  }
+}
+
+.font-brush {
+  font-family: 'Ma Shan Zheng', 'Noto Serif SC', serif;
+}
+
+.font-num {
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+}

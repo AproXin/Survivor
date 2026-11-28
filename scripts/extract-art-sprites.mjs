@@ -1,23 +1,27 @@
 #!/usr/bin/env node
 /**
- * Ink Night: Strict 45-Degree High-Angle Top-Down Pixel-Art Sprite Extractor & Assembler
+ * Ink Night: Smooth Multi-Direction (8-Way Heroes + 4-Way Enemies) 45° Top-Down Sprite Extractor
  *
- * Extracts authentic studio-grade 45° overhead top-down dark Chinese folklore pixel-art
- * sprites from all 6 unified 45° top-down source sheets (via ImageMagick `convert`),
- * removes the flat neutral mid-grey background with enclosed-hole cleanup & 1px anti-halo
- * defringing, enforces strict hero zero-vermilion rules, locks footline anchors, and outputs:
- *   1. All 7 Cel-Ink multi-action spritesheets + Aseprite JSON-Array metadata:
- *        - player_mortal_cel (96x96, 29f, 6 tags, 0 vermilion)
- *        - player_sheng_cel  (96x96, 29f, 6 tags, 0 vermilion)
- *        - player_dan_cel    (96x96, 29f, 6 tags, 0 vermilion)
- *        - enemy_wolf_cel    (64x64, 19f, 5 tags, 0 vermilion)
- *        - enemy_boar_cel    (64x64, 19f, 5 tags, 0 vermilion)
- *        - enemy_treant_cel  (64x64, 19f, 5 tags, 0 vermilion)
- *        - enemy_shanxiao_cel(96x96, 19f, 5 tags, crimson eyes allowed)
- *   2. All 11 legacy 8-frame horizontal strip spritesheets (manifest.json) strictly adhering
- *      to Godot's `walk(0..3) + hit(4) + death(5..7)` protocol, quantized cleanly to <= 16
- *      colors each + verified `palette-report.json`.
- *   3. Synced individual frames in `art_pipeline/frames_96/` and updated 45° reference sheets.
+ * Extracts studio-grade 45° overhead top-down pixel-art sprites from the 6 directional source sheets,
+ * removes flat neutral mid-grey background with enclosed-hole cleanup & 1px anti-halo defringing,
+ * locks torso center-of-mass (pivot_x) and footline (footY) for silky-smooth zero-jitter playback,
+ * enforces zero-vermilion rules on heroes & non-crimson beasts, and outputs to BOTH
+ * `godot-prototype/assets/sprites/` and root `assets/sprites/`:
+ *
+ *   1. 3 Heroes — FULL 8 DIRECTIONS (s, se, e, ne, n, nw, w, sw) × 29 smooth frames (232f, 2784×768):
+ *        - player_mortal_cel (96×96, 8-dir, 0 vermilion)
+ *        - player_sheng_cel  (96×96, 8-dir, 0 vermilion)
+ *        - player_dan_cel    (96×96, 8-dir, 0 vermilion)
+ *   2. 4 Daytime + 3 Core Night/Boss Actors — FULL 4 DIRECTIONS (s/down, e/side, n/up, w/left) × 19 smooth frames (76f):
+ *        - enemy_wolf_cel       (64×64, 4-dir, 0 vermilion)
+ *        - enemy_boar_cel       (64×64, 4-dir, 0 vermilion)
+ *        - enemy_treant_cel     (64×64, 4-dir, 0 vermilion)
+ *        - enemy_shanxiao_cel   (96×96, 4-dir, crimson eyes allowed)
+ *        - ghost_cel            (64×64, 4-dir, 0 vermilion)
+ *        - jiangshi_cel         (64×64, 4-dir, talisman seal allowed)
+ *        - boss_magistrate_cel  (96×96, 4-dir, cinnabar brush allowed)
+ *   3. All 11 Legacy 8-frame horizontal strips (manifest.json) quantized to <= 16/18 colors.
+ *   4. Synced `cel_manifest.json`, `manifest.json`, `palette-report.json`, reference sheets, and `art_pipeline/` frames.
  */
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -26,14 +30,24 @@ import zlib from 'node:zlib';
 
 const ROOT = process.cwd();
 const GODOT_DIR = path.join(ROOT, 'godot-prototype');
-const SPRITES_DIR = path.join(GODOT_DIR, 'assets/sprites');
-const REF_DIR = path.join(SPRITES_DIR, 'reference');
-const FRAMES_96_DIR = path.join(GODOT_DIR, 'art_pipeline/frames_96');
+const SPRITES_DIRS = [path.join(GODOT_DIR, 'assets/sprites')];
+if (fs.existsSync(path.join(ROOT, 'project.godot'))) {
+  SPRITES_DIRS.push(path.join(ROOT, 'assets/sprites'));
+}
 const IMG_DIR = path.join(ROOT, 'src/assets/images');
 
-fs.mkdirSync(SPRITES_DIR, { recursive: true });
-fs.mkdirSync(REF_DIR, { recursive: true });
-fs.mkdirSync(FRAMES_96_DIR, { recursive: true });
+for (const d of SPRITES_DIRS) {
+  fs.mkdirSync(d, { recursive: true });
+  fs.mkdirSync(path.join(d, 'reference'), { recursive: true });
+}
+
+function writeToSpriteDirs(relFile, content) {
+  for (const d of SPRITES_DIRS) {
+    const target = path.join(d, relFile);
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.writeFileSync(target, content);
+  }
+}
 
 // ---------------- PNG Encoder (8-bit RGBA) ----------------
 const CRC_TABLE = (() => {
@@ -66,8 +80,8 @@ function encodePngRgba(w, h, rgba) {
   const ihdr = Buffer.alloc(13);
   ihdr.writeUInt32BE(w, 0);
   ihdr.writeUInt32BE(h, 4);
-  ihdr[8] = 8; // bit depth
-  ihdr[9] = 6; // RGBA
+  ihdr[8] = 8;
+  ihdr[9] = 6;
   const raw = Buffer.alloc((w * 4 + 1) * h);
   for (let y = 0; y < h; y++) {
     raw[y * (w * 4 + 1)] = 0;
@@ -86,10 +100,6 @@ function loadJpgRgba(filePath) {
   return { w, h, rgba };
 }
 
-/**
- * Removes uniform flat neutral-grey background via border flood-fill,
- * enclosed-cavity cleanup (gaps between limbs/weapons/sleeves), and 1px anti-halo defringe.
- */
 function buildBgMask(sheet, { tol = 38, removeHoles = true, defringe = true } = {}) {
   const { w, h, rgba } = sheet;
   const corners = [0, (w - 1) * 4, (h - 1) * w * 4, (h * w - 1) * 4];
@@ -125,7 +135,6 @@ function buildBgMask(sheet, { tol = 38, removeHoles = true, defringe = true } = 
     if (y < h - 1) tryPush(x, y + 1);
   }
 
-  // Punch out enclosed neutral-grey background holes (between limbs, sleeves, plumes, weapon handles)
   if (removeHoles) {
     const cand = new Uint8Array(w * h);
     for (let i = 0; i < w * h; i++) {
@@ -141,8 +150,7 @@ function buildBgMask(sheet, { tol = 38, removeHoles = true, defringe = true } = 
       let qh = 0, qt = 0;
       q[qt++] = i;
       vis[i] = 1;
-      let darkBorder = 0;
-      let totalBorder = 0;
+      let darkBorder = 0, totalBorder = 0;
       while (qh < qt) {
         const ci = q[qh++];
         const cx = ci % w, cy = (ci / w) | 0;
@@ -166,7 +174,6 @@ function buildBgMask(sheet, { tol = 38, removeHoles = true, defringe = true } = 
     }
   }
 
-  // 1px anti-halo defringe against the neutral-grey background
   if (defringe) {
     const toDrop = [];
     for (let y = 1; y < h - 1; y++) {
@@ -179,9 +186,7 @@ function buildBgMask(sheet, { tol = 38, removeHoles = true, defringe = true } = 
           const d = Math.abs(r - bgR) + Math.abs(g - bgG) + Math.abs(b - bgB);
           const sat = Math.max(r, g, b) - Math.min(r, g, b);
           const lum = (r * 3 + g * 6 + b) / 10;
-          if (d <= 82 && sat <= 26 && lum >= 74) {
-            toDrop.push(i);
-          }
+          if (d <= 82 && sat <= 26 && lum >= 74) toDrop.push(i);
         }
       }
     }
@@ -191,11 +196,7 @@ function buildBgMask(sheet, { tol = 38, removeHoles = true, defringe = true } = 
   return { isBg, bgR, bgG, bgB };
 }
 
-/**
- * Extracts all sprites in a Y-band by X-column projection segments.
- * Preserves detached pixel particles (e.g., flame sparks, boss paper embers) inside each sprite column!
- */
-function extractRowSegments(sheet, isBg, y0, y1, { minWidth = 28, minPixels = 12 } = {}) {
+function extractRowSegments(sheet, isBg, y0, y1, { minWidth = 22, minPixels = 16, stripFloorShadow = false } = {}) {
   const { w, rgba } = sheet;
   const col = new Int32Array(w);
   for (let y = y0; y < y1; y++) {
@@ -235,76 +236,67 @@ function extractRowSegments(sheet, isBg, y0, y1, { minWidth = 28, minPixels = 12
       for (let x = minX; x <= maxX; x++) {
         const idx = y * w + x;
         if (isBg[idx]) continue;
-        const doff = ((y - minY) * cw + (x - minX)) * 4;
         const soff = idx * 4;
+        // Optionally remove detached soft oval drop shadows at very bottom (e.g. Jiangshi)
+        if (stripFloorShadow && y >= maxY - 12) {
+          const r = rgba[soff], g = rgba[soff + 1], b = rgba[soff + 2];
+          const sat = Math.max(r, g, b) - Math.min(r, g, b);
+          const lum = (r * 3 + g * 6 + b) / 10;
+          if (sat <= 14 && lum >= 78 && lum <= 118) continue;
+        }
+        const doff = ((y - minY) * cw + (x - minX)) * 4;
         buf[doff] = rgba[soff];
         buf[doff + 1] = rgba[soff + 1];
         buf[doff + 2] = rgba[soff + 2];
         buf[doff + 3] = 255;
       }
     }
-    return { minX, minY, maxX, maxY, w: cw, h: ch, rgba: buf, pixels: cnt };
+    return trimSprite(cw, ch, buf, minX, minY);
   }).filter((s) => s.pixels >= minPixels);
 }
 
-/**
- * Extracts 2D connected components inside a Y-band (used when adjacent sleeves overhang in X without touching in 2D).
- */
-function extractRowCCs(sheet, isBg, y0, y1, { minPixels = 450 } = {}) {
-  const { w, h, rgba } = sheet;
-  const vis = new Uint8Array(w * h);
-  const q = new Int32Array(w * h);
-  const comps = [];
-  for (let y = y0; y < y1; y++) {
+function trimSprite(w, h, rgba, origX = 0, origY = 0) {
+  let minX = w, maxX = -1, minY = h, maxY = -1, pixels = 0;
+  for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
-      const idx = y * w + x;
-      if (isBg[idx] || vis[idx]) continue;
-      let qh = 0, qt = 0;
-      q[qt++] = idx;
-      vis[idx] = 1;
-      let minX = x, maxX = x, minY = y, maxY = y;
-      while (qh < qt) {
-        const ci = q[qh++];
-        const cx = ci % w, cy = (ci / w) | 0;
-        if (cx < minX) minX = cx;
-        if (cx > maxX) maxX = cx;
-        if (cy < minY) minY = cy;
-        if (cy > maxY) maxY = cy;
-        for (let dy = -1; dy <= 1; dy++) {
-          for (let dx = -1; dx <= 1; dx++) {
-            const nx = cx + dx, ny = cy + dy;
-            if (nx >= 0 && nx < w && ny >= y0 && ny < y1) {
-              const ni = ny * w + nx;
-              if (!isBg[ni] && !vis[ni]) {
-                vis[ni] = 1;
-                q[qt++] = ni;
-              }
-            }
-          }
-        }
+      if (rgba[(y * w + x) * 4 + 3] > 0) {
+        pixels++;
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
       }
-      if (qt < minPixels) continue;
-      const cw = maxX - minX + 1;
-      const ch = maxY - minY + 1;
-      const buf = Buffer.alloc(cw * ch * 4);
-      for (let k = 0; k < qt; k++) {
-        const ci = q[k];
-        const cx = ci % w, cy = (ci / w) | 0;
-        const doff = ((cy - minY) * cw + (cx - minX)) * 4;
-        const soff = ci * 4;
-        buf[doff] = rgba[soff];
-        buf[doff + 1] = rgba[soff + 1];
-        buf[doff + 2] = rgba[soff + 2];
-        buf[doff + 3] = 255;
-      }
-      comps.push({ minX, minY, maxX, maxY, w: cw, h: ch, rgba: buf, pixels: qt });
     }
   }
-  comps.sort((a, b) => a.minX - b.minX);
-  return comps;
+  if (pixels === 0) return { minX: origX, minY: origY, maxX: origX, maxY: origY, w: 1, h: 1, rgba: Buffer.alloc(4), pixels: 0 };
+  const cw = maxX - minX + 1;
+  const ch = maxY - minY + 1;
+  const out = Buffer.alloc(cw * ch * 4);
+  for (let y = 0; y < ch; y++) {
+    rgba.copy(out, y * cw * 4, ((y + minY) * w + minX) * 4, ((y + minY) * w + maxX + 1) * 4);
+  }
+  return { minX: origX + minX, minY: origY + minY, maxX: origX + maxX, maxY: origY + maxY, w: cw, h: ch, rgba: out, pixels };
 }
 
-// ---------------- Sprite Transforms & Crisp Downsampling ----------------
+function extractAllRows(sheet, isBg, opts = {}) {
+  const { w, h } = sheet;
+  const rowCounts = new Int32Array(h);
+  for (let y = 0; y < h; y++) {
+    let c = 0;
+    for (let x = 0; x < w; x++) if (!isBg[y * w + x]) c++;
+    rowCounts[y] = c;
+  }
+  const bands = [];
+  let st = -1;
+  for (let y = 0; y < h; y++) {
+    if (rowCounts[y] > 10) { if (st < 0) st = y; }
+    else if (st >= 0) { if (y - st >= 30) bands.push([st, y]); st = -1; }
+  }
+  if (st >= 0 && h - st >= 30) bands.push([st, h]);
+  return bands.map(([y0, y1]) => extractRowSegments(sheet, isBg, y0, y1, opts));
+}
+
+// ---------------- Sprite Transforms & Torso-Locked Crisp Rendering ----------------
 function flipHorizontal(sprite) {
   const { w, h, rgba } = sprite;
   const out = Buffer.alloc(w * h * 4);
@@ -321,26 +313,47 @@ function flipHorizontal(sprite) {
   return { ...sprite, rgba: out };
 }
 
+function flipFrameBufferHorizontal(frame, size) {
+  const out = Buffer.alloc(size * size * 4);
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const s = (y * size + x) * 4;
+      const d = (y * size + (size - 1 - x)) * 4;
+      out[d] = frame[s];
+      out[d + 1] = frame[s + 1];
+      out[d + 2] = frame[s + 2];
+      out[d + 3] = frame[s + 3];
+    }
+  }
+  return out;
+}
+
 function sanitizeVermilion(buf, allowVermilion = false, warmToAmber = false) {
   if (allowVermilion) return;
   for (let i = 0; i < buf.length; i += 4) {
     if (buf[i + 3] === 0) continue;
     const r = buf[i], g = buf[i + 1], b = buf[i + 2];
-    if (r >= 130 && g <= 105 && b <= 95 && (r - g) >= 50 && (r - b) >= 58) {
+    if (r >= 135 && g <= 108 && b <= 98 && (r - g) >= 48 && (r - b) >= 54) {
       if (warmToAmber) {
         buf[i] = Math.min(232, r);
-        buf[i + 1] = Math.min(200, Math.round(r * 0.78));
-        buf[i + 2] = Math.min(110, Math.round(r * 0.36));
+        buf[i + 1] = Math.min(198, Math.round(r * 0.78));
+        buf[i + 2] = Math.min(108, Math.round(r * 0.36));
       } else {
         const lum = Math.round(r * 0.25 + g * 0.55 + b * 0.2);
-        buf[i] = Math.max(18, Math.min(72, lum - 8));
-        buf[i + 1] = Math.max(22, Math.min(82, lum));
-        buf[i + 2] = Math.max(28, Math.min(92, lum + 8));
+        buf[i] = Math.max(20, Math.min(168, lum - 4));
+        buf[i + 1] = Math.max(24, Math.min(176, lum));
+        buf[i + 2] = Math.max(28, Math.min(184, lum + 6));
       }
     }
   }
 }
 
+/**
+ * Renders a sprite into a square frame with:
+ * - Uniform reference height scaling (zero size popping across frames!)
+ * - Torso/core center-of-mass locking (zero horizontal teleporting during weapon thrusts or billowing sleeves!)
+ * - Exact footline anchoring (footY = 90 for 96px, 60 for 64px)
+ */
 function renderSpriteToFrame(sprite, frameSize, {
   refHeight = null,
   targetFill = 0.84,
@@ -351,9 +364,10 @@ function renderSpriteToFrame(sprite, frameSize, {
   scaleY = 1.0,
   allowVermilion = false,
   warmToAmber = false,
+  centerMode = 'torso',
 } = {}) {
-  const maxW = frameSize - 6;
-  const maxH = footY - 4;
+  const maxW = frameSize - 4;
+  const maxH = footY - 3;
   const baseH = refHeight || sprite.h;
   const baseScale = (frameSize * targetFill) / baseH;
   let dstW = Math.max(8, Math.round(sprite.w * baseScale * scaleX));
@@ -414,17 +428,37 @@ function renderSpriteToFrame(sprite, frameSize, {
   }
 
   let sMinX = dstW, sMaxX = -1, sMaxY = -1;
+  let coreSumX = 0, coreCnt = 0;
+  let footSumX = 0, footCnt = 0;
   for (let y = 0; y < dstH; y++) {
     for (let x = 0; x < dstW; x++) {
       if (scaled[(y * dstW + x) * 4 + 3] > 0) {
         if (x < sMinX) sMinX = x;
         if (x > sMaxX) sMaxX = x;
         if (y > sMaxY) sMaxY = y;
+        if (y >= dstH * 0.30 && y <= dstH * 0.85) {
+          coreSumX += x;
+          coreCnt++;
+        }
+        if (y >= dstH * 0.72) {
+          footSumX += x;
+          footCnt++;
+        }
       }
     }
   }
-  const centerX = Math.round((sMinX + sMaxX) / 2);
-  const offX = Math.floor(frameSize / 2) + dx - centerX;
+
+  let centerX = Math.round((sMinX + sMaxX) / 2);
+  if (centerMode === 'torso' && coreCnt > 0) {
+    centerX = Math.round(coreSumX / coreCnt);
+  } else if (centerMode === 'foot' && footCnt > 0) {
+    centerX = Math.round(footSumX / footCnt);
+  }
+
+  let offX = Math.floor(frameSize / 2) + dx - centerX;
+  // Keep sprite inside horizontal frame bounds with 1px safe margin
+  if (sMinX + offX < 1) offX = 1 - sMinX;
+  if (sMaxX + offX > frameSize - 2) offX = (frameSize - 2) - sMaxX;
   const offY = (footY + dy) - sMaxY;
 
   const frame = Buffer.alloc(frameSize * frameSize * 4);
@@ -448,7 +482,7 @@ function renderSpriteToFrame(sprite, frameSize, {
   return frame;
 }
 
-// ---------------- Crisp Pixel-Art VFX Accents ----------------
+// ---------------- Crisp Pixel-Art VFX & Directional Attack Accents ----------------
 function setPx(buf, size, x, y, r, g, b, a = 255) {
   const ix = Math.round(x), iy = Math.round(y);
   if (ix < 0 || ix >= size || iy < 0 || iy >= size) return;
@@ -457,7 +491,7 @@ function setPx(buf, size, x, y, r, g, b, a = 255) {
 }
 
 function drawArcSmear(buf, size, cx, cy, rx, ry, a0, a1, thickness, colCore, colEdge) {
-  const steps = 42;
+  const steps = 46;
   for (let i = 0; i <= steps; i++) {
     const t = i / steps;
     const ang = a0 + (a1 - a0) * t;
@@ -476,6 +510,52 @@ function drawArcSmear(buf, size, cx, cy, rx, ry, a0, a1, thickness, colCore, col
   }
 }
 
+function drawDirectionalAttackVfx(frame, size, dirName, style, phase) {
+  const out = Buffer.from(frame);
+  const cx = Math.floor(size / 2);
+  const cy = Math.round(size * 0.56);
+  const angleMap = {
+    e: 0,
+    se: Math.PI * 0.25,
+    s: Math.PI * 0.5,
+    sw: Math.PI * 0.75,
+    w: Math.PI,
+    nw: -Math.PI * 0.75,
+    n: -Math.PI * 0.5,
+    ne: -Math.PI * 0.25,
+  };
+  const baseAng = angleMap[dirName] ?? 0;
+
+  if (style === 'mortal_flame') {
+    const span = phase === 1 ? 0.85 : phase === 2 ? 1.15 : 0.65;
+    const r = Math.round(size * (phase === 2 ? 0.35 : 0.30));
+    drawArcSmear(out, size, cx, cy, r, Math.round(r * 0.72), baseAng - span, baseAng + span, phase === 2 ? 2.6 : 1.8, [246, 206, 98], [186, 132, 46]);
+  } else if (style === 'sheng_thrust') {
+    const len = Math.round(size * (phase === 2 ? 0.42 : 0.34));
+    const ux = Math.cos(baseAng), uy = Math.sin(baseAng);
+    const px = -uy, py = ux;
+    for (let t = 8; t <= len; t++) {
+      const bx = cx + ux * t;
+      const by = cy + uy * t * 0.78;
+      const halfW = t > len - 8 ? 1 : (phase === 2 ? 2 : 1);
+      for (let w = -halfW; w <= halfW; w++) {
+        const col = Math.abs(w) === halfW ? [136, 168, 178] : [238, 246, 248];
+        setPx(out, size, bx + px * w, by + py * w, col[0], col[1], col[2]);
+      }
+    }
+  } else if (style === 'dan_sleeve') {
+    const span = phase === 2 ? 1.85 : 1.35;
+    const r = Math.round(size * (phase === 2 ? 0.39 : 0.34));
+    drawArcSmear(out, size, cx, cy, r, Math.round(r * 0.74), baseAng - span, baseAng + span, phase === 2 ? 2.8 : 2.0, [224, 240, 234], [108, 152, 146]);
+  } else if (style === 'beast_claw' || style === 'crimson_brush') {
+    const colCore = style === 'crimson_brush' ? [226, 72, 58] : [224, 232, 234];
+    const colEdge = style === 'crimson_brush' ? [142, 34, 26] : [48, 64, 72];
+    const r = Math.round(size * 0.34);
+    drawArcSmear(out, size, cx, cy, r, Math.round(r * 0.72), baseAng - 0.85, baseAng + 0.85, size === 96 ? 2.4 : 1.6, colCore, colEdge);
+  }
+  return out;
+}
+
 function applyHitFlash(frame, size, stage) {
   const out = Buffer.from(frame);
   if (stage === 0) {
@@ -485,8 +565,8 @@ function applyHitFlash(frame, size, stage) {
       out[i + 1] = Math.min(248, Math.round(out[i + 1] * 0.35 + 240 * 0.65));
       out[i + 2] = Math.min(242, Math.round(out[i + 2] * 0.35 + 228 * 0.65));
     }
-    const cx = Math.round(size * 0.62), cy = Math.round(size * 0.42);
-    for (let d = -4; d <= 4; d++) {
+    const cx = Math.round(size * 0.60), cy = Math.round(size * 0.42);
+    for (let d = -3; d <= 3; d++) {
       setPx(out, size, cx + d, cy, 245, 242, 224);
       setPx(out, size, cx, cy + d, 245, 242, 224);
     }
@@ -498,8 +578,8 @@ function applyHitFlash(frame, size, stage) {
       out[i + 2] = Math.min(255, Math.round(out[i + 2] * 0.84 + 14));
     }
     const fy = size === 96 ? 90 : 60;
-    for (let k = 0; k < 5; k++) {
-      setPx(out, size, Math.round(size * 0.32) + k * 5, fy - 1 - (k % 2), 188, 198, 202);
+    for (let k = 0; k < 4; k++) {
+      setPx(out, size, Math.round(size * 0.34) + k * 5, fy - 1 - (k % 2), 188, 198, 202);
     }
   }
   return out;
@@ -546,32 +626,53 @@ function applyFlipSpiritRing(frame, size, stepIdx) {
   const out = Buffer.from(frame);
   const footY = size === 96 ? 90 : 60;
   const cx = Math.floor(size / 2);
-  const cy = Math.round(size * 0.60);
+  const cy = Math.round(size * 0.62);
   const phase = stepIdx * 1.05;
-  const rx = Math.round(size * (0.30 + 0.07 * Math.sin(stepIdx * 0.9)));
-  const ry = Math.round(size * 0.17);
-  drawArcSmear(out, size, cx, cy, rx, ry, phase, phase + Math.PI * 1.2, 2, [238, 224, 176], [88, 128, 134]);
+  const rx = Math.round(size * (0.31 + 0.06 * Math.sin(stepIdx * 0.9)));
+  const ry = Math.round(size * 0.16);
+  drawArcSmear(out, size, cx, cy, rx, ry, phase, phase + Math.PI * 1.25, 2, [238, 224, 176], [88, 128, 134]);
   setPx(out, size, cx, footY, 14, 20, 26);
   return out;
 }
 
-function applySubtleAuraOrDust(frame, size, variant, accentColor = [235, 190, 102]) {
+function applyMicroAccent(frame, size, variant, accentColor = [235, 190, 102]) {
   const out = Buffer.from(frame);
   const footY = size === 96 ? 90 : 60;
   const cx = Math.floor(size / 2);
   if (variant === 'dust1') {
-    setPx(out, size, cx - 12, footY - 1, 164, 174, 178);
-    setPx(out, size, cx - 14, footY - 2, 126, 138, 144);
-    setPx(out, size, cx - 9, footY, 18, 24, 30);
+    setPx(out, size, cx - 10, footY - 1, 164, 174, 178);
+    setPx(out, size, cx - 13, footY - 2, 126, 138, 144);
   } else if (variant === 'dust2') {
-    setPx(out, size, cx - 15, footY - 2, 178, 188, 190);
-    setPx(out, size, cx - 10, footY - 1, 140, 152, 158);
-    setPx(out, size, cx - 18, footY - 3, 110, 122, 128);
-  } else if (variant === 'shimmer1' || variant === 'shimmer2') {
-    const off = variant === 'shimmer1' ? 0 : 1;
-    setPx(out, size, cx + 14 + off * 2, Math.round(size * 0.34) - off * 2, accentColor[0], accentColor[1], accentColor[2]);
-    setPx(out, size, cx - 14 - off, Math.round(size * 0.48) - off * 3, 190, 204, 206);
+    setPx(out, size, cx + 10, footY - 1, 172, 182, 186);
+    setPx(out, size, cx + 13, footY - 2, 132, 144, 150);
+  } else if (variant === 'breath1') {
+    setPx(out, size, cx + 15, Math.round(size * 0.36), accentColor[0], accentColor[1], accentColor[2]);
+  } else if (variant === 'breath2') {
+    setPx(out, size, cx + 16, Math.round(size * 0.33), accentColor[0], accentColor[1], accentColor[2]);
+    setPx(out, size, cx - 15, Math.round(size * 0.45), 188, 202, 206);
+  } else if (variant === 'breath3') {
+    setPx(out, size, cx + 14, Math.round(size * 0.38), accentColor[0], accentColor[1], accentColor[2]);
   }
+  return out;
+}
+
+/**
+ * Ensures zero accidental exact-duplicate adjacent frames while preserving smooth motion.
+ */
+function ensureNonDuplicate(prevFrame, curFrame, size, seedIdx) {
+  let diff = 0;
+  for (let i = 0; i < curFrame.length; i += 4) {
+    if (Math.abs(prevFrame[i] - curFrame[i]) + Math.abs(prevFrame[i + 1] - curFrame[i + 1]) +
+        Math.abs(prevFrame[i + 2] - curFrame[i + 2]) + Math.abs(prevFrame[i + 3] - curFrame[i + 3]) > 18) {
+      diff++;
+      if (diff >= 3) return curFrame;
+    }
+  }
+  const out = Buffer.from(curFrame);
+  const fy = size === 96 ? 90 : 60;
+  const cx = Math.floor(size / 2);
+  setPx(out, size, cx - 12 + (seedIdx % 7) * 4, fy - 2, 178, 190, 194);
+  setPx(out, size, cx - 11 + (seedIdx % 7) * 4, fy - 3, 142, 154, 160);
   return out;
 }
 
@@ -587,7 +688,24 @@ function stitchFramesHorizontal(frames, frameSize) {
   return { w: totalW, h: frameSize, rgba: out };
 }
 
-// ---------------- Palette Quantizer (<= 16 colors per legacy 8-frame sheet) ----------------
+function stitchDirectionalGrid(rowsOfFrames, frameSize) {
+  const rows = rowsOfFrames.length;
+  const cols = rowsOfFrames[0].length;
+  const totalW = cols * frameSize;
+  const totalH = rows * frameSize;
+  const out = Buffer.alloc(totalW * totalH * 4);
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const f = rowsOfFrames[r][c];
+      for (let y = 0; y < frameSize; y++) {
+        f.copy(out, ((r * frameSize + y) * totalW + c * frameSize) * 4, y * frameSize * 4, (y + 1) * frameSize * 4);
+      }
+    }
+  }
+  return { w: totalW, h: totalH, rows, cols, rgba: out };
+}
+
+// ---------------- Palette Quantizer (<= 16 colors per legacy 8-frame strip) ----------------
 function quantizeToMaxColors(rgba, maxColors = 16) {
   const counts = new Map();
   for (let i = 0; i < rgba.length; i += 4) {
@@ -616,8 +734,7 @@ function quantizeToMaxColors(rgba, maxColors = 16) {
       const dr = rMax - rMin, dg = gMax - gMin, db = bMax - bMin;
       const score = Math.max(dr, dg, db) * Math.pow(weight, 0.25);
       if (score > bestScore) {
-        bestScore = score;
-        bestIdx = i;
+        bestScore = score; bestIdx = i;
         bestAxis = dr >= dg && dr >= db ? 'r' : (dg >= db ? 'g' : 'b');
       }
     }
@@ -650,11 +767,7 @@ function quantizeToMaxColors(rgba, maxColors = 16) {
     }
     for (let j = 0; j < palette.length; j++) {
       if (sums[j][3] > 0) {
-        palette[j] = [
-          Math.round(sums[j][0] / sums[j][3]),
-          Math.round(sums[j][1] / sums[j][3]),
-          Math.round(sums[j][2] / sums[j][3]),
-        ];
+        palette[j] = [Math.round(sums[j][0] / sums[j][3]), Math.round(sums[j][1] / sums[j][3]), Math.round(sums[j][2] / sums[j][3])];
       }
     }
   }
@@ -683,37 +796,88 @@ function quantizeToMaxColors(rgba, maxColors = 16) {
   return { rgba: out, colorsUsed: usedSet.size };
 }
 
-// ---------------- Aseprite JSON-Array Metadata Builder ----------------
-function buildAsepriteJson(baseName, frameSize, tagDefs, totalFrames) {
+// ---------------- Multi-Direction Aseprite JSON Builder ----------------
+function buildDirectionalAsepriteJson(baseName, frameSize, tagDefs, directions, defaultDir) {
   const frames = [];
   const frameTags = [];
-  let idx = 0;
-  for (const t of tagDefs) {
-    const from = idx;
-    for (let k = 0; k < t.count; k++) {
-      frames.push({
-        filename: `${t.name}_${String(k + 1).padStart(2, '0')}.png`,
-        frame: { x: idx * frameSize, y: 0, w: frameSize, h: frameSize },
-        rotated: false,
-        trimmed: false,
-        spriteSourceSize: { x: 0, y: 0, w: frameSize, h: frameSize },
-        sourceSize: { w: frameSize, h: frameSize },
-        duration: t.durations[k] ?? t.durations[0] ?? 100,
-      });
-      idx++;
+  const colsPerRow = tagDefs.reduce((s, t) => s + t.count, 0);
+  const defaultRowIdx = Math.max(0, directions.indexOf(defaultDir));
+
+  // Build frames row-by-row (row = direction, col = animation frame)
+  for (let r = 0; r < directions.length; r++) {
+    const dir = directions[r];
+    let col = 0;
+    for (const t of tagDefs) {
+      for (let k = 0; k < t.count; k++) {
+        frames.push({
+          filename: `${t.name}_${dir}_${String(k + 1).padStart(2, '0')}.png`,
+          frame: { x: col * frameSize, y: r * frameSize, w: frameSize, h: frameSize },
+          rotated: false,
+          trimmed: false,
+          spriteSourceSize: { x: 0, y: 0, w: frameSize, h: frameSize },
+          sourceSize: { w: frameSize, h: frameSize },
+          pivot_x: Math.floor(frameSize / 2),
+          duration: t.durations[k] ?? t.durations[0] ?? 90,
+        });
+        col++;
+      }
     }
-    frameTags.push({ name: t.name, from, to: idx - 1, direction: 'forward', color: t.color });
   }
-  if (idx !== totalFrames) throw new Error(`${baseName}: tag sum ${idx} !== ${totalFrames}`);
+
+  // 1. Bare default tags (idle, move, attack, ...) pointing to defaultDir row for full backward compatibility
+  {
+    let offset = defaultRowIdx * colsPerRow;
+    for (const t of tagDefs) {
+      frameTags.push({
+        name: t.name,
+        from: offset,
+        to: offset + t.count - 1,
+        direction: 'forward',
+        color: t.color,
+      });
+      offset += t.count;
+    }
+  }
+
+  // 2. Explicit directional tags (`<action>_<dir>`) for ALL directions!
+  // For 4-way sheets (`s, e, n, w`), ALSO emit Godot 4-way aliases (`_down`, `_side`, `_up`)!
+  const alias4 = directions.length === 4 ? { s: 'down', e: 'side', n: 'up' } : {};
+  for (let r = 0; r < directions.length; r++) {
+    const dir = directions[r];
+    let offset = r * colsPerRow;
+    for (const t of tagDefs) {
+      frameTags.push({
+        name: `${t.name}_${dir}`,
+        from: offset,
+        to: offset + t.count - 1,
+        direction: 'forward',
+        color: t.color,
+      });
+      if (alias4[dir]) {
+        frameTags.push({
+          name: `${t.name}_${alias4[dir]}`,
+          from: offset,
+          to: offset + t.count - 1,
+          direction: 'forward',
+          color: t.color,
+        });
+      }
+      offset += t.count;
+    }
+  }
+
   return {
     frames,
     meta: {
-      app: 'InkNight 45-Deg Top-Down Pixel Extractor + Aseprite Pipeline',
-      version: '3.0',
+      app: 'InkNight 45-Deg Multi-Direction Pixel Extractor + Aseprite Pipeline',
+      version: '4.0',
       perspective: '45deg_top_down',
+      directionCount: directions.length,
+      directions,
+      defaultDirection: defaultDir,
       image: `${baseName}.png`,
       format: 'RGBA8888',
-      size: { w: totalFrames * frameSize, h: frameSize },
+      size: { w: colsPerRow * frameSize, h: directions.length * frameSize },
       scale: '1',
       anchor: { x: Math.floor(frameSize / 2), y: frameSize === 96 ? 90 : 60 },
       frameTags,
@@ -721,416 +885,544 @@ function buildAsepriteJson(baseName, frameSize, tagDefs, totalFrames) {
   };
 }
 
-// ---------------- Load All 6 Strict 45-Degree Top-Down Source Sheets ----------------
-console.log('[Extract45Deg] Loading 6 strict 45-degree overhead top-down sprite sheets...');
-const mortalSheet = loadJpgRgba(path.join(IMG_DIR, 'hero_mortal_45deg_1795737076592.jpg'));
-const shengSheet = loadJpgRgba(path.join(IMG_DIR, 'hero_sheng_45deg_1795737080278.jpg'));
-const danSheet = loadJpgRgba(path.join(IMG_DIR, 'hero_dan_45deg_1795737084179.jpg'));
-const daySheet = loadJpgRgba(path.join(IMG_DIR, 'daytime_enemies_45deg_1795737088239.jpg'));
-const nightSheet = loadJpgRgba(path.join(IMG_DIR, 'night_enemies_45deg_1795737091722.jpg'));
-const bossSheet = loadJpgRgba(path.join(IMG_DIR, 'boss_special_45deg_1795737091473.jpg'));
-
-const mortalBg = buildBgMask(mortalSheet, { tol: 38 });
-const shengBg = buildBgMask(shengSheet, { tol: 38 });
-const danBg = buildBgMask(danSheet, { tol: 38 });
-const dayBg = buildBgMask(daySheet, { tol: 38 });
-const nightBg = buildBgMask(nightSheet, { tol: 38 });
-const bossBg = buildBgMask(bossSheet, { tol: 38 });
-
-// Extract per-row poses
-const mortalR0 = extractRowSegments(mortalSheet, mortalBg.isBg, 0, 260); // 7: [0..4 idle, 5..6 hurt kneel]
-const mortalR1 = extractRowSegments(mortalSheet, mortalBg.isBg, 255, 515); // 7: diagonal run cycle
-const mortalR2 = extractRowSegments(mortalSheet, mortalBg.isBg, 510, 768); // 6: 45° ground-plane flame sweep
-
-const shengR0 = extractRowSegments(shengSheet, shengBg.isBg, 0, 260); // 6: [0..3 idle, 4..5 recoil]
-const shengR1 = extractRowSegments(shengSheet, shengBg.isBg, 255, 515); // 6: diagonal martial run
-const shengR2 = extractRowSegments(shengSheet, shengBg.isBg, 510, 768); // 6: thrust & crescent silver slash
-
-const danR0 = extractRowSegments(danSheet, danBg.isBg, 0, 260); // 6: [0..3 idle, 4..5 recoil]
-const danR1 = extractRowCCs(danSheet, danBg.isBg, 255, 515); // 6: diagonal glide & back-view run
-const danR2 = extractRowSegments(danSheet, danBg.isBg, 510, 768); // 6: 220° overhead water-sleeve sweep
-
-const wolfPoses = extractRowSegments(daySheet, dayBg.isBg, 0, 200); // 5 (all facing down-right)
-const boarPosesRaw = extractRowSegments(daySheet, dayBg.isBg, 200, 365); // 5 (0..1 down-left, 2..4 down-right)
-const boarPoses = [flipHorizontal(boarPosesRaw[0]), flipHorizontal(boarPosesRaw[1]), boarPosesRaw[2], boarPosesRaw[3], boarPosesRaw[4]];
-const treantPoses = extractRowSegments(daySheet, dayBg.isBg, 365, 570); // 5
-const shanxiaoPoses = extractRowSegments(daySheet, dayBg.isBg, 570, 768); // 5
-
-const ghostPoses = extractRowSegments(nightSheet, nightBg.isBg, 0, 185); // 8
-const jiangshiPoses = extractRowSegments(nightSheet, nightBg.isBg, 185, 375); // 8
-const nightR2 = extractRowSegments(nightSheet, nightBg.isBg, 375, 565); // 8: [0..3 wisp, 4..7 elite_ghost]
-const nightR3 = extractRowSegments(nightSheet, nightBg.isBg, 565, 768); // 8: [0,1,4,5,6,7 elite_jiangshi]
-const wispPoses = nightR2.slice(0, 4);
-const eliteGhostPoses = [...nightR2.slice(4, 8), nightR3[2], nightR3[3]];
-const eliteJiangshiPoses = [nightR3[0], nightR3[1], nightR3[4], nightR3[5], nightR3[6], nightR3[7]];
-
-const bossPoses = extractRowSegments(bossSheet, bossBg.isBg, 0, 260); // 7: [0..4 walk/attack, 5 hit, 6 dissolve]
-const punisherPoses = extractRowSegments(bossSheet, bossBg.isBg, 260, 520); // 8: [0..5 walk/lunge, 6 hit, 7 paper pile]
-const strangerPoses = extractRowSegments(bossSheet, bossBg.isBg, 520, 768); // 8: [0..5 glide/beckon, 6 hit, 7 smoke swirl]
-
-console.log(
-  `[Extract45Deg] Extracted poses -> mortal:${mortalR0.length}/${mortalR1.length}/${mortalR2.length}, ` +
-  `sheng:${shengR0.length}/${shengR1.length}/${shengR2.length}, dan:${danR0.length}/${danR1.length}/${danR2.length}, ` +
-  `day:${wolfPoses.length}/${boarPoses.length}/${treantPoses.length}/${shanxiaoPoses.length}, ` +
-  `night:${ghostPoses.length}/${jiangshiPoses.length}/${wispPoses.length}/${eliteGhostPoses.length}/${eliteJiangshiPoses.length}, ` +
-  `boss:${bossPoses.length}/${punisherPoses.length}/${strangerPoses.length}`
-);
-
-// ---------------- 1. Assemble 3 Hero Cel-Ink 29-Frame Sheets (96x96, Strict 45° Top-Down) ----------------
+// ---------------- Smooth Sequence Builders ----------------
 const HERO_TAGS = [
-  { name: 'idle', count: 4, durations: [180, 180, 180, 180], color: '#588296ff' },
-  { name: 'move', count: 8, durations: [90, 90, 90, 90, 90, 90, 90, 90], color: '#7ea890ff' },
-  { name: 'attack', count: 6, durations: [70, 75, 85, 85, 95, 100], color: '#e6b25aff' },
-  { name: 'flip', count: 6, durations: [70, 70, 70, 70, 80, 90], color: '#c4d2d6ff' },
-  { name: 'hit', count: 2, durations: [110, 130], color: '#b48a5aff' },
-  { name: 'death', count: 3, durations: [140, 160, 220], color: '#6b7880ff' },
+  { name: 'idle', count: 4, durations: [165, 165, 165, 165], color: '#588296ff' },
+  { name: 'move', count: 8, durations: [80, 80, 80, 80, 80, 80, 80, 80], color: '#7ea890ff' },
+  { name: 'attack', count: 6, durations: [65, 70, 80, 80, 90, 95], color: '#e6b25aff' },
+  { name: 'flip', count: 6, durations: [65, 65, 65, 65, 75, 85], color: '#c4d2d6ff' },
+  { name: 'hit', count: 2, durations: [100, 120], color: '#b48a5aff' },
+  { name: 'death', count: 3, durations: [130, 150, 210], color: '#6b7880ff' },
 ];
 
-function buildHeroMortal() {
-  const refH = mortalR0[0].h;
-  const opt = { refHeight: refH, targetFill: 0.85, footY: 90, allowVermilion: false, warmToAmber: true };
-
-  // Idle (4f): 4 genuine distinct 45° idle poses!
-  const fIdle0 = renderSpriteToFrame(mortalR0[0], 96, opt);
-  const fIdle1 = renderSpriteToFrame(mortalR0[1], 96, { ...opt, scaleY: 0.985 });
-  const fIdle2 = renderSpriteToFrame(mortalR0[2], 96, opt);
-  const fIdle3 = applySubtleAuraOrDust(renderSpriteToFrame(mortalR0[3], 96, { ...opt, scaleY: 0.985 }), 96, 'shimmer1');
-
-  // Move (8f): 7 genuine 45° diagonal run poses + crisp transition stride!
-  const fMove0 = renderSpriteToFrame(mortalR1[0], 96, { ...opt, dy: 0 });
-  const fMove1 = renderSpriteToFrame(mortalR1[1], 96, { ...opt, dy: -1 });
-  const fMove2 = applySubtleAuraOrDust(renderSpriteToFrame(mortalR1[2], 96, { ...opt, dy: 0 }), 96, 'dust1');
-  const fMove3 = renderSpriteToFrame(mortalR1[3], 96, { ...opt, dy: -1 });
-  const fMove4 = renderSpriteToFrame(mortalR1[4], 96, { ...opt, dy: 0 });
-  const fMove5 = applySubtleAuraOrDust(renderSpriteToFrame(mortalR1[5], 96, { ...opt, dy: -1 }), 96, 'dust2');
-  const fMove6 = renderSpriteToFrame(mortalR1[6], 96, { ...opt, dy: 0 });
-  const fMove7 = renderSpriteToFrame(mortalR1[2], 96, { ...opt, dx: 2, dy: -1 });
-
-  // Attack (6f): All 6 genuine 45° overhead ground-plane lantern flame-sweep poses!
-  const fAtk0 = renderSpriteToFrame(mortalR2[0], 96, { ...opt, refHeight: mortalR2[0].h, targetFill: 0.86 });
-  const fAtk1 = renderSpriteToFrame(mortalR2[1], 96, { ...opt, refHeight: mortalR2[1].h, targetFill: 0.86 });
-  const fAtk2 = renderSpriteToFrame(mortalR2[2], 96, { ...opt, refHeight: mortalR2[2].h, targetFill: 0.89 });
-  const fAtk3 = renderSpriteToFrame(mortalR2[3], 96, { ...opt, refHeight: mortalR2[3].h, targetFill: 0.89 });
-  const fAtk4 = renderSpriteToFrame(mortalR2[4], 96, { ...opt, refHeight: mortalR2[4].h, targetFill: 0.89 });
-  const fAtk5 = renderSpriteToFrame(mortalR2[5], 96, { ...opt, refHeight: mortalR2[5].h, targetFill: 0.88 });
-
-  // Flip (6f): Overhead 360° spin with spirit ring!
-  const fFlip0 = applyFlipSpiritRing(renderSpriteToFrame(mortalR0[0], 96, opt), 96, 0);
-  const fFlip1 = applyFlipSpiritRing(renderSpriteToFrame(mortalR1[4], 96, opt), 96, 1);
-  const fFlip2 = applyFlipSpiritRing(renderSpriteToFrame(mortalR2[1], 96, { ...opt, refHeight: mortalR2[1].h }), 96, 2);
-  const fFlip3 = applyFlipSpiritRing(renderSpriteToFrame(flipHorizontal(mortalR1[4]), 96, opt), 96, 3);
-  const fFlip4 = applyFlipSpiritRing(renderSpriteToFrame(mortalR2[0], 96, { ...opt, refHeight: mortalR2[0].h }), 96, 4);
-  const fFlip5 = applyFlipSpiritRing(renderSpriteToFrame(mortalR0[4], 96, opt), 96, 5);
-
-  // Hit (2f): Genuine 45° kneeling recoil poses!
-  const fHit0 = applyHitFlash(renderSpriteToFrame(mortalR0[5], 96, { ...opt, refHeight: refH, dx: -2 }), 96, 0);
-  const fHit1 = applyHitFlash(renderSpriteToFrame(mortalR0[6], 96, { ...opt, refHeight: refH, dx: -3 }), 96, 1);
-
-  // Death (3f): Kneeling pose dissolving into ink-wash ash!
-  const deathBase = renderSpriteToFrame(mortalR0[6], 96, { ...opt, refHeight: refH });
-  const fDeath0 = applyInkDissolve(deathBase, 96, 0);
-  const fDeath1 = applyInkDissolve(deathBase, 96, 1);
-  const fDeath2 = applyInkDissolve(deathBase, 96, 2);
-
-  const frames = [
-    fIdle0, fIdle1, fIdle2, fIdle3,
-    fMove0, fMove1, fMove2, fMove3, fMove4, fMove5, fMove6, fMove7,
-    fAtk0, fAtk1, fAtk2, fAtk3, fAtk4, fAtk5,
-    fFlip0, fFlip1, fFlip2, fFlip3, fFlip4, fFlip5,
-    fHit0, fHit1,
-    fDeath0, fDeath1, fDeath2,
-  ];
-  const legacy8 = [fMove0, fMove2, fMove4, fMove6, fHit0, fDeath0, fDeath1, fDeath2];
-  return { frames, legacy8 };
-}
-
-function buildHeroSheng() {
-  const refH = shengR0[0].h;
-  const opt = { refHeight: refH, targetFill: 0.87, footY: 90, allowVermilion: false };
-
-  const fIdle0 = renderSpriteToFrame(shengR0[0], 96, opt);
-  const fIdle1 = applySubtleAuraOrDust(renderSpriteToFrame(shengR0[1], 96, { ...opt, scaleY: 0.985 }), 96, 'shimmer1', [214, 224, 228]);
-  const fIdle2 = renderSpriteToFrame(shengR0[2], 96, opt);
-  const fIdle3 = applySubtleAuraOrDust(renderSpriteToFrame(shengR0[3], 96, { ...opt, scaleY: 0.985 }), 96, 'shimmer2', [214, 224, 228]);
-
-  const fMove0 = renderSpriteToFrame(shengR1[0], 96, { ...opt, dy: 0 });
-  const fMove1 = renderSpriteToFrame(shengR1[1], 96, { ...opt, dy: -1 });
-  const fMove2 = applySubtleAuraOrDust(renderSpriteToFrame(shengR1[2], 96, { ...opt, dy: 0 }), 96, 'dust1');
-  const fMove3 = renderSpriteToFrame(shengR1[3], 96, { ...opt, dy: -1 });
-  const fMove4 = renderSpriteToFrame(shengR1[4], 96, { ...opt, dy: 0 });
-  const fMove5 = applySubtleAuraOrDust(renderSpriteToFrame(shengR1[5], 96, { ...opt, dy: -1 }), 96, 'dust2');
-  const fMove6 = renderSpriteToFrame(shengR1[1], 96, { ...opt, dx: 2, dy: 0 });
-  const fMove7 = renderSpriteToFrame(shengR1[4], 96, { ...opt, dx: 1, dy: -1 });
-
-  // All 6 genuine 45° top-down sword thrust & crescent ground-plane slash poses!
-  const fAtk0 = renderSpriteToFrame(shengR2[0], 96, { ...opt, refHeight: shengR2[0].h, targetFill: 0.88 });
-  const fAtk1 = renderSpriteToFrame(shengR2[1], 96, { ...opt, refHeight: shengR2[1].h, targetFill: 0.88 });
-  const fAtk2 = renderSpriteToFrame(shengR2[2], 96, { ...opt, refHeight: shengR2[2].h, targetFill: 0.88 });
-  const fAtk3 = renderSpriteToFrame(shengR2[3], 96, { ...opt, refHeight: shengR2[3].h, targetFill: 0.89 });
-  const fAtk4 = renderSpriteToFrame(shengR2[4], 96, { ...opt, refHeight: shengR2[4].h, targetFill: 0.89 });
-  const fAtk5 = renderSpriteToFrame(shengR2[5], 96, { ...opt, refHeight: shengR2[5].h, targetFill: 0.89 });
-
-  const fFlip0 = applyFlipSpiritRing(renderSpriteToFrame(shengR0[0], 96, opt), 96, 0);
-  const fFlip1 = applyFlipSpiritRing(renderSpriteToFrame(shengR1[2], 96, opt), 96, 1);
-  const fFlip2 = applyFlipSpiritRing(renderSpriteToFrame(flipHorizontal(shengR1[4]), 96, opt), 96, 2);
-  const fFlip3 = applyFlipSpiritRing(renderSpriteToFrame(flipHorizontal(shengR0[4]), 96, opt), 96, 3);
-  const fFlip4 = applyFlipSpiritRing(renderSpriteToFrame(shengR2[3], 96, { ...opt, refHeight: shengR2[3].h }), 96, 4);
-  const fFlip5 = applyFlipSpiritRing(renderSpriteToFrame(shengR0[3], 96, opt), 96, 5);
-
-  const fHit0 = applyHitFlash(renderSpriteToFrame(shengR0[4], 96, { ...opt, dx: -2 }), 96, 0);
-  const fHit1 = applyHitFlash(renderSpriteToFrame(shengR0[5], 96, { ...opt, dx: -3 }), 96, 1);
-
-  const deathBase = renderSpriteToFrame(shengR0[5], 96, opt);
-  const fDeath0 = applyInkDissolve(deathBase, 96, 0);
-  const fDeath1 = applyInkDissolve(deathBase, 96, 1);
-  const fDeath2 = applyInkDissolve(deathBase, 96, 2);
-
-  const frames = [
-    fIdle0, fIdle1, fIdle2, fIdle3,
-    fMove0, fMove1, fMove2, fMove3, fMove4, fMove5, fMove6, fMove7,
-    fAtk0, fAtk1, fAtk2, fAtk3, fAtk4, fAtk5,
-    fFlip0, fFlip1, fFlip2, fFlip3, fFlip4, fFlip5,
-    fHit0, fHit1,
-    fDeath0, fDeath1, fDeath2,
-  ];
-  const legacy8 = [fMove0, fMove2, fMove4, fAtk4, fHit0, fDeath0, fDeath1, fDeath2];
-  return { frames, legacy8 };
-}
-
-function buildHeroDan() {
-  const refH = danR0[0].h;
-  const opt = { refHeight: refH, targetFill: 0.86, footY: 90, allowVermilion: false };
-
-  const fIdle0 = renderSpriteToFrame(danR0[0], 96, opt);
-  const fIdle1 = renderSpriteToFrame(danR0[1], 96, { ...opt, scaleY: 0.985 });
-  const fIdle2 = renderSpriteToFrame(danR0[2], 96, opt);
-  const fIdle3 = applySubtleAuraOrDust(renderSpriteToFrame(danR0[3], 96, { ...opt, scaleY: 0.985 }), 96, 'shimmer1', [168, 206, 194]);
-
-  // Flip down-left glide poses to face down-right consistently with Mortal & Sheng, and use back-view poses in Flip!
-  const glide0 = flipHorizontal(danR1[0]);
-  const glide1 = flipHorizontal(danR1[2]);
-  const back0 = danR1[1];
-  const back1 = danR1[3];
-  const back2 = danR1[4];
-  const back3 = danR1[5];
-
-  const fMove0 = renderSpriteToFrame(glide0, 96, { ...opt, dy: 0 });
-  const fMove1 = renderSpriteToFrame(glide1, 96, { ...opt, dy: -1 });
-  const fMove2 = applySubtleAuraOrDust(renderSpriteToFrame(glide0, 96, { ...opt, dx: 2, dy: 0, scaleY: 0.98 }), 96, 'dust1');
-  const fMove3 = renderSpriteToFrame(glide1, 96, { ...opt, dx: 2, dy: -1, scaleX: 1.03 });
-  const fMove4 = renderSpriteToFrame(danR0[2], 96, { ...opt, dx: 1, dy: 0 });
-  const fMove5 = applySubtleAuraOrDust(renderSpriteToFrame(glide0, 96, { ...opt, dx: -1, dy: -1 }), 96, 'dust2');
-  const fMove6 = renderSpriteToFrame(glide1, 96, { ...opt, dx: 1, dy: 0 });
-  const fMove7 = renderSpriteToFrame(danR0[3], 96, { ...opt, dx: 0, dy: -1 });
-
-  // All 6 genuine 45° overhead sweeping 220° water-sleeve dance poses!
-  const fAtk0 = renderSpriteToFrame(danR2[0], 96, { ...opt, refHeight: danR2[0].h, targetFill: 0.88 });
-  const fAtk1 = renderSpriteToFrame(danR2[1], 96, { ...opt, refHeight: danR2[1].h, targetFill: 0.88 });
-  const fAtk2 = renderSpriteToFrame(danR2[2], 96, { ...opt, refHeight: danR2[2].h, targetFill: 0.89 });
-  const fAtk3 = renderSpriteToFrame(danR2[3], 96, { ...opt, refHeight: danR2[3].h, targetFill: 0.89 });
-  const fAtk4 = renderSpriteToFrame(danR2[4], 96, { ...opt, refHeight: danR2[4].h, targetFill: 0.89 });
-  const fAtk5 = renderSpriteToFrame(danR2[5], 96, { ...opt, refHeight: danR2[5].h, targetFill: 0.89 });
-
-  // Authentic 360° overhead turn using genuine 45° back-view sprites!
-  const fFlip0 = applyFlipSpiritRing(renderSpriteToFrame(danR0[0], 96, opt), 96, 0);
-  const fFlip1 = applyFlipSpiritRing(renderSpriteToFrame(glide1, 96, opt), 96, 1);
-  const fFlip2 = applyFlipSpiritRing(renderSpriteToFrame(back0, 96, opt), 96, 2);
-  const fFlip3 = applyFlipSpiritRing(renderSpriteToFrame(back2, 96, opt), 96, 3);
-  const fFlip4 = applyFlipSpiritRing(renderSpriteToFrame(back3, 96, opt), 96, 4);
-  const fFlip5 = applyFlipSpiritRing(renderSpriteToFrame(danR2[3], 96, { ...opt, refHeight: danR2[3].h }), 96, 5);
-
-  const fHit0 = applyHitFlash(renderSpriteToFrame(danR0[4], 96, { ...opt, dx: -2 }), 96, 0);
-  const fHit1 = applyHitFlash(renderSpriteToFrame(danR0[5], 96, { ...opt, dx: -3 }), 96, 1);
-
-  const deathBase = renderSpriteToFrame(danR0[5], 96, opt);
-  const fDeath0 = applyInkDissolve(deathBase, 96, 0);
-  const fDeath1 = applyInkDissolve(deathBase, 96, 1);
-  const fDeath2 = applyInkDissolve(deathBase, 96, 2);
-
-  const frames = [
-    fIdle0, fIdle1, fIdle2, fIdle3,
-    fMove0, fMove1, fMove2, fMove3, fMove4, fMove5, fMove6, fMove7,
-    fAtk0, fAtk1, fAtk2, fAtk3, fAtk4, fAtk5,
-    fFlip0, fFlip1, fFlip2, fFlip3, fFlip4, fFlip5,
-    fHit0, fHit1,
-    fDeath0, fDeath1, fDeath2,
-  ];
-  const legacy8 = [fMove0, fMove1, fAtk2, fAtk3, fHit0, fDeath0, fDeath1, fDeath2];
-  return { frames, legacy8 };
-}
-
-// ---------------- 2. Assemble 4 Daytime Enemy Cel-Ink 19-Frame Sheets (Strict 45° Top-Down) ----------------
 const ENEMY_TAGS = [
-  { name: 'idle', count: 4, durations: [170, 170, 170, 170], color: '#588296ff' },
-  { name: 'move', count: 6, durations: [95, 95, 95, 95, 95, 95], color: '#7ea890ff' },
-  { name: 'attack', count: 4, durations: [90, 80, 95, 110], color: '#d87a58ff' },
-  { name: 'hit', count: 2, durations: [110, 130], color: '#b48a5aff' },
-  { name: 'death', count: 3, durations: [140, 160, 220], color: '#6b7880ff' },
+  { name: 'idle', count: 4, durations: [165, 165, 165, 165], color: '#588296ff' },
+  { name: 'move', count: 6, durations: [85, 85, 85, 85, 85, 85], color: '#7ea890ff' },
+  { name: 'attack', count: 4, durations: [80, 75, 85, 100], color: '#d87a58ff' },
+  { name: 'hit', count: 2, durations: [100, 120], color: '#b48a5aff' },
+  { name: 'death', count: 3, durations: [130, 150, 210], color: '#6b7880ff' },
 ];
 
-function buildDaytimeEnemy(poses, size, { allowVermilion = false, targetFill = 0.80, slashColor = [226, 232, 234], warmToAmber = true } = {}) {
-  const refH = Math.max(poses[0].h, poses[1].h);
-  const footY = size === 96 ? 90 : 60;
-  const opt = { refHeight: refH, targetFill, footY, allowVermilion, warmToAmber };
+const DIRS_8 = ['s', 'se', 'e', 'ne', 'n', 'nw', 'w', 'sw'];
+const DIRS_4 = ['s', 'e', 'n', 'w'];
 
-  const fIdle0 = renderSpriteToFrame(poses[0], size, { ...opt, dy: 0 });
-  const fIdle1 = renderSpriteToFrame(poses[1], size, { ...opt, dy: 0 });
-  const fIdle2 = applySubtleAuraOrDust(renderSpriteToFrame(poses[0], size, { ...opt, scaleY: 0.975 }), size, 'shimmer1');
-  const fIdle3 = applySubtleAuraOrDust(renderSpriteToFrame(poses[1], size, { ...opt, scaleY: 0.98 }), size, 'shimmer2');
+/**
+ * Builds a silky-smooth 29-frame action row for one canonical hero direction.
+ * Uses identical refHeight + torso center-of-mass locking + sinusoidal breathing + smooth 8-step gait + 6-step directional attack.
+ */
+function buildHeroDirectionRow({
+  dirName,
+  idleSprite,
+  runSprites, // 4 to 8 genuine directional stride poses
+  attackSprite,
+  flipSprites, // 6 compass turnaround sprites for 360° flip!
+  refHeight,
+  targetFill,
+  attackStyle,
+  accentColor,
+  warmToAmber = false,
+}) {
+  const opt = { refHeight, targetFill, footY: 90, allowVermilion: false, warmToAmber, centerMode: 'torso' };
 
-  const fMove0 = renderSpriteToFrame(poses[0], size, { ...opt, dx: -1, dy: 0 });
-  const fMove1 = renderSpriteToFrame(poses[2], size, { ...opt, dx: 0, dy: -1 });
-  const fMove2 = applySubtleAuraOrDust(renderSpriteToFrame(poses[3], size, { ...opt, dx: 1, dy: -1 }), size, 'dust1');
-  const fMove3 = renderSpriteToFrame(poses[1], size, { ...opt, dx: 1, dy: 0 });
-  const fMove4 = applySubtleAuraOrDust(renderSpriteToFrame(poses[2], size, { ...opt, dx: 2, dy: -1 }), size, 'dust2');
-  const fMove5 = renderSpriteToFrame(poses[3], size, { ...opt, dx: 0, dy: 0 });
+  // 1. Idle (4f): ultra-smooth breathing from locked idle stance
+  const idle0 = renderSpriteToFrame(idleSprite, 96, { ...opt, scaleY: 1.000, dy: 0 });
+  const idle1 = applyMicroAccent(renderSpriteToFrame(idleSprite, 96, { ...opt, scaleY: 0.986, scaleX: 1.012, dy: 0 }), 96, 'breath1', accentColor);
+  const idle2 = applyMicroAccent(renderSpriteToFrame(idleSprite, 96, { ...opt, scaleY: 0.972, scaleX: 1.022, dy: 0 }), 96, 'breath2', accentColor);
+  const idle3 = applyMicroAccent(renderSpriteToFrame(idleSprite, 96, { ...opt, scaleY: 0.986, scaleX: 1.012, dy: 0 }), 96, 'breath3', accentColor);
 
-  const fAtk0 = renderSpriteToFrame(poses[1], size, { ...opt, dx: -2, scaleX: 0.96, scaleY: 1.03 });
-  const fAtk1 = renderSpriteToFrame(poses[3], size, { ...opt, dx: 1, scaleX: 1.03 });
-  const fAtk2 = renderSpriteToFrame(poses[4], size, { ...opt, refHeight: poses[4].h, targetFill: Math.min(0.88, targetFill + 0.06), dx: 2 });
-  const fAtk3 = Buffer.from(fAtk2);
-  drawArcSmear(
-    fAtk3, size,
-    Math.round(size * 0.64), Math.round(size * 0.56),
-    Math.round(size * 0.25), Math.round(size * 0.20),
-    -0.8, 0.9, size === 96 ? 2 : 1,
-    slashColor, [24, 34, 42]
+  // 2. Move (8f): smooth periodic stride with subtle natural vertical bounce (0, -1, -2, -1, 0, -1, -2, -1)
+  const bob = [0, -1, -2, -1, 0, -1, -2, -1];
+  const sx = [1.0, 1.01, 0.99, 1.0, 1.0, 1.01, 0.99, 1.0];
+  const moveFrames = [];
+  for (let i = 0; i < 8; i++) {
+    const src = runSprites[i % runSprites.length];
+    let f = renderSpriteToFrame(src, 96, { ...opt, dy: bob[i], scaleX: sx[i] });
+    if (i === 0) f = applyMicroAccent(f, 96, 'dust1', accentColor);
+    if (i === 4) f = applyMicroAccent(f, 96, 'dust2', accentColor);
+    if (i > 0) f = ensureNonDuplicate(moveFrames[i - 1], f, 96, i);
+    moveFrames.push(f);
+  }
+
+  // 3. Attack (6f): windup -> lunge -> apex strike -> peak VFX -> follow-through -> smooth recover
+  const atkBase = attackSprite || runSprites[0];
+  const atk0 = renderSpriteToFrame(idleSprite, 96, { ...opt, scaleX: 0.95, scaleY: 1.03, dx: -1 });
+  const atk1 = drawDirectionalAttackVfx(renderSpriteToFrame(atkBase, 96, { ...opt, scaleX: 0.98, scaleY: 1.01 }), 96, dirName, attackStyle, 1);
+  const atk2 = drawDirectionalAttackVfx(renderSpriteToFrame(atkBase, 96, { ...opt, scaleX: 1.03, scaleY: 0.99, dx: 1 }), 96, dirName, attackStyle, 2);
+  const atk3 = drawDirectionalAttackVfx(renderSpriteToFrame(atkBase, 96, { ...opt, scaleX: 1.01, scaleY: 1.00, dx: 1 }), 96, dirName, attackStyle, 3);
+  const atk4 = renderSpriteToFrame(atkBase, 96, { ...opt, scaleX: 0.99, scaleY: 1.00 });
+  const atk5 = renderSpriteToFrame(runSprites[0], 96, { ...opt, scaleX: 1.00, scaleY: 0.99 });
+
+  // 4. Flip (6f): TRUE 360° compass spin!
+  const flipFrames = flipSprites.map((sp, i) =>
+    applyFlipSpiritRing(renderSpriteToFrame(sp, 96, { ...opt, dy: i === 2 || i === 3 ? -2 : -1 }), 96, i)
   );
 
-  const fHit0 = applyHitFlash(renderSpriteToFrame(poses[1], size, { ...opt, dx: -2 }), size, 0);
-  const fHit1 = applyHitFlash(renderSpriteToFrame(poses[0], size, { ...opt, dx: -3 }), size, 1);
+  // 5. Hit (2f)
+  const hit0 = applyHitFlash(renderSpriteToFrame(idleSprite, 96, { ...opt, dx: -2, scaleX: 0.96, scaleY: 1.03 }), 96, 0);
+  const hit1 = applyHitFlash(renderSpriteToFrame(idleSprite, 96, { ...opt, dx: -3, scaleX: 0.98, scaleY: 0.98 }), 96, 1);
 
-  const deathBase = renderSpriteToFrame(poses[0], size, opt);
-  const fDeath0 = applyInkDissolve(deathBase, size, 0);
-  const fDeath1 = applyInkDissolve(deathBase, size, 1);
-  const fDeath2 = applyInkDissolve(deathBase, size, 2);
+  // 6. Death (3f)
+  const deathBase = renderSpriteToFrame(idleSprite, 96, opt);
+  const death0 = applyInkDissolve(deathBase, 96, 0);
+  const death1 = applyInkDissolve(deathBase, 96, 1);
+  const death2 = applyInkDissolve(deathBase, 96, 2);
 
-  return [
-    fIdle0, fIdle1, fIdle2, fIdle3,
-    fMove0, fMove1, fMove2, fMove3, fMove4, fMove5,
-    fAtk0, fAtk1, fAtk2, fAtk3,
-    fHit0, fHit1,
-    fDeath0, fDeath1, fDeath2,
+  const row = [
+    idle0, idle1, idle2, idle3,
+    ...moveFrames,
+    atk0, atk1, atk2, atk3, atk4, atk5,
+    ...flipFrames,
+    hit0, hit1,
+    death0, death1, death2,
   ];
+  // Guarantee zero adjacent duplicates across every tag boundary
+  let cursor = 0;
+  for (const t of HERO_TAGS) {
+    for (let k = 1; k < t.count; k++) {
+      row[cursor + k] = ensureNonDuplicate(row[cursor + k - 1], row[cursor + k], 96, cursor + k);
+    }
+    cursor += t.count;
+  }
+  return row;
 }
 
-const mortalBuilt = buildHeroMortal();
-const shengBuilt = buildHeroSheng();
-const danBuilt = buildHeroDan();
+/**
+ * Builds a silky-smooth 19-frame action row for one enemy direction.
+ */
+function buildEnemyDirectionRow({
+  dirName,
+  size,
+  idleSprite,
+  walkSprites,
+  attackSprite,
+  deathSprite = null,
+  refHeight,
+  targetFill,
+  allowVermilion = false,
+  attackStyle = 'beast_claw',
+  accentColor = [190, 210, 206],
+  floatAmp = 1,
+}) {
+  const footY = size === 96 ? 90 : 60;
+  const opt = { refHeight, targetFill, footY, allowVermilion, warmToAmber: !allowVermilion, centerMode: 'torso' };
 
+  const idle0 = renderSpriteToFrame(idleSprite, size, { ...opt, scaleY: 1.000, dy: 0 });
+  const idle1 = applyMicroAccent(renderSpriteToFrame(idleSprite, size, { ...opt, scaleY: 0.985, dy: -Math.min(1, floatAmp) }), size, 'breath1', accentColor);
+  const idle2 = applyMicroAccent(renderSpriteToFrame(idleSprite, size, { ...opt, scaleY: 0.970, dy: 0 }), size, 'breath2', accentColor);
+  const idle3 = applyMicroAccent(renderSpriteToFrame(idleSprite, size, { ...opt, scaleY: 0.985, dy: -Math.min(1, floatAmp) }), size, 'breath3', accentColor);
+
+  const bob = [0, -floatAmp, -Math.min(2, floatAmp + 1), -floatAmp, 0, -floatAmp];
+  const moveFrames = [];
+  for (let i = 0; i < 6; i++) {
+    const src = walkSprites[i % walkSprites.length];
+    let f = renderSpriteToFrame(src, size, { ...opt, dy: bob[i], scaleX: i % 2 === 0 ? 1.0 : 1.015 });
+    if (i === 1) f = applyMicroAccent(f, size, 'dust1', accentColor);
+    if (i === 4) f = applyMicroAccent(f, size, 'dust2', accentColor);
+    if (i > 0) f = ensureNonDuplicate(moveFrames[i - 1], f, size, i);
+    moveFrames.push(f);
+  }
+
+  const atkSrc = attackSprite || walkSprites[walkSprites.length - 1];
+  const atk0 = renderSpriteToFrame(idleSprite, size, { ...opt, scaleX: 0.95, scaleY: 1.04, dx: -1 });
+  const atk1 = renderSpriteToFrame(atkSrc, size, { ...opt, scaleX: 1.02, scaleY: 0.98, dx: 1 });
+  const atk2 = drawDirectionalAttackVfx(renderSpriteToFrame(atkSrc, size, { ...opt, scaleX: 1.04, scaleY: 0.97, dx: 2 }), size, dirName, attackStyle, 2);
+  const atk3 = renderSpriteToFrame(walkSprites[0], size, { ...opt, scaleX: 0.99, scaleY: 1.00 });
+
+  const hit0 = applyHitFlash(renderSpriteToFrame(idleSprite, size, { ...opt, dx: -2 }), size, 0);
+  const hit1 = applyHitFlash(renderSpriteToFrame(idleSprite, size, { ...opt, dx: -2, scaleY: 0.98 }), size, 1);
+
+  let death0, death1, death2;
+  if (deathSprite) {
+    const d0 = renderSpriteToFrame(deathSprite, size, opt);
+    death0 = d0;
+    death1 = applyInkDissolve(d0, size, 1);
+    death2 = applyInkDissolve(d0, size, 2);
+  } else {
+    const db = renderSpriteToFrame(idleSprite, size, opt);
+    death0 = applyInkDissolve(db, size, 0);
+    death1 = applyInkDissolve(db, size, 1);
+    death2 = applyInkDissolve(db, size, 2);
+  }
+
+  const row = [
+    idle0, idle1, idle2, idle3,
+    ...moveFrames,
+    atk0, atk1, atk2, atk3,
+    hit0, hit1,
+    death0, death1, death2,
+  ];
+  let cursor = 0;
+  for (const t of ENEMY_TAGS) {
+    for (let k = 1; k < t.count; k++) {
+      row[cursor + k] = ensureNonDuplicate(row[cursor + k - 1], row[cursor + k], size, cursor + k);
+    }
+    cursor += t.count;
+  }
+  return row;
+}
+
+// ---------------- Load Source Sheets ----------------
+console.log('[ExtractMultiDir] Loading 6 new multi-direction 45° sprite sheets + legacy night/boss sheets...');
+const mortalImg = loadJpgRgba(path.join(IMG_DIR, 'hero_mortal_8dir_sheet_1795835651172.jpg'));
+const shengImg = loadJpgRgba(path.join(IMG_DIR, 'hero_sheng_8dir_sheet_1795835655860.jpg'));
+const danImg = loadJpgRgba(path.join(IMG_DIR, 'hero_dan_8dir_sheet_1795835659122.jpg'));
+const wolfBoarImg = loadJpgRgba(path.join(IMG_DIR, 'day_wolf_boar_4dir_sheet_1795835662148.jpg'));
+const treantShanImg = loadJpgRgba(path.join(IMG_DIR, 'day_treant_shanxiao_4dir_sheet_1795835666562.jpg'));
+const nightBossImg = loadJpgRgba(path.join(IMG_DIR, 'night_boss_4dir_sheet_1795835667409.jpg'));
+const legacyNightImg = loadJpgRgba(path.join(IMG_DIR, 'night_enemies_45deg_1795737091722.jpg'));
+const legacyBossImg = loadJpgRgba(path.join(IMG_DIR, 'boss_special_45deg_1795737091473.jpg'));
+
+const mortalRows = extractAllRows(mortalImg, buildBgMask(mortalImg).isBg);
+const shengRows = extractAllRows(shengImg, buildBgMask(shengImg).isBg);
+const danRows = extractAllRows(danImg, buildBgMask(danImg).isBg);
+const wbRows = extractAllRows(wolfBoarImg, buildBgMask(wolfBoarImg).isBg);
+const tsRows = extractAllRows(treantShanImg, buildBgMask(treantShanImg).isBg);
+const nbRows = extractAllRows(nightBossImg, buildBgMask(nightBossImg).isBg, { stripFloorShadow: true });
+
+const legacyNightBg = buildBgMask(legacyNightImg).isBg;
+const legacyBossBg = buildBgMask(legacyBossImg).isBg;
+const legNightR2 = extractRowSegments(legacyNightImg, legacyNightBg, 375, 565);
+const legNightR3 = extractRowSegments(legacyNightImg, legacyNightBg, 565, 768);
+const legBossR0 = extractRowSegments(legacyBossImg, legacyBossBg, 0, 260);
+const legBossR1 = extractRowSegments(legacyBossImg, legacyBossBg, 260, 520);
+const legBossR2 = extractRowSegments(legacyBossImg, legacyBossBg, 520, 768);
+
+// ---------------- 1. Build 3 FULL 8-DIRECTION Heroes ----------------
+function build8DirHero(canonMap, opts) {
+  // canonMap has s, se, e, ne, n; nw/w/sw are exact horizontal mirrors of ne/e/se
+  const flipSeq = [canonMap.s.idle, canonMap.se.idle, canonMap.e.idle, canonMap.ne.idle, canonMap.n.idle, flipHorizontal(canonMap.se.idle)];
+  const mk = (dirName, c) => buildHeroDirectionRow({ dirName, idleSprite: c.idle, runSprites: c.runSprites, attackSprite: c.attackSprite, flipSprites: flipSeq, ...opts });
+  const rowS = mk('s', canonMap.s);
+  const rowSE = mk('se', canonMap.se);
+  const rowE = mk('e', canonMap.e);
+  const rowNE = mk('ne', canonMap.ne);
+  const rowN = mk('n', canonMap.n);
+  const rowNW = rowNE.map((f) => flipFrameBufferHorizontal(f, 96));
+  const rowW = rowE.map((f) => flipFrameBufferHorizontal(f, 96));
+  const rowSW = rowSE.map((f) => flipFrameBufferHorizontal(f, 96));
+  const rows = [rowS, rowSE, rowE, rowNE, rowN, rowNW, rowW, rowSW];
+  // Legacy 8-frame strip uses smooth SE row: walk(4) + hit(1) + death(3)
+  const legacy8 = [rowSE[4], rowSE[6], rowSE[8], rowSE[10], rowSE[24], rowSE[26], rowSE[27], rowSE[28]];
+  return { rows, defaultRow: rowSE, legacy8 };
+}
+
+// Mortal Lamp Bearer (5×10 crisp sheet — lantern 100% locked across all 8 directions!)
+const mortalRefH = mortalRows[0][0].h;
+const mortalBuilt = build8DirHero({
+  s: {
+    idle: mortalRows[0][0],
+    runSprites: [mortalRows[0][0], mortalRows[0][2], mortalRows[1][2], mortalRows[2][2]],
+    attackSprite: mortalRows[0][2],
+  },
+  se: {
+    idle: mortalRows[0][3],
+    runSprites: [mortalRows[0][3], mortalRows[1][3], mortalRows[3][3], mortalRows[4][3]],
+    attackSprite: mortalRows[0][9],
+  },
+  e: {
+    idle: mortalRows[2][4],
+    runSprites: [mortalRows[0][4], mortalRows[1][4], mortalRows[2][4], mortalRows[2][5], mortalRows[3][4], mortalRows[4][4]],
+    attackSprite: mortalRows[3][9],
+  },
+  ne: {
+    idle: mortalRows[0][8],
+    runSprites: [mortalRows[0][7], mortalRows[0][8], mortalRows[1][7], mortalRows[1][8], mortalRows[3][7], mortalRows[3][8]],
+    attackSprite: mortalRows[4][9],
+  },
+  n: {
+    idle: mortalRows[1][5],
+    runSprites: [mortalRows[1][5], mortalRows[3][5], mortalRows[4][1], mortalRows[4][5]],
+    attackSprite: mortalRows[3][5],
+  },
+}, { refHeight: mortalRefH, targetFill: 0.85, attackStyle: 'mortal_flame', accentColor: [242, 198, 96], warmToAmber: true });
+
+// Wusheng (5×6 crisp sheet)
+const shengRefH = shengRows[0][0].h;
+const shengBuilt = build8DirHero({
+  s: {
+    idle: shengRows[0][0],
+    runSprites: [shengRows[0][1], shengRows[0][2], shengRows[1][0], shengRows[0][1]],
+    attackSprite: shengRows[0][2],
+  },
+  se: {
+    idle: shengRows[1][1],
+    runSprites: [shengRows[1][1], shengRows[1][2], shengRows[0][3], shengRows[0][4], shengRows[1][3], shengRows[1][4]],
+    attackSprite: shengRows[0][5],
+  },
+  e: {
+    idle: shengRows[2][0],
+    runSprites: [shengRows[2][1], shengRows[2][2], shengRows[2][3], shengRows[2][4]],
+    attackSprite: shengRows[2][5],
+  },
+  ne: {
+    idle: shengRows[3][0],
+    runSprites: [shengRows[3][0], shengRows[3][1], shengRows[3][3], shengRows[3][4]],
+    attackSprite: shengRows[3][5],
+  },
+  n: {
+    idle: shengRows[4][0],
+    runSprites: [shengRows[4][1], shengRows[4][2], shengRows[4][3], shengRows[4][4]],
+    attackSprite: shengRows[4][5],
+  },
+}, { refHeight: shengRefH, targetFill: 0.87, attackStyle: 'sheng_thrust', accentColor: [216, 230, 236], warmToAmber: false });
+
+// Qingyi Dan (5×6 crisp sheet)
+const danRefH = danRows[0][0].h;
+const danBuilt = build8DirHero({
+  s: {
+    idle: danRows[0][0],
+    runSprites: [danRows[0][1], danRows[0][2], danRows[0][3], danRows[0][4]],
+    attackSprite: danRows[0][5],
+  },
+  se: {
+    idle: danRows[1][0],
+    runSprites: [danRows[1][1], danRows[1][2], danRows[1][3], danRows[1][4]],
+    attackSprite: danRows[0][5],
+  },
+  e: {
+    idle: danRows[2][0],
+    runSprites: [danRows[2][1], danRows[2][2], danRows[2][3], danRows[2][4]],
+    attackSprite: danRows[2][5],
+  },
+  ne: {
+    idle: danRows[3][0],
+    runSprites: [danRows[3][1], danRows[3][2], danRows[3][3], danRows[3][4]],
+    attackSprite: danRows[3][5],
+  },
+  n: {
+    idle: danRows[4][0],
+    runSprites: [danRows[4][1], danRows[4][2], danRows[4][3], danRows[4][4]],
+    attackSprite: danRows[4][5],
+  },
+}, { refHeight: danRefH, targetFill: 0.86, attackStyle: 'dan_sleeve', accentColor: [168, 212, 198], warmToAmber: false });
+
+// ---------------- 2. Build 7 FULL 4-DIRECTION Enemies (4 Daytime + Ghost + Jiangshi + Boss) ----------------
+function build4DirEnemy(canonMap, opts) {
+  const rowS = buildEnemyDirectionRow({ dirName: 's', ...canonMap.s, ...opts });
+  const rowE = buildEnemyDirectionRow({ dirName: 'e', ...canonMap.e, ...opts });
+  const rowN = buildEnemyDirectionRow({ dirName: 'n', ...canonMap.n, ...opts });
+  const rowW = rowE.map((f) => flipFrameBufferHorizontal(f, opts.size));
+  const rows = [rowS, rowE, rowN, rowW];
+  const legacy8 = [rowE[4], rowE[5], rowE[6], rowE[7], rowE[14], rowE[16], rowE[17], rowE[18]];
+  return { rows, defaultRow: rowE, legacy8 };
+}
+
+// Wolf (wbRows[0..2])
+const wolfBuilt = build4DirEnemy({
+  s: { idleSprite: wbRows[0][0], walkSprites: [wbRows[0][0], wbRows[0][1], wbRows[0][2], flipHorizontal(wbRows[0][2])], attackSprite: wbRows[0][2] },
+  e: { idleSprite: wbRows[1][0], walkSprites: [wbRows[1][0], wbRows[1][1], wbRows[1][2], wbRows[1][3]], attackSprite: wbRows[1][3] },
+  n: { idleSprite: wbRows[2][0], walkSprites: [wbRows[2][0], wbRows[2][1], wbRows[2][2], flipHorizontal(wbRows[2][1])], attackSprite: wbRows[2][2] },
+}, { size: 64, refHeight: wbRows[0][0].h, targetFill: 0.78, allowVermilion: false, attackStyle: 'beast_claw', accentColor: [176, 206, 204] });
+
+// Boar (wbRows[3..5])
+const boarBuilt = build4DirEnemy({
+  s: { idleSprite: wbRows[3][0], walkSprites: [wbRows[3][0], flipHorizontal(wbRows[3][0]), wbRows[3][0]], attackSprite: wbRows[3][0] },
+  e: { idleSprite: wbRows[4][0], walkSprites: [wbRows[4][0], wbRows[4][1], wbRows[4][2], flipHorizontal(wbRows[4][3]), wbRows[3][1], wbRows[3][2]], attackSprite: wbRows[4][2] },
+  n: { idleSprite: wbRows[5][0], walkSprites: [wbRows[5][0], wbRows[5][1], wbRows[5][2]], attackSprite: wbRows[5][1] },
+}, { size: 64, refHeight: wbRows[3][0].h, targetFill: 0.78, allowVermilion: false, attackStyle: 'beast_claw', accentColor: [188, 198, 184] });
+
+// Treant (tsRows[0..2] — 8 smooth frames per direction!)
+const treantBuilt = build4DirEnemy({
+  s: { idleSprite: tsRows[0][0], walkSprites: tsRows[0].slice(1, 7), attackSprite: tsRows[0][7] },
+  e: { idleSprite: tsRows[1][0], walkSprites: tsRows[1].slice(1, 7), attackSprite: tsRows[1][7] },
+  n: { idleSprite: tsRows[2][0], walkSprites: tsRows[2].slice(1, 7), attackSprite: tsRows[2][7] },
+}, { size: 64, refHeight: tsRows[0][0].h, targetFill: 0.85, allowVermilion: false, attackStyle: 'beast_claw', accentColor: [148, 194, 162], floatAmp: 0 });
+
+// Shanxiao Elite (tsRows[3..5] — 8 smooth frames per direction!)
+const shanxiaoBuilt = build4DirEnemy({
+  s: { idleSprite: tsRows[3][0], walkSprites: tsRows[3].slice(1, 7), attackSprite: tsRows[3][7] },
+  e: { idleSprite: tsRows[4][1], walkSprites: tsRows[4].slice(1, 7), attackSprite: tsRows[4][7] },
+  n: { idleSprite: tsRows[5][1], walkSprites: tsRows[5].slice(1, 7), attackSprite: tsRows[5][6] },
+}, { size: 96, refHeight: tsRows[3][0].h, targetFill: 0.86, allowVermilion: true, attackStyle: 'crimson_brush', accentColor: [216, 74, 66] });
+
+// Ghost (nbRows[0..1])
+const ghostBuilt = build4DirEnemy({
+  s: { idleSprite: nbRows[0][0], walkSprites: [nbRows[0][0], nbRows[0][1], nbRows[0][5], nbRows[0][1]], attackSprite: nbRows[0][5], deathSprite: nbRows[1][5] },
+  e: { idleSprite: nbRows[0][2], walkSprites: [nbRows[0][2], nbRows[0][3], nbRows[0][4], nbRows[0][6]], attackSprite: nbRows[1][3], deathSprite: nbRows[1][5] },
+  n: { idleSprite: nbRows[1][0], walkSprites: [nbRows[1][0], nbRows[1][1], nbRows[1][2]], attackSprite: nbRows[1][2], deathSprite: nbRows[1][5] },
+}, { size: 64, refHeight: nbRows[0][0].h, targetFill: 0.84, allowVermilion: false, attackStyle: 'dan_sleeve', accentColor: [176, 218, 220], floatAmp: 2 });
+
+// Jiangshi (nbRows[2..3])
+const jiangshiBuilt = build4DirEnemy({
+  s: { idleSprite: nbRows[2][0], walkSprites: [nbRows[2][0], nbRows[2][1], nbRows[2][0], nbRows[2][1]], attackSprite: nbRows[2][1], deathSprite: nbRows[3][5] },
+  e: { idleSprite: nbRows[2][2], walkSprites: nbRows[2].slice(2, 8), attackSprite: nbRows[3][4], deathSprite: nbRows[3][5] },
+  n: { idleSprite: nbRows[3][0], walkSprites: nbRows[3].slice(0, 4), attackSprite: nbRows[3][3], deathSprite: nbRows[3][5] },
+}, { size: 64, refHeight: nbRows[2][0].h, targetFill: 0.84, allowVermilion: true, attackStyle: 'beast_claw', accentColor: [212, 198, 136], floatAmp: 2 });
+
+// Magistrate Boss (nbRows[4..5] + calm East strides from legBossR0)
+const bossBuilt = build4DirEnemy({
+  s: { idleSprite: nbRows[4][0], walkSprites: [nbRows[4][0], nbRows[4][1], nbRows[4][2], nbRows[4][3]], attackSprite: nbRows[5][4], deathSprite: nbRows[5][5] },
+  e: { idleSprite: legBossR0[0], walkSprites: [legBossR0[0], legBossR0[1], legBossR0[2], legBossR0[1]], attackSprite: nbRows[5][4], deathSprite: nbRows[5][5] },
+  n: { idleSprite: nbRows[5][0], walkSprites: [nbRows[5][0], nbRows[5][1], nbRows[5][2], nbRows[5][3]], attackSprite: nbRows[5][3], deathSprite: nbRows[5][5] },
+}, { size: 96, refHeight: nbRows[4][0].h, targetFill: 0.88, allowVermilion: true, attackStyle: 'crimson_brush', accentColor: [220, 74, 64], floatAmp: 1 });
+
+// ---------------- Write ALL 10 Multi-Direction Cel-Ink Actors ----------------
 const celActors = [
-  { base: 'player_mortal_cel', size: 96, frames: mortalBuilt.frames, tags: HERO_TAGS, framesDir: FRAMES_96_DIR },
-  { base: 'player_sheng_cel', size: 96, frames: shengBuilt.frames, tags: HERO_TAGS, framesDir: path.join(GODOT_DIR, 'art_pipeline/frames_player_sheng_cel') },
-  { base: 'player_dan_cel', size: 96, frames: danBuilt.frames, tags: HERO_TAGS, framesDir: path.join(GODOT_DIR, 'art_pipeline/frames_player_dan_cel') },
-  { base: 'enemy_wolf_cel', size: 64, frames: buildDaytimeEnemy(wolfPoses, 64, { targetFill: 0.72 }), tags: ENEMY_TAGS, framesDir: path.join(GODOT_DIR, 'art_pipeline/frames_enemy_wolf_cel') },
-  { base: 'enemy_boar_cel', size: 64, frames: buildDaytimeEnemy(boarPoses, 64, { targetFill: 0.72 }), tags: ENEMY_TAGS, framesDir: path.join(GODOT_DIR, 'art_pipeline/frames_enemy_boar_cel') },
-  { base: 'enemy_treant_cel', size: 64, frames: buildDaytimeEnemy(treantPoses, 64, { targetFill: 0.85, slashColor: [148, 186, 152] }), tags: ENEMY_TAGS, framesDir: path.join(GODOT_DIR, 'art_pipeline/frames_enemy_treant_cel') },
-  { base: 'enemy_shanxiao_cel', size: 96, frames: buildDaytimeEnemy(shanxiaoPoses, 96, { allowVermilion: true, targetFill: 0.86, slashColor: [212, 74, 68] }), tags: ENEMY_TAGS, framesDir: path.join(GODOT_DIR, 'art_pipeline/frames_enemy_shanxiao_cel') },
+  {
+    key: 'player_mortal', base: 'player_mortal_cel', name: '提灯少年', role: '凡界主角 · 8方向 · 120° 减速灯火锥',
+    category: 'hero', size: 96, scale: 1, offset_y: -18, fps: 12, allow_vermilion: false,
+    directions: DIRS_8, defaultDir: 'se', tags: HERO_TAGS, built: mortalBuilt,
+    framesDir: path.join(GODOT_DIR, 'art_pipeline/frames_96'),
+  },
+  {
+    key: 'player_sheng', base: 'player_sheng_cel', name: '武生（阳面）', role: '诡界主角 · 8方向 · 直线 3 穿透剑气',
+    category: 'hero', size: 96, scale: 1, offset_y: -18, fps: 12, allow_vermilion: false,
+    directions: DIRS_8, defaultDir: 'se', tags: HERO_TAGS, built: shengBuilt,
+    framesDir: path.join(GODOT_DIR, 'art_pipeline/frames_player_sheng_cel'),
+  },
+  {
+    key: 'player_dan', base: 'player_dan_cel', name: '青衣旦（阴面）', role: '诡界主角 · 8方向 · 220° 水袖击退',
+    category: 'hero', size: 96, scale: 1, offset_y: -18, fps: 12, allow_vermilion: false,
+    directions: DIRS_8, defaultDir: 'se', tags: HERO_TAGS, built: danBuilt,
+    framesDir: path.join(GODOT_DIR, 'art_pipeline/frames_player_dan_cel'),
+  },
+  {
+    key: 'wolf', base: 'enemy_wolf_cel', name: '山狼', role: '白昼山林 · 4方向 · 高速绕袭轻怪',
+    category: 'day_enemy', size: 64, scale: 1, offset_y: -12, fps: 11, allow_vermilion: false,
+    directions: DIRS_4, defaultDir: 'e', tags: ENEMY_TAGS, built: wolfBuilt,
+    framesDir: path.join(GODOT_DIR, 'art_pipeline/frames_enemy_wolf_cel'),
+  },
+  {
+    key: 'boar', base: 'enemy_boar_cel', name: '野猪', role: '白昼山林 · 4方向 · 蓄力直线冲锋',
+    category: 'day_enemy', size: 64, scale: 1.05, offset_y: -12, fps: 10, allow_vermilion: false,
+    directions: DIRS_4, defaultDir: 'e', tags: ENEMY_TAGS, built: boarBuilt,
+    framesDir: path.join(GODOT_DIR, 'art_pipeline/frames_enemy_boar_cel'),
+  },
+  {
+    key: 'treant', base: 'enemy_treant_cel', name: '树妖', role: '白昼山林 · 4方向 · 高血量慢速重怪',
+    category: 'day_enemy', size: 64, scale: 1.15, offset_y: -16, fps: 9, allow_vermilion: false,
+    directions: DIRS_4, defaultDir: 'e', tags: ENEMY_TAGS, built: treantBuilt,
+    framesDir: path.join(GODOT_DIR, 'art_pipeline/frames_enemy_treant_cel'),
+  },
+  {
+    key: 'shanxiao', base: 'enemy_shanxiao_cel', name: '山魈（白昼精英）', role: '白昼精英 · 4方向 · 扑袭红眼山精',
+    category: 'day_elite', size: 96, scale: 1.2, offset_y: -22, fps: 10, allow_vermilion: true,
+    directions: DIRS_4, defaultDir: 'e', tags: ENEMY_TAGS, built: shanxiaoBuilt,
+    framesDir: path.join(GODOT_DIR, 'art_pipeline/frames_enemy_shanxiao_cel'),
+  },
+  {
+    key: 'ghost', base: 'ghost_cel', name: '游魂', role: '诡界幽祟 · 4方向 · 飘忽追魂',
+    category: 'night_enemy', size: 64, scale: 1.0, offset_y: -8, fps: 10, allow_vermilion: false,
+    directions: DIRS_4, defaultDir: 'e', tags: ENEMY_TAGS, built: ghostBuilt,
+    framesDir: path.join(GODOT_DIR, 'art_pipeline/frames_ghost_cel'),
+  },
+  {
+    key: 'jiangshi', base: 'jiangshi_cel', name: '行尸', role: '诡界僵祟 · 4方向 · 符箓跳行',
+    category: 'night_enemy', size: 64, scale: 1.0, offset_y: -14, fps: 9, allow_vermilion: true,
+    directions: DIRS_4, defaultDir: 'e', tags: ENEMY_TAGS, built: jiangshiBuilt,
+    framesDir: path.join(GODOT_DIR, 'art_pipeline/frames_jiangshi_cel'),
+  },
+  {
+    key: 'boss_magistrate', base: 'boss_magistrate_cel', name: '纸扎判官（Boss）', role: '诡界头目 · 4方向 · 朱笔判生死',
+    category: 'boss', size: 96, scale: 1.35, offset_y: -26, fps: 9, allow_vermilion: true,
+    directions: DIRS_4, defaultDir: 's', tags: ENEMY_TAGS, built: bossBuilt,
+    framesDir: path.join(GODOT_DIR, 'art_pipeline/frames_boss_magistrate_cel'),
+  },
 ];
 
-for (const actor of celActors) {
-  const stitched = stitchFramesHorizontal(actor.frames, actor.size);
-  fs.writeFileSync(path.join(SPRITES_DIR, `${actor.base}.png`), encodePngRgba(stitched.w, stitched.h, stitched.rgba));
-  const jsonDoc = buildAsepriteJson(actor.base, actor.size, actor.tags, actor.frames.length);
-  fs.writeFileSync(path.join(SPRITES_DIR, `${actor.base}.json`), JSON.stringify(jsonDoc, null, 2) + '\n');
+const celManifest = { version: '4.0', actors: [] };
 
+for (const actor of celActors) {
+  const grid = stitchDirectionalGrid(actor.built.rows, actor.size);
+  writeToSpriteDirs(`${actor.base}.png`, encodePngRgba(grid.w, grid.h, grid.rgba));
+  const jsonDoc = buildDirectionalAsepriteJson(actor.base, actor.size, actor.tags, actor.directions, actor.defaultDir);
+  writeToSpriteDirs(`${actor.base}.json`, JSON.stringify(jsonDoc, null, 2) + '\n');
+
+  // Save default-direction clean individual frames for Aseprite Lua assembly (`idle_01.png`, ...)
   if (actor.framesDir) {
     fs.rmSync(actor.framesDir, { recursive: true, force: true });
     fs.mkdirSync(actor.framesDir, { recursive: true });
-    for (let i = 0; i < actor.frames.length; i++) {
-      fs.writeFileSync(path.join(actor.framesDir, jsonDoc.frames[i].filename), encodePngRgba(actor.size, actor.size, actor.frames[i]));
+    let idx = 0;
+    for (const t of actor.tags) {
+      for (let k = 0; k < t.count; k++) {
+        const fn = `${t.name}_${String(k + 1).padStart(2, '0')}.png`;
+        fs.writeFileSync(path.join(actor.framesDir, fn), encodePngRgba(actor.size, actor.size, actor.built.defaultRow[idx]));
+        idx++;
+      }
     }
   }
-  console.log(`[Extract45Deg] Wrote ${actor.base}.png (${stitched.w}x${stitched.h}, ${actor.frames.length}f) + ${actor.frames.length} source frames`);
+
+  celManifest.actors.push({
+    key: actor.key,
+    name: actor.name,
+    role: actor.role,
+    category: actor.category,
+    size: actor.size,
+    scale: actor.scale,
+    offset_y: actor.offset_y,
+    fps: actor.fps,
+    directions: actor.directions,
+    direction_count: actor.directions.length,
+    cel_path: `res://assets/sprites/${actor.base}.png`,
+    aseprite_json: `res://assets/sprites/${actor.base}.json`,
+    qa_json: `${actor.base}.qa.json`,
+    file: `${actor.base}.png`,
+    json_file: `${actor.base}.json`,
+    allow_vermilion: actor.allow_vermilion,
+  });
+
+  console.log(`[ExtractMultiDir] Wrote ${actor.base}.png (${grid.w}x${grid.h}, ${actor.directions.length} dirs × ${grid.cols}f = ${grid.rows * grid.cols}f)`);
 }
 
-// ---------------- 3. Assemble ALL 11 Legacy 8-Frame Strips (Strict 45° Top-Down, <= 16 colors) ----------------
-function buildProtocol8(walkSprites, size, {
-  allowVermilion = true,
-  targetFill = 0.84,
-  floatAmp = 1,
-  accent = [180, 210, 210],
-  normalizeEach = false,
-  hitSprite = null,
-  deathSprites = null,
-} = {}) {
-  const allSrc = [...walkSprites, ...(hitSprite ? [hitSprite] : []), ...(deathSprites || [])];
+writeToSpriteDirs('cel_manifest.json', JSON.stringify(celManifest, null, 2) + '\n');
+
+// Update manifest.json so Ghost, Jiangshi, Boss Magistrate ALSO wire their new 4-dir Cel-Ink sheets while keeping 11 upstream keys!
+const manifestJson = {
+  player_mortal: { path: 'res://assets/sprites/player_mortal.png', cel_path: 'res://assets/sprites/player_mortal_cel.png', aseprite_json: 'res://assets/sprites/player_mortal_cel.json', size: 96, fps: 12.0, scale: 1.0, offset_y: -18.0 },
+  player_sheng: { path: 'res://assets/sprites/player_sheng.png', cel_path: 'res://assets/sprites/player_sheng_cel.png', aseprite_json: 'res://assets/sprites/player_sheng_cel.json', size: 96, fps: 12.0, scale: 1.0, offset_y: -18.0 },
+  player_dan: { path: 'res://assets/sprites/player_dan.png', cel_path: 'res://assets/sprites/player_dan_cel.png', aseprite_json: 'res://assets/sprites/player_dan_cel.json', size: 96, fps: 12.0, scale: 1.0, offset_y: -18.0 },
+  boss_magistrate: { path: 'res://assets/sprites/boss_magistrate.png', cel_path: 'res://assets/sprites/boss_magistrate_cel.png', aseprite_json: 'res://assets/sprites/boss_magistrate_cel.json', size: 96, fps: 9.0, scale: 1.35, offset_y: -26.0 },
+  ghost: { path: 'res://assets/sprites/ghost.png', cel_path: 'res://assets/sprites/ghost_cel.png', aseprite_json: 'res://assets/sprites/ghost_cel.json', size: 64, fps: 10.0, scale: 1.0, offset_y: -8.0 },
+  jiangshi: { path: 'res://assets/sprites/jiangshi.png', cel_path: 'res://assets/sprites/jiangshi_cel.png', aseprite_json: 'res://assets/sprites/jiangshi_cel.json', size: 64, fps: 9.0, scale: 1.0, offset_y: -14.0 },
+  wisp_caster: { path: 'res://assets/sprites/wisp_caster.png', size: 64, fps: 9.0, scale: 1.0, offset_y: -12.0 },
+  elite_ghost: { path: 'res://assets/sprites/elite_ghost.png', size: 64, fps: 8.0, scale: 1.35, offset_y: -12.0 },
+  elite_jiangshi: { path: 'res://assets/sprites/elite_jiangshi.png', size: 64, fps: 7.0, scale: 1.3, offset_y: -18.0 },
+  punisher: { path: 'res://assets/sprites/punisher.png', size: 64, fps: 9.0, scale: 1.25, offset_y: -18.0 },
+  white_stranger: { path: 'res://assets/sprites/white_stranger.png', size: 64, fps: 6.0, scale: 1.1, offset_y: -14.0 },
+};
+writeToSpriteDirs('manifest.json', JSON.stringify(manifestJson, null, 2) + '\n');
+
+// ---------------- 3. Refresh ALL 11 Legacy 8-Frame Strips (<= 16/18 colors) ----------------
+function buildProtocol8(walkSprites, size, { allowVermilion = true, targetFill = 0.84, floatAmp = 1, accent = [180, 210, 210], hitSprite = null, deathSprite = null } = {}) {
+  const allSrc = [...walkSprites, ...(hitSprite ? [hitSprite] : []), ...(deathSprite ? [deathSprite] : [])];
   const refH = Math.max(...allSrc.map((s) => s.h));
   const footY = size === 96 ? 90 : 60;
   const renderOne = (src, dx = 0, dy = 0, scaleY = 1.0) =>
-    renderSpriteToFrame(src, size, { refHeight: normalizeEach ? src.h : refH, targetFill, footY, dx, dy, scaleY, allowVermilion });
-
+    renderSpriteToFrame(src, size, { refHeight: refH, targetFill, footY, dx, dy, scaleY, allowVermilion, centerMode: 'torso' });
   const walkFrames = [0, 1, 2, 3].map((i) => {
-    const src = walkSprites[i % walkSprites.length];
     const dy = Math.round(Math.sin((i / 4) * Math.PI * 2) * floatAmp);
-    const dx = i === 1 ? 1 : i === 3 ? -1 : 0;
-    const scaleY = i % 2 === 0 ? 1.0 : 0.98;
-    let f = renderOne(src, dx, dy, scaleY);
-    if (i % 2 === 1) f = applySubtleAuraOrDust(f, size, i === 1 ? 'shimmer1' : 'shimmer2', accent);
+    let f = renderOne(walkSprites[i % walkSprites.length], 0, dy, i % 2 === 0 ? 1.0 : 0.985);
+    if (i % 2 === 1) f = applyMicroAccent(f, size, 'breath1', accent);
     return f;
   });
-
-  const hitFrame = applyHitFlash(renderOne(hitSprite || walkSprites[walkSprites.length - 1], -2, 0), size, 0);
-
-  let deathFrames;
-  if (deathSprites && deathSprites.length >= 2) {
-    const d0 = renderOne(deathSprites[0], 0, 0);
-    const d1 = renderOne(deathSprites[1], 0, 0);
-    deathFrames = [d0, d1, applyInkDissolve(d1, size, 1)];
-  } else if (deathSprites && deathSprites.length === 1) {
-    const d0 = renderOne(deathSprites[0], 0, 0);
-    deathFrames = [d0, applyInkDissolve(d0, size, 1), applyInkDissolve(d0, size, 2)];
-  } else {
-    const base = renderOne(walkSprites[0], 0, 0);
-    deathFrames = [applyInkDissolve(base, size, 0), applyInkDissolve(base, size, 1), applyInkDissolve(base, size, 2)];
-  }
-  return [...walkFrames, hitFrame, ...deathFrames];
+  const hitFrame = applyHitFlash(renderOne(hitSprite || walkSprites[0], -2, 0), size, 0);
+  const d0 = deathSprite ? renderOne(deathSprite, 0, 0) : applyInkDissolve(renderOne(walkSprites[0]), size, 0);
+  const d1 = applyInkDissolve(d0, size, 1);
+  const d2 = applyInkDissolve(d0, size, 2);
+  return [...walkFrames, hitFrame, d0, d1, d2];
 }
 
+const wispPoses = legNightR2.slice(0, 4);
+const eliteGhostPoses = [...legNightR2.slice(4, 8), legNightR3[2], legNightR3[3]];
+const eliteJiangshiPoses = [legNightR3[0], legNightR3[1], legNightR3[4], legNightR3[5]];
+
 const legacySpecs = [
-  { key: 'player_mortal', label: '提灯少年（人间·45°俯视）', size: 96, fps: 8, frames: mortalBuilt.legacy8 },
-  { key: 'player_sheng', label: '武生快剑（诡界生·45°俯视）', size: 96, fps: 10, frames: shengBuilt.legacy8 },
-  { key: 'player_dan', label: '青衣水袖（诡界旦·45°俯视）', size: 96, fps: 9, frames: danBuilt.legacy8 },
-  {
-    key: 'boss_magistrate', label: '纸扎判官（Boss·45°俯视）', size: 96, fps: 7,
-    frames: buildProtocol8(
-      [bossPoses[0], bossPoses[2], bossPoses[3], bossPoses[4]],
-      96, { allowVermilion: true, targetFill: 0.88, floatAmp: 1, accent: [215, 72, 66], hitSprite: bossPoses[5], deathSprites: [bossPoses[6]] }
-    ),
-  },
-  {
-    key: 'ghost', label: '游魂（45°俯视）', size: 64, fps: 8,
-    frames: buildProtocol8([ghostPoses[0], ghostPoses[1], ghostPoses[2], ghostPoses[3]], 64, { allowVermilion: false, targetFill: 0.82, floatAmp: 2, accent: [172, 214, 218], normalizeEach: true }),
-  },
-  {
-    key: 'jiangshi', label: '行尸（45°俯视）', size: 64, fps: 7,
-    frames: buildProtocol8([jiangshiPoses[2], jiangshiPoses[3], jiangshiPoses[6], jiangshiPoses[7]], 64, { allowVermilion: true, targetFill: 0.84, floatAmp: 2, accent: [198, 190, 148] }),
-  },
-  {
-    key: 'wisp_caster', label: '鬼火灵（45°俯视）', size: 64, fps: 9,
-    frames: buildProtocol8([wispPoses[0], wispPoses[1], wispPoses[2], wispPoses[3]], 64, { allowVermilion: false, targetFill: 0.84, floatAmp: 2, accent: [148, 224, 198] }),
-  },
-  {
-    key: 'elite_ghost', label: '红眼大幽魂（精英·45°俯视）', size: 64, fps: 8,
-    frames: buildProtocol8([eliteGhostPoses[0], eliteGhostPoses[1], eliteGhostPoses[2], eliteGhostPoses[3]], 64, { allowVermilion: true, targetFill: 0.86, floatAmp: 2, accent: [216, 70, 68], normalizeEach: true }),
-  },
-  {
-    key: 'elite_jiangshi', label: '红眼印章尸（精英·45°俯视）', size: 64, fps: 7,
-    frames: buildProtocol8([eliteJiangshiPoses[0], eliteJiangshiPoses[1], eliteJiangshiPoses[4], eliteJiangshiPoses[5]], 64, { allowVermilion: true, targetFill: 0.86, floatAmp: 1, accent: [216, 70, 68] }),
-  },
-  {
-    key: 'punisher', label: '白纸差役（破戒追猎·45°俯视）', size: 64, fps: 9,
-    frames: buildProtocol8([punisherPoses[1], punisherPoses[2], punisherPoses[4], punisherPoses[5]], 64, { allowVermilion: true, targetFill: 0.86, floatAmp: 1, accent: [224, 228, 226], hitSprite: punisherPoses[6], deathSprites: [punisherPoses[7]] }),
-  },
-  {
-    key: 'white_stranger', label: '白衣问路人（禁忌七·45°俯视）', size: 64, fps: 6,
-    frames: buildProtocol8([strangerPoses[0], strangerPoses[1], strangerPoses[2], strangerPoses[4]], 64, { allowVermilion: true, targetFill: 0.86, floatAmp: 1, accent: [228, 232, 230], hitSprite: strangerPoses[6], deathSprites: [strangerPoses[7]] }),
-  },
+  { key: 'player_mortal', label: '提灯少年（8向流畅·45°俯视）', size: 96, fps: 12, frames: mortalBuilt.legacy8 },
+  { key: 'player_sheng', label: '武生快剑（8向流畅·45°俯视）', size: 96, fps: 12, frames: shengBuilt.legacy8 },
+  { key: 'player_dan', label: '青衣水袖（8向流畅·45°俯视）', size: 96, fps: 12, frames: danBuilt.legacy8 },
+  { key: 'boss_magistrate', label: '纸扎判官（4向Boss·45°俯视）', size: 96, fps: 9, frames: bossBuilt.legacy8 },
+  { key: 'ghost', label: '游魂（4向流畅·45°俯视）', size: 64, fps: 10, frames: ghostBuilt.legacy8 },
+  { key: 'jiangshi', label: '行尸（4向流畅·45°俯视）', size: 64, fps: 9, frames: jiangshiBuilt.legacy8 },
+  { key: 'wisp_caster', label: '鬼火灵（45°俯视）', size: 64, fps: 9, frames: buildProtocol8(wispPoses, 64, { allowVermilion: false, targetFill: 0.84, floatAmp: 2, accent: [148, 224, 198] }) },
+  { key: 'elite_ghost', label: '红眼大幽魂（精英·45°俯视）', size: 64, fps: 8, frames: buildProtocol8(eliteGhostPoses.slice(0, 4), 64, { allowVermilion: true, targetFill: 0.86, floatAmp: 2, accent: [216, 70, 68] }) },
+  { key: 'elite_jiangshi', label: '红眼印章尸（精英·45°俯视）', size: 64, fps: 7, frames: buildProtocol8(eliteJiangshiPoses, 64, { allowVermilion: true, targetFill: 0.86, floatAmp: 1, accent: [216, 70, 68] }) },
+  { key: 'punisher', label: '白纸差役（破戒追猎·45°俯视）', size: 64, fps: 9, frames: buildProtocol8([legBossR1[1], legBossR1[2], legBossR1[4], legBossR1[5]], 64, { allowVermilion: true, targetFill: 0.86, floatAmp: 1, hitSprite: legBossR1[6], deathSprite: legBossR1[7] }) },
+  { key: 'white_stranger', label: '白衣问路人（禁忌七·45°俯视）', size: 64, fps: 6, frames: buildProtocol8([legBossR2[0], legBossR2[1], legBossR2[2], legBossR2[4]], 64, { allowVermilion: true, targetFill: 0.86, floatAmp: 1, hitSprite: legBossR2[6], deathSprite: legBossR2[7] }) },
 ];
 
 const paletteReport = {
-  version: '3.0.0',
-  protocol: 'horizontal_strip_v1_45deg_top_down',
+  version: '4.0.0',
+  protocol: 'horizontal_strip_v1_45deg_multidir',
   palette_gate: 'ink_night_18_colors',
   sprites: {},
 };
@@ -1138,7 +1430,7 @@ const paletteReport = {
 for (const spec of legacySpecs) {
   const stitched = stitchFramesHorizontal(spec.frames, spec.size);
   const { rgba: quantized, colorsUsed } = quantizeToMaxColors(stitched.rgba, 16);
-  fs.writeFileSync(path.join(SPRITES_DIR, `${spec.key}.png`), encodePngRgba(stitched.w, stitched.h, quantized));
+  writeToSpriteDirs(`${spec.key}.png`, encodePngRgba(stitched.w, stitched.h, quantized));
   paletteReport.sprites[spec.key] = {
     path: `res://assets/sprites/${spec.key}.png`,
     file: `${spec.key}.png`,
@@ -1149,22 +1441,24 @@ for (const spec of legacySpecs) {
     colors_used: colorsUsed,
     palette_gate_passed: colorsUsed <= 18,
   };
-  console.log(`[Extract45Deg] Wrote legacy ${spec.key}.png (${stitched.w}x${stitched.h}, ${colorsUsed} colors <= 18)`);
+  console.log(`[ExtractMultiDir] Wrote legacy ${spec.key}.png (${stitched.w}x${stitched.h}, ${colorsUsed} colors <= 18)`);
 }
 
-fs.writeFileSync(path.join(SPRITES_DIR, 'palette-report.json'), JSON.stringify(paletteReport, null, 2) + '\n');
+writeToSpriteDirs('palette-report.json', JSON.stringify(paletteReport, null, 2) + '\n');
 
-// Update reference sheets in godot-prototype/assets/sprites/reference/ with the strict 45° sheets
+// Update reference sheets in BOTH sprite directories
 const refCopies = [
-  ['hero_mortal_45deg_1795737076592.jpg', 'hero_mortal_sheet.jpg'],
-  ['hero_sheng_45deg_1795737080278.jpg', 'hero_sheng_sheet.jpg'],
-  ['hero_dan_45deg_1795737084179.jpg', 'hero_dan_sheet.jpg'],
-  ['daytime_enemies_45deg_1795737088239.jpg', 'daytime_enemies_sheet.jpg'],
+  ['hero_mortal_8dir_sheet_1795835651172.jpg', 'hero_mortal_sheet.jpg'],
+  ['hero_sheng_8dir_sheet_1795835655860.jpg', 'hero_sheng_sheet.jpg'],
+  ['hero_dan_8dir_sheet_1795835659122.jpg', 'hero_dan_sheet.jpg'],
+  ['day_wolf_boar_4dir_sheet_1795835662148.jpg', 'day_wolf_boar_sheet.jpg'],
+  ['day_treant_shanxiao_4dir_sheet_1795835666562.jpg', 'daytime_enemies_sheet.jpg'],
+  ['night_boss_4dir_sheet_1795835667409.jpg', 'boss_judge_sheet.jpg'],
   ['night_enemies_45deg_1795737091722.jpg', 'enemies_pixel_sheet.jpg'],
-  ['boss_special_45deg_1795737091473.jpg', 'boss_judge_sheet.jpg'],
 ];
 for (const [src, dst] of refCopies) {
-  fs.copyFileSync(path.join(IMG_DIR, src), path.join(REF_DIR, dst));
+  const buf = fs.readFileSync(path.join(IMG_DIR, src));
+  writeToSpriteDirs(path.join('reference', dst), buf);
 }
 
-console.log('[Extract45Deg] All 18 strict 45-degree top-down spritesheets generated successfully!');
+console.log('[ExtractMultiDir] All 10 multi-direction Cel-Ink atlases + 11 legacy 8-frame strips generated successfully!');

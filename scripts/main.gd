@@ -136,11 +136,15 @@ var slashes: Array[Dictionary] = []
 var floaters: Array[Dictionary] = []
 var afterimages: Array[Dictionary] = []
 var dying_corpses: Array[Dictionary] = []
-var town_bounds := Rect2(-440.0, -240.0, 880.0, 480.0)
+var town_bounds := Rect2(-760.0, -240.0, 1520.0, 720.0)
 var town_spots := {
 	"furnace": Vector2(0.0, 20.0),
-	"oil_shop": Vector2(-245.0, 30.0),
-	"paper_shop": Vector2(245.0, 30.0),
+	"oil_shop": Vector2(-265.0, 10.0),
+	"paper_shop": Vector2(265.0, 10.0),
+	"tea_pavilion": Vector2(-535.0, 20.0),
+	"apothecary": Vector2(535.0, 20.0),
+	"ancient_well": Vector2(-330.0, 290.0),
+	"notice_board": Vector2(310.0, 270.0),
 	"north_gate": Vector2(0.0, -210.0),
 }
 var town_nearby := ""
@@ -654,6 +658,16 @@ func interact_in_town() -> void:
 		town_modal_open = true
 		town_modal_kind = "paper_shop"
 		hud.open_town_modal("paper_shop")
+	elif InkData.TOWN_LANDMARK_LORE.has(town_nearby):
+		var lore_entry: Dictionary = InkData.TOWN_LANDMARK_LORE.get(town_nearby, {})
+		var msg: String = str(lore_entry.get(lang, lore_entry.get("zh", "")))
+		if town_nearby == "tea_pavilion" or town_nearby == "apothecary":
+			player.hp = player.max_hp
+			player.fuel = 100.0
+			play_sfx("xp")
+		if msg != "":
+			_push_subtitle(msg, 5.2)
+		_emit_hud()
 
 func toggle_selected_mode() -> void:
 	selected_mode = "prototype" if selected_mode == "full_vigil" else "full_vigil"
@@ -698,9 +712,9 @@ func _step_town(dt: float) -> void:
 	if move.length_squared() > 0.01:
 		player.facing_dir = move.normalized()
 		player.walk += speed * dt
-	camera = camera.lerp(p_pos * 0.45, 1.0 - exp(-6.0 * dt))
+	camera = camera.lerp(p_pos * 0.68, 1.0 - exp(-6.0 * dt))
 	town_nearby = ""
-	var best_d := 115.0
+	var best_d := 125.0
 	for spot_id in town_spots:
 		var sp: Vector2 = town_spots[spot_id]
 		var d: float = p_pos.distance_to(sp)

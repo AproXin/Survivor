@@ -9,6 +9,7 @@ var number_font: Font = ThemeDB.fallback_font
 var title_font: Font = ThemeDB.fallback_font
 var radial_glow_tex: GradientTexture2D
 var sprite_bank: InkSpriteBank
+var world_bank: InkWorldAssetBank
 
 func setup(target: InkMain) -> void:
 	sim = target
@@ -20,6 +21,8 @@ func setup(target: InkMain) -> void:
 		title_font = load("res://assets/fonts/MaShanZheng-Regular.ttf")
 	sprite_bank = InkSpriteBank.new()
 	sprite_bank.load_manifest()
+	world_bank = InkWorldAssetBank.new()
+	world_bank.load_all()
 	var grad := Gradient.new()
 	grad.offsets = PackedFloat32Array([0.0, 0.35, 0.72, 1.0])
 	grad.colors = PackedColorArray([Color(1, 1, 1, 1.0), Color(1, 1, 1, 0.48), Color(1, 1, 1, 0.12), Color(1, 1, 1, 0.0)])
@@ -33,17 +36,29 @@ func setup(target: InkMain) -> void:
 	scenery = make_scenery(20261125)
 	queue_redraw()
 
-func _try_draw_sprite(key: String, pos: Vector2, state: String, anim_time: float, facing: float, tint: Color = Color.WHITE) -> bool:
+func _try_draw_sprite(key: String, pos: Vector2, state: String, anim_time: float, facing: float, tint: Color = Color.WHITE, move_dir: Vector2 = Vector2.ZERO) -> bool:
 	if sprite_bank == null or not sprite_bank.has_sheet(key):
 		return false
 	var sheet: Dictionary = sprite_bank.get_sheet(key)
 	var tex: Texture2D = sheet.texture
-	var region: Rect2 = sprite_bank.get_frame_region(key, state, anim_time)
-	var draw_sz := float(sheet.frame_size) * float(sheet.scale)
-	var off_y := float(sheet.offset_y)
-	var dst := Rect2(pos.x - draw_sz * 0.5, pos.y - draw_sz * 0.5 + off_y, draw_sz, draw_sz)
-	if facing < 0.0:
-		dst = Rect2(pos.x + draw_sz * 0.5, pos.y - draw_sz * 0.5 + off_y, -draw_sz, draw_sz)
+	var dir_name: String = ""
+	var flip_x: bool = facing < 0.0
+	if move_dir.length_squared() > 0.001 and sprite_bank.has_directional_tags(key):
+		var d_info: Dictionary = InkSpriteBank.dir_from_vector(move_dir, bool(sheet.get("eight_way", false)))
+		dir_name = str(d_info.get("dir", ""))
+		flip_x = bool(d_info.get("flip_x", false))
+		if dir_name == "w" or dir_name == "nw" or dir_name == "sw":
+			if not sprite_bank.has_tag(key, state + "_" + dir_name):
+				flip_x = true
+	var fdata: Dictionary = sprite_bank.get_frame_data(key, state, anim_time, dir_name)
+	var region: Rect2 = fdata.get("region", Rect2())
+	var frame_w: float = region.size.x if region.size.x > 0.0 else float(sheet.frame_size)
+	var scale_val: float = float(sheet.scale)
+	var draw_sz: float = float(sheet.frame_size) * scale_val
+	var off_y: float = float(sheet.offset_y)
+	var pivot_x: float = float(fdata.get("pivot_x", frame_w * 0.5))
+	var dst_x: float = (pos.x + (frame_w - pivot_x) * scale_val) if flip_x else (pos.x - pivot_x * scale_val)
+	var dst := Rect2(dst_x, pos.y - draw_sz * 0.5 + off_y, -draw_sz if flip_x else draw_sz, draw_sz)
 	draw_texture_rect_region(tex, dst, region, tint)
 	return true
 
@@ -126,72 +141,184 @@ func _draw_dying_corpses(palette: Dictionary) -> void:
 		if not _try_draw_sprite(kind, pos, "death", age, float(c.facing), Color(1, 1, 1, alpha)):
 			draw_circle(pos, 16.0 * (1.0 + age * 1.4), Color(palette.ink_slate, alpha * 0.35))
 
+func _draw_tiled_rect(tex: Texture2D, area: Rect2, tile_sz: float, tint: Color = Color.WHITE) -> void:
+	if tex == null:
+		return
+	var x0: float = floor(area.position.x / tile_sz) * tile_sz
+	var y0: float = floor(area.position.y / tile_sz) * tile_sz
+	var x_end: float = area.end.x
+	var y_end: float = area.end.y
+	var y: float = y0
+	while y < y_end:
+		var x: float = x0
+		while x < x_end:
+			var dst := Rect2(x, y, tile_sz, tile_sz)
+			if dst.intersects(area):
+				draw_texture_rect(tex, dst, false, tint)
+			x += tile_sz
+		y += tile_sz
+
+func _draw_world_tex_anchored(tex: Texture2D, foot_pos: Vector2, draw_w: float, draw_h: float, tint: Color = Color.WHITE) -> void:
+	if tex == null:
+		return
+	var dst := Rect2(foot_pos.x - draw_w * 0.5, foot_pos.y - draw_h + 12.0, draw_w, draw_h)
+	draw_texture_rect(tex, dst, false, tint)
+
 func _draw_town(palette: Dictionary, viewport_size: Vector2) -> void:
 	var cam_pos: Vector2 = sim.camera
 	draw_set_transform(viewport_size * 0.5 - cam_pos)
-	var bounds: Rect2 = sim.town_bounds.grow(64.0)
-	# Bluestone courtyard tiles
-	draw_rect(bounds, palette.ink_night)
-	draw_rect(sim.town_bounds.grow(16.0), palette.ink_slate)
-	for tx in range(-420, 421, 60):
-		draw_line(Vector2(float(tx), -240.0), Vector2(float(tx), 240.0), Color(palette.ink_night, 0.45), 1.4)
-	for ty in range(-240, 241, 60):
-		draw_line(Vector2(-440.0, float(ty)), Vector2(440.0, float(ty)), Color(palette.ink_night, 0.45), 1.4)
-	# Central ceremonial path from south to North Iron Gate
-	draw_rect(Rect2(-76.0, -260.0, 152.0, 500.0), Color(palette.grey_dark, 0.38))
-	# Perimeter bluestone walls (leaving opening at North Iron Gate)
-	draw_rect(Rect2(-470.0, -255.0, 380.0, 26.0), palette.grey_dark)
-	draw_rect(Rect2(90.0, -255.0, 380.0, 26.0), palette.grey_dark)
-	draw_rect(Rect2(-470.0, 240.0, 940.0, 24.0), palette.grey_dark)
-	draw_rect(Rect2(-470.0, -255.0, 26.0, 519.0), palette.grey_dark)
-	draw_rect(Rect2(444.0, -255.0, 26.0, 519.0), palette.grey_dark)
-	# North Iron Gate & Spirit Screen (镇北铁门 · 辟邪照壁)
-	var gate: Vector2 = sim.town_spots.north_gate
-	_draw_soft_glow(gate + Vector2(0.0, -40.0), 170.0, Color(palette.sage_dark, 0.32))
-	draw_rect(Rect2(gate + Vector2(-95.0, -54.0), Vector2(20.0, 62.0)), palette.grey_mid)
-	draw_rect(Rect2(gate + Vector2(75.0, -54.0), Vector2(20.0, 62.0)), palette.grey_mid)
-	draw_rect(Rect2(gate + Vector2(-108.0, -68.0), Vector2(216.0, 18.0)), palette.ink_deep)
-	draw_string(title_font, gate + Vector2(-62.0, -76.0), "镇北铁门", HORIZONTAL_ALIGNMENT_LEFT, -1, 24, palette.bone)
-	var arrow_bob := sin(visual_time * 3.2) * 4.0
-	draw_string(body_font, gate + Vector2(-58.0, 18.0 + arrow_bob), "↑ 出城入乱葬岗 ↑", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, palette.amber_bright if sim.town_nearby == "north_gate" else palette.bone_dark)
-	# West: Old Oil Shop (老油坊)
-	var oil: Vector2 = sim.town_spots.oil_shop
-	draw_rect(Rect2(oil + Vector2(-74.0, -64.0), Vector2(148.0, 84.0)), palette.grey_dark)
-	draw_colored_polygon(PackedVector2Array([oil + Vector2(-88, -62), oil + Vector2(0, -104), oil + Vector2(88, -62)]), palette.ink_deep)
-	draw_rect(Rect2(oil + Vector2(-36.0, -52.0), Vector2(72.0, 24.0)), palette.ink_night)
-	draw_string(body_font, oil + Vector2(-24.0, -34.0), "老油坊", HORIZONTAL_ALIGNMENT_LEFT, -1, 16, palette.amber_bright if sim.town_nearby == "oil_shop" else palette.bone)
-	_draw_hex_lantern(oil + Vector2(62.0, -32.0), 0.9, sin(visual_time * 2.0) * 2.0, palette)
-	# East: Paper-Craft Shop (扎彩故铺)
-	var paper: Vector2 = sim.town_spots.paper_shop
-	draw_rect(Rect2(paper + Vector2(-74.0, -64.0), Vector2(148.0, 84.0)), palette.grey_dark)
-	draw_colored_polygon(PackedVector2Array([paper + Vector2(-88, -62), paper + Vector2(0, -104), paper + Vector2(88, -62)]), palette.ink_deep)
-	draw_rect(Rect2(paper + Vector2(-42.0, -52.0), Vector2(84.0, 24.0)), palette.ink_night)
-	draw_string(body_font, paper + Vector2(-32.0, -34.0), "扎彩故铺", HORIZONTAL_ALIGNMENT_LEFT, -1, 16, palette.amber_bright if sim.town_nearby == "paper_shop" else palette.bone)
-	_draw_hex_lantern(paper + Vector2(-62.0, -32.0), 0.9, -sin(visual_time * 2.0) * 2.0, palette)
-	# Center: Ancestral Bronze Furnace (辟邪祖火青铜炉) Y-sorted with player
-	var furnace: Vector2 = sim.town_spots.furnace
-	if sim.player.pos.y < furnace.y:
-		_draw_player(palette)
-		_draw_ancestral_furnace(furnace, palette)
+	var tb: Rect2 = sim.town_bounds
+	var outer_bounds: Rect2 = tb.grow(96.0)
+	draw_rect(outer_bounds, palette.ink_deep)
+	# Tiled pixel-art ground layers for expanded 1520x720 Dumo Town
+	var bluestone_tex: Texture2D = world_bank.get_tile("town_bluestone") if world_bank != null else null
+	var avenue_tex: Texture2D = world_bank.get_tile("town_avenue") if world_bank != null else null
+	var timber_tex: Texture2D = world_bank.get_tile("town_timber_deck") if world_bank != null else null
+	var moss_tex: Texture2D = world_bank.get_tile("town_moss_cobble") if world_bank != null else null
+	if bluestone_tex != null:
+		_draw_tiled_rect(bluestone_tex, tb.grow(24.0), 64.0, Color(0.86, 0.90, 0.94, 1.0))
 	else:
-		_draw_ancestral_furnace(furnace, palette)
-		_draw_player(palette)
+		draw_rect(tb.grow(24.0), palette.ink_slate)
+	# South Garden Mossy Cobble Courtyard
+	var south_garden := Rect2(tb.position.x + 24.0, 210.0, tb.size.x - 48.0, tb.end.y - 210.0)
+	if moss_tex != null:
+		_draw_tiled_rect(moss_tex, south_garden, 64.0, Color(0.84, 0.90, 0.86, 0.95))
+	# Weathered Timber Verandas beneath the 4 side shops (Tea Pavilion, Oil Shop, Paper Shop, Apothecary)
+	var veranda_rects: Array[Rect2] = [
+		Rect2(-640.0, -96.0, 210.0, 160.0),
+		Rect2(-370.0, -96.0, 210.0, 160.0),
+		Rect2(160.0, -96.0, 210.0, 160.0),
+		Rect2(430.0, -96.0, 210.0, 160.0),
+	]
+	for vr in veranda_rects:
+		if timber_tex != null:
+			_draw_tiled_rect(timber_tex, vr, 64.0, Color(0.92, 0.88, 0.82, 1.0))
+		else:
+			draw_rect(vr, Color(palette.grey_dark, 0.5))
+		draw_rect(vr, Color(palette.ink_deep, 0.55), false, 2.0)
+	# Central Ceremonial Avenue from South Spirit Screen through Ancestral Furnace to North Iron Gate
+	var avenue_rect := Rect2(-84.0, tb.position.y - 24.0, 168.0, tb.size.y + 40.0)
+	if avenue_tex != null:
+		_draw_tiled_rect(avenue_tex, avenue_rect, 64.0, Color(0.72, 0.75, 0.74, 0.88))
+	else:
+		draw_rect(avenue_rect, Color(palette.grey_dark, 0.38))
+	draw_rect(avenue_rect, Color(palette.ink_deep, 0.45), false, 2.0)
+	# Perimeter bluestone walls (leaving opening at North Iron Gate x in [-95, 95])
+	var wall_col: Color = palette.grey_dark
+	draw_rect(Rect2(tb.position.x - 30.0, tb.position.y - 28.0, absf(tb.position.x) - 65.0, 28.0), wall_col)
+	draw_rect(Rect2(95.0, tb.position.y - 28.0, tb.end.x - 65.0, 28.0), wall_col)
+	draw_rect(Rect2(tb.position.x - 30.0, tb.end.y, tb.size.x + 60.0, 28.0), wall_col)
+	draw_rect(Rect2(tb.position.x - 30.0, tb.position.y - 28.0, 28.0, tb.size.y + 56.0), wall_col)
+	draw_rect(Rect2(tb.end.x + 2.0, tb.position.y - 28.0, 28.0, tb.size.y + 56.0), wall_col)
+
+	# Warm lantern glow pools on ground before Y-sorted actors
+	var flicker: float = 1.0 + sin(visual_time * 4.6) * 0.05
+	for raw_prop in InkData.TOWN_PROPS:
+		var prop_d: Dictionary = raw_prop
+		if bool(prop_d.get("glow", false)):
+			var lp: Vector2 = prop_d.get("pos", Vector2.ZERO)
+			_draw_soft_glow(lp + Vector2(0.0, -32.0), 108.0 * flicker, Color(palette.amber, 0.24))
+
+	# Y-sort all 6 Safe Zone buildings, all 30 courtyard props, and the player!
+	var draw_list: Array[Dictionary] = []
+	var building_defs: Array[Dictionary] = [
+		{"id": "north_gate", "spot": "north_gate", "label": "镇北铁门", "w": 220.0, "h": 220.0, "y_bias": -16.0},
+		{"id": "oil_shop", "spot": "oil_shop", "label": "老油坊", "w": 204.0, "h": 204.0, "y_bias": 24.0},
+		{"id": "paper_shop", "spot": "paper_shop", "label": "扎彩故铺", "w": 204.0, "h": 204.0, "y_bias": 24.0},
+		{"id": "tea_pavilion", "spot": "tea_pavilion", "label": "月下茶亭戏台", "w": 216.0, "h": 216.0, "y_bias": 28.0},
+		{"id": "apothecary", "spot": "apothecary", "label": "济世药铺", "w": 204.0, "h": 204.0, "y_bias": 24.0},
+		{"id": "ancestral_furnace", "spot": "furnace", "label": "辟邪祖火", "w": 176.0, "h": 176.0, "y_bias": 16.0},
+	]
+	for bdef in building_defs:
+		var spot_key: String = str(bdef.get("spot", ""))
+		var bpos: Vector2 = sim.town_spots.get(spot_key, Vector2.ZERO)
+		draw_list.append({"y": bpos.y + float(bdef.get("y_bias", 0.0)), "kind": "building", "data": bdef, "pos": bpos})
+	for raw_prop in InkData.TOWN_PROPS:
+		var pd: Dictionary = raw_prop
+		var ppos: Vector2 = pd.get("pos", Vector2.ZERO)
+		draw_list.append({"y": ppos.y, "kind": "prop", "data": pd, "pos": ppos})
+	draw_list.append({"y": float(sim.player.pos.y), "kind": "player", "data": {}, "pos": sim.player.pos})
+	draw_list.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return float(a.get("y", 0.0)) < float(b.get("y", 0.0)))
+
+	for item in draw_list:
+		var k: String = str(item.get("kind", ""))
+		if k == "player":
+			_draw_player(palette)
+		elif k == "building":
+			_draw_town_building(item.get("data", {}), item.get("pos", Vector2.ZERO), palette)
+		elif k == "prop":
+			_draw_town_prop(item.get("data", {}), item.get("pos", Vector2.ZERO), palette)
+
 	draw_set_transform(Vector2.ZERO)
 	_draw_moon(palette, viewport_size)
+
+func _draw_town_building(bdef: Dictionary, pos: Vector2, palette: Dictionary) -> void:
+	var bid: String = str(bdef.get("id", ""))
+	var spot: String = str(bdef.get("spot", ""))
+	var label: String = str(bdef.get("label", ""))
+	var bw: float = float(bdef.get("w", 200.0))
+	var bh: float = float(bdef.get("h", 200.0))
+	var is_near: bool = sim.town_nearby == spot
+	if is_near:
+		draw_arc(pos + Vector2(0.0, 12.0), 66.0, 0.0, TAU, 36, Color(palette.amber_bright, 0.65), 2.2, true)
+	if bid == "ancestral_furnace":
+		var pulse: float = 1.0 + sin(visual_time * 5.5) * 0.06
+		_draw_soft_glow(pos + Vector2(0.0, -34.0), 195.0 * pulse, Color(palette.amber, 0.34))
+		_draw_soft_glow(pos + Vector2(0.0, -40.0), 74.0 * pulse, Color(palette.amber_bright, 0.42))
+	elif bid == "north_gate":
+		_draw_soft_glow(pos + Vector2(0.0, -36.0), 185.0, Color(palette.sage_dark, 0.32))
+	else:
+		_draw_soft_glow(pos + Vector2(0.0, -28.0), 132.0, Color(palette.amber, 0.22 if is_near else 0.14))
+
+	var tex: Texture2D = world_bank.get_building(bid) if world_bank != null else null
+	if tex != null:
+		draw_circle(pos + Vector2(0.0, 12.0), bw * 0.34, Color(palette.ink_deep, 0.36))
+		_draw_world_tex_anchored(tex, pos + Vector2(0.0, 24.0), bw, bh, Color.WHITE)
+	else:
+		if bid == "ancestral_furnace":
+			_draw_ancestral_furnace(pos, palette)
+		else:
+			draw_rect(Rect2(pos + Vector2(-74.0, -64.0), Vector2(148.0, 84.0)), palette.grey_dark)
+			draw_colored_polygon(PackedVector2Array([pos + Vector2(-88, -62), pos + Vector2(0, -104), pos + Vector2(88, -62)]), palette.ink_deep)
+	# Crisp floating label nameplate
+	var tw: float = body_font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 15).x
+	var lbl_y: float = pos.y + (44.0 if bid == "ancestral_furnace" else (-bh + 36.0))
+	draw_rect(Rect2(pos.x - tw * 0.5 - 10.0, lbl_y - 16.0, tw + 20.0, 22.0), Color(palette.ink_deep, 0.80))
+	draw_rect(Rect2(pos.x - tw * 0.5 - 10.0, lbl_y - 16.0, tw + 20.0, 22.0), palette.amber if is_near else Color(palette.grey_mid, 0.55), false, 1.2)
+	draw_string(body_font, Vector2(pos.x - tw * 0.5, lbl_y), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, palette.amber_bright if is_near else palette.bone)
+	if bid == "north_gate":
+		var arrow_bob: float = sin(visual_time * 3.2) * 4.0
+		draw_string(body_font, pos + Vector2(-58.0, 28.0 + arrow_bob), "↑ 出城入乱葬岗 ↑", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, palette.amber_bright if is_near else palette.bone_dark)
+
+func _draw_town_prop(prop_d: Dictionary, pos: Vector2, palette: Dictionary) -> void:
+	var pid: String = str(prop_d.get("id", ""))
+	var sc: float = float(prop_d.get("scale", 1.0))
+	var tex: Texture2D = world_bank.get_prop(pid) if world_bank != null else null
+	var is_spot_near: bool = (pid == "ancient_well" and sim.town_nearby == "ancient_well") or (pid == "notice_board" and sim.town_nearby == "notice_board")
+	if is_spot_near:
+		draw_arc(pos + Vector2(0.0, 6.0), 46.0, 0.0, TAU, 32, Color(palette.amber_bright, 0.62), 2.0, true)
+	if tex != null:
+		var base_sz: float = 128.0 if (pid == "ancient_locust_tree" or pid == "spirit_screen") else 92.0
+		var draw_sz: float = base_sz * sc
+		draw_circle(pos + Vector2(0.0, 6.0), draw_sz * 0.28, Color(palette.ink_deep, 0.34))
+		_draw_world_tex_anchored(tex, pos + Vector2(0.0, 8.0), draw_sz, draw_sz, Color.WHITE)
+	else:
+		draw_circle(pos, 18.0 * sc, palette.grey_dark)
+	if pid == "ancient_well" or pid == "notice_board":
+		var lbl: String = "青苔古井" if pid == "ancient_well" else "悬榜告示"
+		var tw: float = body_font.get_string_size(lbl, HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x
+		draw_string(body_font, Vector2(pos.x - tw * 0.5, pos.y + 22.0), lbl, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, palette.amber_bright if is_spot_near else palette.bone_dark)
 
 func _draw_ancestral_furnace(pos: Vector2, palette: Dictionary) -> void:
 	var pulse := 1.0 + sin(visual_time * 5.5) * 0.06
 	_draw_soft_glow(pos + Vector2(0.0, -24.0), 185.0 * pulse, Color(palette.amber, 0.34))
 	_draw_soft_glow(pos + Vector2(0.0, -30.0), 68.0 * pulse, Color(palette.amber_bright, 0.42))
-	# Stone altar ring
 	draw_circle(pos + Vector2(0.0, 8.0), 48.0, Color(palette.grey_dark, 0.65))
 	draw_arc(pos + Vector2(0.0, 8.0), 48.0, 0.0, TAU, 36, palette.amber_dark if sim.town_nearby == "furnace" else palette.grey_mid, 2.2, true)
-	# Bronze tripod cauldron
 	draw_rect(Rect2(pos + Vector2(-24.0, -24.0), Vector2(48.0, 30.0)), palette.grey_dark)
 	draw_rect(Rect2(pos + Vector2(-28.0, -28.0), Vector2(56.0, 8.0)), palette.grey_mid)
 	draw_line(pos + Vector2(-18.0, 6.0), pos + Vector2(-22.0, 18.0), palette.ink_deep, 5.0)
 	draw_line(pos + Vector2(18.0, 6.0), pos + Vector2(22.0, 18.0), palette.ink_deep, 5.0)
-	# Ancestral flame
 	var flame := PackedVector2Array([
 		pos + Vector2(-14.0, -26.0),
 		pos + Vector2(-6.0, -48.0 * pulse),
@@ -201,7 +328,6 @@ func _draw_ancestral_furnace(pos: Vector2, palette: Dictionary) -> void:
 	])
 	draw_colored_polygon(flame, palette.amber)
 	draw_circle(pos + Vector2(0.0, -36.0), 9.0 * pulse, palette.amber_bright)
-	draw_string(body_font, pos + Vector2(-32.0, 36.0), "辟邪祖火", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, palette.amber_bright if sim.town_nearby == "furnace" else palette.bone)
 
 # --- Title Screen Live Atmospheric Diorama ---
 func _draw_title_diorama(palette: Dictionary, vs: Vector2) -> void:
@@ -272,7 +398,15 @@ func _draw_ground(palette: Dictionary, cam_pos: Vector2, vs: Vector2) -> void:
 	var half_h := vs.y * 0.55
 	var view_rect := Rect2(cam_pos.x - half_w, cam_pos.y - half_h, half_w * 2.0, half_h * 2.0)
 	var world_rect := Rect2(-InkData.WORLD_HALF, -InkData.WORLD_HALF, InkData.WORLD_SIZE, InkData.WORLD_SIZE)
-	draw_rect(world_rect.intersection(view_rect), palette.ink_night)
+	var visible_world: Rect2 = world_rect.intersection(view_rect)
+	var mortal_tile: Texture2D = world_bank.get_tile("wild_mountain_grass" if sim.day_phase == "day" else "wild_grave_earth") if world_bank != null else null
+	var spec_tile: Texture2D = world_bank.get_tile("spectral_cracked_stone") if world_bank != null else null
+	if mortal_tile != null:
+		_draw_tiled_rect(mortal_tile, visible_world, 96.0, Color(0.68, 0.72, 0.72, 1.0))
+		if spec_tile != null and sim.realm_blend > 0.02:
+			_draw_tiled_rect(spec_tile, visible_world, 96.0, Color(0.90, 0.94, 1.0, sim.realm_blend * 0.92))
+	else:
+		draw_rect(visible_world, palette.ink_night)
 	# Winding dirt road with soft ink-wash borders
 	var road_outer := PackedVector2Array([
 		Vector2(-210.0, -InkData.WORLD_HALF),
@@ -394,7 +528,17 @@ func _draw_taboo_zones(palette: Dictionary) -> void:
 			var lid: String = str(lm.get("id", ""))
 			var ring_col: Color = palette.vermilion if is_spec_lm else palette.sage_light
 			draw_arc(lp, lr, 0.0, TAU, 36, Color(ring_col, 0.24), 1.6, true)
-			if lid == "bridge":
+			var lm_tex: Texture2D = null
+			if world_bank != null:
+				if lid == "bridge":
+					lm_tex = world_bank.get_landmark("styx_paper_bridge" if is_spec_lm else "stone_bridge")
+				elif lid == "market":
+					lm_tex = world_bank.get_landmark("ghost_market_stall")
+				elif lid == "shrine":
+					lm_tex = world_bank.get_landmark("nether_altar" if is_spec_lm else "gravestone_stele")
+			if lm_tex != null:
+				_draw_world_tex_anchored(lm_tex, lp + Vector2(0.0, 28.0), 156.0, 156.0, Color.WHITE)
+			elif lid == "bridge":
 				var deck_col: Color = palette.bone if is_spec_lm else palette.grey_mid
 				draw_rect(Rect2(lp + Vector2(-46.0, -14.0), Vector2(92.0, 28.0)), Color(deck_col, 0.55))
 				draw_rect(Rect2(lp + Vector2(-46.0, -14.0), Vector2(92.0, 28.0)), palette.ink_deep, false, 1.8)
@@ -432,12 +576,20 @@ func _draw_taboo_zones(palette: Dictionary) -> void:
 func _draw_gems(palette: Dictionary, cam_pos: Vector2, vs: Vector2) -> void:
 	var half_w := vs.x * 0.55
 	var half_h := vs.y * 0.55
+	var small_tex: Texture2D = world_bank.get_item("xp_gem_small") if world_bank != null else null
+	var large_tex: Texture2D = world_bank.get_item("xp_gem_large") if world_bank != null else null
 	for gem in sim.gems:
 		var pos: Vector2 = gem.pos
 		if absf(pos.x - cam_pos.x) > half_w or absf(pos.y - cam_pos.y) > half_h:
 			continue
 		var pulse := 1.0 + sin(visual_time * 5.2 + pos.x * 0.1) * 0.10
-		draw_circle(pos, 13.0 * pulse, Color(palette.xp_mid, 0.14))
+		draw_circle(pos, 13.0 * pulse, Color(palette.xp_mid, 0.16))
+		var g_val: float = float(gem.get("value", 2.0))
+		var tex: Texture2D = large_tex if (g_val >= 8.0 and large_tex != null) else small_tex
+		if tex != null:
+			var sz: float = (26.0 if g_val >= 8.0 else 20.0) * pulse
+			draw_texture_rect(tex, Rect2(pos - Vector2(sz * 0.5, sz * 0.5), Vector2(sz, sz)), false, Color.WHITE)
+			continue
 		draw_circle(pos, 7.5 * pulse, Color(palette.xp_bright, 0.20))
 		var points := PackedVector2Array([
 			pos + Vector2(0.0, -8.5) * pulse,
@@ -496,7 +648,30 @@ func _draw_y_sorted_world(palette: Dictionary, cam_pos: Vector2, vs: Vector2) ->
 func _draw_prop(prop: Dictionary, palette: Dictionary) -> void:
 	var pos: Vector2 = prop.pos
 	var scale_value: float = prop.scale
-	match prop.kind:
+	var kind: String = str(prop.kind)
+	if world_bank != null:
+		if kind == "grave":
+			var g_tex: Texture2D = world_bank.get_landmark("gravestone_stele")
+			if g_tex != null:
+				_draw_world_tex_anchored(g_tex, pos + Vector2(0.0, 14.0), 84.0 * scale_value, 84.0 * scale_value)
+				return
+		elif kind == "bamboo":
+			var b_tex: Texture2D = world_bank.get_landmark("bamboo_grove")
+			if b_tex != null:
+				_draw_world_tex_anchored(b_tex, pos + Vector2(0.0, 14.0), 108.0 * scale_value, 108.0 * scale_value)
+				return
+		elif kind == "stone_lantern":
+			var l_tex: Texture2D = world_bank.get_prop("courtyard_lantern")
+			if l_tex != null:
+				_draw_soft_glow(pos + Vector2(0.0, -28.0) * scale_value, 42.0 * scale_value, Color(palette.sage_light, 0.22))
+				_draw_world_tex_anchored(l_tex, pos + Vector2(0.0, 10.0), 74.0 * scale_value, 74.0 * scale_value, Color(0.84, 0.94, 0.92, 1.0))
+				return
+		elif kind == "wall":
+			var w_tex: Texture2D = world_bank.get_landmark("ruined_wall")
+			if w_tex != null:
+				_draw_world_tex_anchored(w_tex, pos + Vector2(0.0, 12.0), 112.0 * scale_value, 112.0 * scale_value)
+				return
+	match kind:
 		"grave":
 			_draw_grave(pos, scale_value, prop.glyph, palette)
 		"bamboo":
@@ -720,7 +895,8 @@ func _draw_player(palette: Dictionary) -> void:
 	if sim.switch_anim_timer > 0.0:
 		var sw_ratio: float = clampf(sim.switch_anim_timer / 0.60, 0.0, 1.0)
 		draw_arc(pos + Vector2(0.0, -10.0), 26.0 + (1.0 - sw_ratio) * 24.0, 0.0, TAU, 28, Color(palette.amber_bright, sw_ratio * 0.62), 2.4, true)
-	if _try_draw_sprite(p_key, pos, p_state, p_anim_t, float(sim.player.facing)):
+	var p_dir: Vector2 = sim.player.get("facing_dir", Vector2(float(sim.player.facing), 0.0))
+	if _try_draw_sprite(p_key, pos, p_state, p_anim_t, float(sim.player.facing), Color.WHITE, p_dir):
 		return
 	var bob := sin(sim.player.walk * 0.09) * 2.6 if moving else sin(visual_time * 2.8) * 0.8
 	var stride := sin(sim.player.walk * 0.09) * 5.0 if moving else 0.0
@@ -852,7 +1028,7 @@ func _draw_enemy(enemy: Dictionary, palette: Dictionary) -> void:
 	var e_facing: float = 1.0 if (float(sim.player.pos.x) >= pos.x) else -1.0
 	var is_attacking: bool = float(enemy.get("charge_active", 0.0)) > 0.0 or float(enemy.get("charge_windup", 0.0)) > 0.0 or float(enemy.get("pounce_timer", 0.0)) > 0.0
 	var e_state: String = "hit" if flash else ("attack" if is_attacking else "walk")
-	if _try_draw_sprite(kind, pos, e_state, visual_time + anim_phase, e_facing, Color(1.4, 1.4, 1.4, 1.0) if flash else Color.WHITE):
+	if _try_draw_sprite(kind, pos, e_state, visual_time + anim_phase, e_facing, Color(1.4, 1.4, 1.4, 1.0) if flash else Color.WHITE, sim.player.pos - pos):
 		if float(enemy.get("slow_timer", 0.0)) > 0.0:
 			draw_arc(pos + Vector2(0.0, 12.0), 19.0, 0.0, TAU, 18, Color(palette.amber, 0.72), 1.8, true)
 		if (is_elite or kind == "punisher") and kind != "boss_magistrate":

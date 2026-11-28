@@ -5,12 +5,14 @@
   "upstreamCommit": "ac9f3c6 (AproXin/Survivor main)",
   "webVersionStatus": "deprecated",
   "zipUrl": "/downloads/ink-night-godot-4.7.2-complete.zip",
-  "zipBytes": 30036026,
-  "totalFiles": 273,
-  "gdscriptFiles": 16,
+  "zipBytes": 39185891,
+  "totalFiles": 415,
+  "gdscriptFiles": 17,
   "testFiles": 9,
-  "spriteSheets": 18,
-  "referenceSheets": 6,
+  "spriteSheets": 21,
+  "worldAssets": 38,
+  "itemIcons": 28,
+  "referenceSheets": 13,
   "files": [
     {
       "path": ".gitignore",
@@ -27,7 +29,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 7134,
+      "bytes": 7187,
       "lines": 0
     },
     {
@@ -36,7 +38,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 7481,
+      "bytes": 8386,
       "lines": 0
     },
     {
@@ -45,7 +47,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 10315,
+      "bytes": 8428,
       "lines": 0
     },
     {
@@ -54,7 +56,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 10673,
+      "bytes": 8767,
       "lines": 0
     },
     {
@@ -63,7 +65,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 9256,
+      "bytes": 8679,
       "lines": 0
     },
     {
@@ -72,7 +74,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 9155,
+      "bytes": 7332,
       "lines": 0
     },
     {
@@ -81,7 +83,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 4529,
+      "bytes": 5460,
       "lines": 0
     },
     {
@@ -90,7 +92,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 2660,
+      "bytes": 3620,
       "lines": 0
     },
     {
@@ -99,7 +101,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 1502,
+      "bytes": 1989,
       "lines": 0
     },
     {
@@ -108,7 +110,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 6482,
+      "bytes": 7377,
       "lines": 0
     },
     {
@@ -117,7 +119,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 5463,
+      "bytes": 7205,
       "lines": 0
     },
     {
@@ -126,7 +128,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 7173,
+      "bytes": 6729,
       "lines": 0
     },
     {
@@ -135,7 +137,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 5279,
+      "bytes": 6514,
       "lines": 0
     },
     {
@@ -144,7 +146,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 6880,
+      "bytes": 6152,
       "lines": 0
     },
     {
@@ -153,7 +155,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 6615,
+      "bytes": 6955,
       "lines": 0
     },
     {
@@ -162,7 +164,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 5060,
+      "bytes": 5837,
       "lines": 0
     },
     {
@@ -171,7 +173,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 5805,
+      "bytes": 6858,
       "lines": 0
     },
     {
@@ -180,7 +182,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 6741,
+      "bytes": 7290,
       "lines": 0
     },
     {
@@ -189,7 +191,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 6821,
+      "bytes": 7418,
       "lines": 0
     },
     {
@@ -198,7 +200,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 6599,
+      "bytes": 7337,
       "lines": 0
     },
     {
@@ -207,7 +209,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 6498,
+      "bytes": 7418,
       "lines": 0
     },
     {
@@ -216,7 +218,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 7338,
+      "bytes": 7302,
       "lines": 0
     },
     {
@@ -225,7 +227,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 6060,
+      "bytes": 7196,
       "lines": 0
     },
     {
@@ -234,7 +236,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 6748,
+      "bytes": 7339,
       "lines": 0
     },
     {
@@ -243,7 +245,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 7177,
+      "bytes": 7221,
       "lines": 0
     },
     {
@@ -252,7 +254,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 5449,
+      "bytes": 7302,
       "lines": 0
     },
     {
@@ -261,7 +263,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 6498,
+      "bytes": 7196,
       "lines": 0
     },
     {
@@ -270,7 +272,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 6781,
+      "bytes": 7339,
       "lines": 0
     },
     {
@@ -279,7 +281,178 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 6729,
+      "bytes": 7221,
+      "lines": 0
+    },
+    {
+      "path": "art_pipeline/frames_boss_magistrate_cel/attack_01.png",
+      "url": "",
+      "category": "高精源帧资产",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 7127,
+      "lines": 0
+    },
+    {
+      "path": "art_pipeline/frames_boss_magistrate_cel/attack_02.png",
+      "url": "",
+      "category": "高精源帧资产",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 9774,
+      "lines": 0
+    },
+    {
+      "path": "art_pipeline/frames_boss_magistrate_cel/attack_03.png",
+      "url": "",
+      "category": "高精源帧资产",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 9469,
+      "lines": 0
+    },
+    {
+      "path": "art_pipeline/frames_boss_magistrate_cel/attack_04.png",
+      "url": "",
+      "category": "高精源帧资产",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 7539,
+      "lines": 0
+    },
+    {
+      "path": "art_pipeline/frames_boss_magistrate_cel/death_01.png",
+      "url": "",
+      "category": "高精源帧资产",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 8382,
+      "lines": 0
+    },
+    {
+      "path": "art_pipeline/frames_boss_magistrate_cel/death_02.png",
+      "url": "",
+      "category": "高精源帧资产",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 4006,
+      "lines": 0
+    },
+    {
+      "path": "art_pipeline/frames_boss_magistrate_cel/death_03.png",
+      "url": "",
+      "category": "高精源帧资产",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 2292,
+      "lines": 0
+    },
+    {
+      "path": "art_pipeline/frames_boss_magistrate_cel/hit_01.png",
+      "url": "",
+      "category": "高精源帧资产",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 5749,
+      "lines": 0
+    },
+    {
+      "path": "art_pipeline/frames_boss_magistrate_cel/hit_02.png",
+      "url": "",
+      "category": "高精源帧资产",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 7310,
+      "lines": 0
+    },
+    {
+      "path": "art_pipeline/frames_boss_magistrate_cel/idle_01.png",
+      "url": "",
+      "category": "高精源帧资产",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 7730,
+      "lines": 0
+    },
+    {
+      "path": "art_pipeline/frames_boss_magistrate_cel/idle_02.png",
+      "url": "",
+      "category": "高精源帧资产",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 7782,
+      "lines": 0
+    },
+    {
+      "path": "art_pipeline/frames_boss_magistrate_cel/idle_03.png",
+      "url": "",
+      "category": "高精源帧资产",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 7922,
+      "lines": 0
+    },
+    {
+      "path": "art_pipeline/frames_boss_magistrate_cel/idle_04.png",
+      "url": "",
+      "category": "高精源帧资产",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 7782,
+      "lines": 0
+    },
+    {
+      "path": "art_pipeline/frames_boss_magistrate_cel/move_01.png",
+      "url": "",
+      "category": "高精源帧资产",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 7730,
+      "lines": 0
+    },
+    {
+      "path": "art_pipeline/frames_boss_magistrate_cel/move_02.png",
+      "url": "",
+      "category": "高精源帧资产",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 6153,
+      "lines": 0
+    },
+    {
+      "path": "art_pipeline/frames_boss_magistrate_cel/move_03.png",
+      "url": "",
+      "category": "高精源帧资产",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 6253,
+      "lines": 0
+    },
+    {
+      "path": "art_pipeline/frames_boss_magistrate_cel/move_04.png",
+      "url": "",
+      "category": "高精源帧资产",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 6142,
+      "lines": 0
+    },
+    {
+      "path": "art_pipeline/frames_boss_magistrate_cel/move_05.png",
+      "url": "",
+      "category": "高精源帧资产",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 7738,
+      "lines": 0
+    },
+    {
+      "path": "art_pipeline/frames_boss_magistrate_cel/move_06.png",
+      "url": "",
+      "category": "高精源帧资产",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 6142,
       "lines": 0
     },
     {
@@ -288,7 +461,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 3482,
+      "bytes": 3327,
       "lines": 0
     },
     {
@@ -297,7 +470,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 2447,
+      "bytes": 3035,
       "lines": 0
     },
     {
@@ -306,7 +479,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 2824,
+      "bytes": 2869,
       "lines": 0
     },
     {
@@ -315,7 +488,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 2807,
+      "bytes": 3039,
       "lines": 0
     },
     {
@@ -324,7 +497,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 2576,
+      "bytes": 2249,
       "lines": 0
     },
     {
@@ -333,7 +506,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 1775,
+      "bytes": 1481,
       "lines": 0
     },
     {
@@ -342,7 +515,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 962,
+      "bytes": 749,
       "lines": 0
     },
     {
@@ -351,7 +524,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 2603,
+      "bytes": 2117,
       "lines": 0
     },
     {
@@ -360,7 +533,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 3272,
+      "bytes": 2877,
       "lines": 0
     },
     {
@@ -369,7 +542,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 3461,
+      "bytes": 3039,
       "lines": 0
     },
     {
@@ -378,7 +551,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 3666,
+      "bytes": 3045,
       "lines": 0
     },
     {
@@ -387,7 +560,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 3400,
+      "bytes": 3057,
       "lines": 0
     },
     {
@@ -396,7 +569,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 3516,
+      "bytes": 3049,
       "lines": 0
     },
     {
@@ -405,7 +578,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 3461,
+      "bytes": 3039,
       "lines": 0
     },
     {
@@ -414,7 +587,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 2926,
+      "bytes": 3106,
       "lines": 0
     },
     {
@@ -423,7 +596,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 2508,
+      "bytes": 3057,
       "lines": 0
     },
     {
@@ -432,7 +605,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 3666,
+      "bytes": 2950,
       "lines": 0
     },
     {
@@ -441,7 +614,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 2952,
+      "bytes": 3370,
       "lines": 0
     },
     {
@@ -450,7 +623,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 2489,
+      "bytes": 3417,
       "lines": 0
     },
     {
@@ -459,7 +632,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 6281,
+      "bytes": 7952,
       "lines": 0
     },
     {
@@ -468,7 +641,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 6071,
+      "bytes": 8571,
       "lines": 0
     },
     {
@@ -477,7 +650,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 7352,
+      "bytes": 8582,
       "lines": 0
     },
     {
@@ -486,7 +659,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 7429,
+      "bytes": 8205,
       "lines": 0
     },
     {
@@ -495,7 +668,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 4372,
+      "bytes": 6321,
       "lines": 0
     },
     {
@@ -504,7 +677,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 2859,
+      "bytes": 3983,
       "lines": 0
     },
     {
@@ -513,7 +686,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 1730,
+      "bytes": 2229,
       "lines": 0
     },
     {
@@ -522,7 +695,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 4796,
+      "bytes": 6136,
       "lines": 0
     },
     {
@@ -531,7 +704,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 6078,
+      "bytes": 7631,
       "lines": 0
     },
     {
@@ -540,7 +713,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 6297,
+      "bytes": 8196,
       "lines": 0
     },
     {
@@ -549,7 +722,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 6297,
+      "bytes": 8109,
       "lines": 0
     },
     {
@@ -558,7 +731,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 6147,
+      "bytes": 8026,
       "lines": 0
     },
     {
@@ -567,7 +740,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 6187,
+      "bytes": 8109,
       "lines": 0
     },
     {
@@ -576,7 +749,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 6297,
+      "bytes": 8196,
       "lines": 0
     },
     {
@@ -585,7 +758,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 5861,
+      "bytes": 8083,
       "lines": 0
     },
     {
@@ -594,7 +767,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 5936,
+      "bytes": 8512,
       "lines": 0
     },
     {
@@ -603,7 +776,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 6297,
+      "bytes": 8244,
       "lines": 0
     },
     {
@@ -612,7 +785,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 5869,
+      "bytes": 8270,
       "lines": 0
     },
     {
@@ -621,7 +794,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 5920,
+      "bytes": 8409,
       "lines": 0
     },
     {
@@ -630,7 +803,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 4335,
+      "bytes": 3680,
       "lines": 0
     },
     {
@@ -639,7 +812,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 4286,
+      "bytes": 3744,
       "lines": 0
     },
     {
@@ -648,7 +821,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 3977,
+      "bytes": 3640,
       "lines": 0
     },
     {
@@ -657,7 +830,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 3984,
+      "bytes": 3759,
       "lines": 0
     },
     {
@@ -666,7 +839,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 2970,
+      "bytes": 2563,
       "lines": 0
     },
     {
@@ -675,7 +848,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 1865,
+      "bytes": 1607,
       "lines": 0
     },
     {
@@ -684,7 +857,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 1053,
+      "bytes": 947,
       "lines": 0
     },
     {
@@ -693,7 +866,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 3172,
+      "bytes": 2692,
       "lines": 0
     },
     {
@@ -702,7 +875,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 4116,
+      "bytes": 3416,
       "lines": 0
     },
     {
@@ -711,7 +884,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 4364,
+      "bytes": 3647,
       "lines": 0
     },
     {
@@ -720,7 +893,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 4383,
+      "bytes": 3659,
       "lines": 0
     },
     {
@@ -729,7 +902,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 4287,
+      "bytes": 3600,
       "lines": 0
     },
     {
@@ -738,7 +911,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 4294,
+      "bytes": 3653,
       "lines": 0
     },
     {
@@ -747,7 +920,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 4364,
+      "bytes": 3759,
       "lines": 0
     },
     {
@@ -756,7 +929,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 4195,
+      "bytes": 3801,
       "lines": 0
     },
     {
@@ -765,7 +938,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 4170,
+      "bytes": 3935,
       "lines": 0
     },
     {
@@ -774,7 +947,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 4383,
+      "bytes": 3277,
       "lines": 0
     },
     {
@@ -783,7 +956,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 4224,
+      "bytes": 3289,
       "lines": 0
     },
     {
@@ -792,7 +965,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 4145,
+      "bytes": 3343,
       "lines": 0
     },
     {
@@ -801,7 +974,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 3002,
+      "bytes": 2393,
       "lines": 0
     },
     {
@@ -810,7 +983,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 2280,
+      "bytes": 2081,
       "lines": 0
     },
     {
@@ -819,7 +992,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 2405,
+      "bytes": 1998,
       "lines": 0
     },
     {
@@ -828,7 +1001,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 2377,
+      "bytes": 2152,
       "lines": 0
     },
     {
@@ -837,7 +1010,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 2058,
+      "bytes": 1621,
       "lines": 0
     },
     {
@@ -846,7 +1019,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 1380,
+      "bytes": 1091,
       "lines": 0
     },
     {
@@ -855,7 +1028,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 800,
+      "bytes": 555,
       "lines": 0
     },
     {
@@ -864,7 +1037,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 2081,
+      "bytes": 1582,
       "lines": 0
     },
     {
@@ -873,7 +1046,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 2601,
+      "bytes": 2065,
       "lines": 0
     },
     {
@@ -882,7 +1055,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 2754,
+      "bytes": 2152,
       "lines": 0
     },
     {
@@ -891,7 +1064,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 2850,
+      "bytes": 2163,
       "lines": 0
     },
     {
@@ -900,7 +1073,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 2712,
+      "bytes": 2131,
       "lines": 0
     },
     {
@@ -909,7 +1082,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 2831,
+      "bytes": 2163,
       "lines": 0
     },
     {
@@ -918,7 +1091,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 2754,
+      "bytes": 2152,
       "lines": 0
     },
     {
@@ -927,7 +1100,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 2653,
+      "bytes": 2081,
       "lines": 0
     },
     {
@@ -936,7 +1109,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 2367,
+      "bytes": 2152,
       "lines": 0
     },
     {
@@ -945,7 +1118,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 2849,
+      "bytes": 2081,
       "lines": 0
     },
     {
@@ -954,7 +1127,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 2667,
+      "bytes": 2159,
       "lines": 0
     },
     {
@@ -963,7 +1136,349 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 2346,
+      "bytes": 2067,
+      "lines": 0
+    },
+    {
+      "path": "art_pipeline/frames_ghost_cel/attack_01.png",
+      "url": "",
+      "category": "高精源帧资产",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 3794,
+      "lines": 0
+    },
+    {
+      "path": "art_pipeline/frames_ghost_cel/attack_02.png",
+      "url": "",
+      "category": "高精源帧资产",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 4124,
+      "lines": 0
+    },
+    {
+      "path": "art_pipeline/frames_ghost_cel/attack_03.png",
+      "url": "",
+      "category": "高精源帧资产",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 3877,
+      "lines": 0
+    },
+    {
+      "path": "art_pipeline/frames_ghost_cel/attack_04.png",
+      "url": "",
+      "category": "高精源帧资产",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 3760,
+      "lines": 0
+    },
+    {
+      "path": "art_pipeline/frames_ghost_cel/death_01.png",
+      "url": "",
+      "category": "高精源帧资产",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 2573,
+      "lines": 0
+    },
+    {
+      "path": "art_pipeline/frames_ghost_cel/death_02.png",
+      "url": "",
+      "category": "高精源帧资产",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 1358,
+      "lines": 0
+    },
+    {
+      "path": "art_pipeline/frames_ghost_cel/death_03.png",
+      "url": "",
+      "category": "高精源帧资产",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 778,
+      "lines": 0
+    },
+    {
+      "path": "art_pipeline/frames_ghost_cel/hit_01.png",
+      "url": "",
+      "category": "高精源帧资产",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 2880,
+      "lines": 0
+    },
+    {
+      "path": "art_pipeline/frames_ghost_cel/hit_02.png",
+      "url": "",
+      "category": "高精源帧资产",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 3577,
+      "lines": 0
+    },
+    {
+      "path": "art_pipeline/frames_ghost_cel/idle_01.png",
+      "url": "",
+      "category": "高精源帧资产",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 3760,
+      "lines": 0
+    },
+    {
+      "path": "art_pipeline/frames_ghost_cel/idle_02.png",
+      "url": "",
+      "category": "高精源帧资产",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 3765,
+      "lines": 0
+    },
+    {
+      "path": "art_pipeline/frames_ghost_cel/idle_03.png",
+      "url": "",
+      "category": "高精源帧资产",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 3719,
+      "lines": 0
+    },
+    {
+      "path": "art_pipeline/frames_ghost_cel/idle_04.png",
+      "url": "",
+      "category": "高精源帧资产",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 3764,
+      "lines": 0
+    },
+    {
+      "path": "art_pipeline/frames_ghost_cel/move_01.png",
+      "url": "",
+      "category": "高精源帧资产",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 3760,
+      "lines": 0
+    },
+    {
+      "path": "art_pipeline/frames_ghost_cel/move_02.png",
+      "url": "",
+      "category": "高精源帧资产",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 3837,
+      "lines": 0
+    },
+    {
+      "path": "art_pipeline/frames_ghost_cel/move_03.png",
+      "url": "",
+      "category": "高精源帧资产",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 3506,
+      "lines": 0
+    },
+    {
+      "path": "art_pipeline/frames_ghost_cel/move_04.png",
+      "url": "",
+      "category": "高精源帧资产",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 3871,
+      "lines": 0
+    },
+    {
+      "path": "art_pipeline/frames_ghost_cel/move_05.png",
+      "url": "",
+      "category": "高精源帧资产",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 3768,
+      "lines": 0
+    },
+    {
+      "path": "art_pipeline/frames_ghost_cel/move_06.png",
+      "url": "",
+      "category": "高精源帧资产",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 3822,
+      "lines": 0
+    },
+    {
+      "path": "art_pipeline/frames_jiangshi_cel/attack_01.png",
+      "url": "",
+      "category": "高精源帧资产",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 2672,
+      "lines": 0
+    },
+    {
+      "path": "art_pipeline/frames_jiangshi_cel/attack_02.png",
+      "url": "",
+      "category": "高精源帧资产",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 3222,
+      "lines": 0
+    },
+    {
+      "path": "art_pipeline/frames_jiangshi_cel/attack_03.png",
+      "url": "",
+      "category": "高精源帧资产",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 3231,
+      "lines": 0
+    },
+    {
+      "path": "art_pipeline/frames_jiangshi_cel/attack_04.png",
+      "url": "",
+      "category": "高精源帧资产",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 2846,
+      "lines": 0
+    },
+    {
+      "path": "art_pipeline/frames_jiangshi_cel/death_01.png",
+      "url": "",
+      "category": "高精源帧资产",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 2065,
+      "lines": 0
+    },
+    {
+      "path": "art_pipeline/frames_jiangshi_cel/death_02.png",
+      "url": "",
+      "category": "高精源帧资产",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 617,
+      "lines": 0
+    },
+    {
+      "path": "art_pipeline/frames_jiangshi_cel/death_03.png",
+      "url": "",
+      "category": "高精源帧资产",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 355,
+      "lines": 0
+    },
+    {
+      "path": "art_pipeline/frames_jiangshi_cel/hit_01.png",
+      "url": "",
+      "category": "高精源帧资产",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 2170,
+      "lines": 0
+    },
+    {
+      "path": "art_pipeline/frames_jiangshi_cel/hit_02.png",
+      "url": "",
+      "category": "高精源帧资产",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 2709,
+      "lines": 0
+    },
+    {
+      "path": "art_pipeline/frames_jiangshi_cel/idle_01.png",
+      "url": "",
+      "category": "高精源帧资产",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 2846,
+      "lines": 0
+    },
+    {
+      "path": "art_pipeline/frames_jiangshi_cel/idle_02.png",
+      "url": "",
+      "category": "高精源帧资产",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 2853,
+      "lines": 0
+    },
+    {
+      "path": "art_pipeline/frames_jiangshi_cel/idle_03.png",
+      "url": "",
+      "category": "高精源帧资产",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 2820,
+      "lines": 0
+    },
+    {
+      "path": "art_pipeline/frames_jiangshi_cel/idle_04.png",
+      "url": "",
+      "category": "高精源帧资产",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 2848,
+      "lines": 0
+    },
+    {
+      "path": "art_pipeline/frames_jiangshi_cel/move_01.png",
+      "url": "",
+      "category": "高精源帧资产",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 2846,
+      "lines": 0
+    },
+    {
+      "path": "art_pipeline/frames_jiangshi_cel/move_02.png",
+      "url": "",
+      "category": "高精源帧资产",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 2515,
+      "lines": 0
+    },
+    {
+      "path": "art_pipeline/frames_jiangshi_cel/move_03.png",
+      "url": "",
+      "category": "高精源帧资产",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 2957,
+      "lines": 0
+    },
+    {
+      "path": "art_pipeline/frames_jiangshi_cel/move_04.png",
+      "url": "",
+      "category": "高精源帧资产",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 2860,
+      "lines": 0
+    },
+    {
+      "path": "art_pipeline/frames_jiangshi_cel/move_05.png",
+      "url": "",
+      "category": "高精源帧资产",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 2780,
+      "lines": 0
+    },
+    {
+      "path": "art_pipeline/frames_jiangshi_cel/move_06.png",
+      "url": "",
+      "category": "高精源帧资产",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 2571,
       "lines": 0
     },
     {
@@ -972,7 +1487,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 8788,
+      "bytes": 6386,
       "lines": 0
     },
     {
@@ -981,7 +1496,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 9207,
+      "bytes": 8157,
       "lines": 0
     },
     {
@@ -990,7 +1505,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 8202,
+      "bytes": 7417,
       "lines": 0
     },
     {
@@ -999,7 +1514,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 8907,
+      "bytes": 7856,
       "lines": 0
     },
     {
@@ -1008,7 +1523,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 10509,
+      "bytes": 8252,
       "lines": 0
     },
     {
@@ -1017,7 +1532,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 9460,
+      "bytes": 7865,
       "lines": 0
     },
     {
@@ -1026,7 +1541,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 5948,
+      "bytes": 4845,
       "lines": 0
     },
     {
@@ -1035,7 +1550,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 3544,
+      "bytes": 2814,
       "lines": 0
     },
     {
@@ -1044,7 +1559,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 2052,
+      "bytes": 1652,
       "lines": 0
     },
     {
@@ -1053,7 +1568,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 8211,
+      "bytes": 6601,
       "lines": 0
     },
     {
@@ -1062,7 +1577,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 7654,
+      "bytes": 6526,
       "lines": 0
     },
     {
@@ -1071,7 +1586,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 6516,
+      "bytes": 6131,
       "lines": 0
     },
     {
@@ -1080,7 +1595,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 7652,
+      "bytes": 6869,
       "lines": 0
     },
     {
@@ -1089,7 +1604,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 6879,
+      "bytes": 6887,
       "lines": 0
     },
     {
@@ -1098,7 +1613,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 8702,
+      "bytes": 6456,
       "lines": 0
     },
     {
@@ -1107,7 +1622,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 5948,
+      "bytes": 5209,
       "lines": 0
     },
     {
@@ -1116,7 +1631,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 7655,
+      "bytes": 6039,
       "lines": 0
     },
     {
@@ -1125,7 +1640,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 8467,
+      "bytes": 6538,
       "lines": 0
     },
     {
@@ -1134,7 +1649,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 8451,
+      "bytes": 6503,
       "lines": 0
     },
     {
@@ -1143,7 +1658,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 8567,
+      "bytes": 6644,
       "lines": 0
     },
     {
@@ -1152,7 +1667,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 8186,
+      "bytes": 6505,
       "lines": 0
     },
     {
@@ -1161,7 +1676,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 6936,
+      "bytes": 7948,
       "lines": 0
     },
     {
@@ -1170,7 +1685,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 7607,
+      "bytes": 8627,
       "lines": 0
     },
     {
@@ -1179,7 +1694,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 6842,
+      "bytes": 7955,
       "lines": 0
     },
     {
@@ -1188,7 +1703,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 7739,
+      "bytes": 8369,
       "lines": 0
     },
     {
@@ -1197,7 +1712,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 8567,
+      "bytes": 7949,
       "lines": 0
     },
     {
@@ -1206,7 +1721,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 6952,
+      "bytes": 8627,
       "lines": 0
     },
     {
@@ -1215,7 +1730,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 7607,
+      "bytes": 7955,
       "lines": 0
     },
     {
@@ -1224,7 +1739,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 8348,
+      "bytes": 8369,
       "lines": 0
     },
     {
@@ -1233,7 +1748,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 7432,
+      "bytes": 7369,
       "lines": 0
     },
     {
@@ -1242,7 +1757,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 7185,
+      "bytes": 4448,
       "lines": 0
     },
     {
@@ -1251,7 +1766,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 6962,
+      "bytes": 4255,
       "lines": 0
     },
     {
@@ -1260,7 +1775,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 7255,
+      "bytes": 4394,
       "lines": 0
     },
     {
@@ -1269,7 +1784,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 8287,
+      "bytes": 4373,
       "lines": 0
     },
     {
@@ -1278,7 +1793,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 9109,
+      "bytes": 7829,
       "lines": 0
     },
     {
@@ -1287,7 +1802,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 5304,
+      "bytes": 5869,
       "lines": 0
     },
     {
@@ -1296,7 +1811,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 3366,
+      "bytes": 3643,
       "lines": 0
     },
     {
@@ -1305,7 +1820,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 1873,
+      "bytes": 1975,
       "lines": 0
     },
     {
@@ -1314,7 +1829,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 6947,
+      "bytes": 8508,
       "lines": 0
     },
     {
@@ -1323,7 +1838,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 6103,
+      "bytes": 7694,
       "lines": 0
     },
     {
@@ -1332,7 +1847,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 6016,
+      "bytes": 7112,
       "lines": 0
     },
     {
@@ -1341,7 +1856,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 6903,
+      "bytes": 8263,
       "lines": 0
     },
     {
@@ -1350,7 +1865,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 6915,
+      "bytes": 7679,
       "lines": 0
     },
     {
@@ -1359,7 +1874,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 6705,
+      "bytes": 7601,
       "lines": 0
     },
     {
@@ -1368,7 +1883,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 5455,
+      "bytes": 5815,
       "lines": 0
     },
     {
@@ -1377,7 +1892,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 6896,
+      "bytes": 7230,
       "lines": 0
     },
     {
@@ -1386,7 +1901,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 7125,
+      "bytes": 7829,
       "lines": 0
     },
     {
@@ -1395,7 +1910,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 6939,
+      "bytes": 7744,
       "lines": 0
     },
     {
@@ -1404,7 +1919,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 7040,
+      "bytes": 7746,
       "lines": 0
     },
     {
@@ -1413,7 +1928,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 6979,
+      "bytes": 7741,
       "lines": 0
     },
     {
@@ -1422,7 +1937,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 6146,
+      "bytes": 7834,
       "lines": 0
     },
     {
@@ -1431,7 +1946,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 6025,
+      "bytes": 7160,
       "lines": 0
     },
     {
@@ -1440,7 +1955,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 6031,
+      "bytes": 6882,
       "lines": 0
     },
     {
@@ -1449,7 +1964,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 6121,
+      "bytes": 6792,
       "lines": 0
     },
     {
@@ -1458,7 +1973,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 6053,
+      "bytes": 6924,
       "lines": 0
     },
     {
@@ -1467,7 +1982,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 6265,
+      "bytes": 6724,
       "lines": 0
     },
     {
@@ -1476,7 +1991,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 6028,
+      "bytes": 7739,
       "lines": 0
     },
     {
@@ -1485,7 +2000,7 @@
       "category": "高精源帧资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 6054,
+      "bytes": 7152,
       "lines": 0
     },
     {
@@ -1597,12 +2112,300 @@
       "lines": 0
     },
     {
+      "path": "assets/items/ancestral_ember.png",
+      "url": "/godot-prototype/assets/items/ancestral_ember.png",
+      "category": "局内道具与消耗品图标",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 7832,
+      "lines": 0
+    },
+    {
+      "path": "assets/items/calm_talisman.png",
+      "url": "/godot-prototype/assets/items/calm_talisman.png",
+      "category": "局内道具与消耗品图标",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 7078,
+      "lines": 0
+    },
+    {
+      "path": "assets/items/crane.png",
+      "url": "/godot-prototype/assets/items/crane.png",
+      "category": "局内道具与消耗品图标",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 6363,
+      "lines": 0
+    },
+    {
+      "path": "assets/items/encore.png",
+      "url": "/godot-prototype/assets/items/encore.png",
+      "category": "局内道具与消耗品图标",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 4702,
+      "lines": 0
+    },
+    {
+      "path": "assets/items/gonglu.png",
+      "url": "/godot-prototype/assets/items/gonglu.png",
+      "category": "局内道具与消耗品图标",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 7519,
+      "lines": 0
+    },
+    {
+      "path": "assets/items/incense_coin.png",
+      "url": "/godot-prototype/assets/items/incense_coin.png",
+      "category": "局内道具与消耗品图标",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 7671,
+      "lines": 0
+    },
+    {
+      "path": "assets/items/items_manifest.json",
+      "url": "/godot-prototype/assets/items/items_manifest.json",
+      "category": "局内道具与消耗品图标",
+      "ext": ".json",
+      "isText": true,
+      "bytes": 9054,
+      "lines": 287
+    },
+    {
+      "path": "assets/items/lamp_oil.png",
+      "url": "/godot-prototype/assets/items/lamp_oil.png",
+      "category": "局内道具与消耗品图标",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 4820,
+      "lines": 0
+    },
+    {
+      "path": "assets/items/lantern_fire.png",
+      "url": "/godot-prototype/assets/items/lantern_fire.png",
+      "category": "局内道具与消耗品图标",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 6227,
+      "lines": 0
+    },
+    {
+      "path": "assets/items/magistrate_chest.png",
+      "url": "/godot-prototype/assets/items/magistrate_chest.png",
+      "category": "局内道具与消耗品图标",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 6920,
+      "lines": 0
+    },
+    {
+      "path": "assets/items/mask_freeze.png",
+      "url": "/godot-prototype/assets/items/mask_freeze.png",
+      "category": "局内道具与消耗品图标",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 6241,
+      "lines": 0
+    },
+    {
+      "path": "assets/items/mugwort_cake.png",
+      "url": "/godot-prototype/assets/items/mugwort_cake.png",
+      "category": "局内道具与消耗品图标",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 3548,
+      "lines": 0
+    },
+    {
+      "path": "assets/items/night_bell.png",
+      "url": "/godot-prototype/assets/items/night_bell.png",
+      "category": "局内道具与消耗品图标",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 5640,
+      "lines": 0
+    },
+    {
+      "path": "assets/items/oil_drop_vial.png",
+      "url": "/godot-prototype/assets/items/oil_drop_vial.png",
+      "category": "局内道具与消耗品图标",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 5084,
+      "lines": 0
+    },
+    {
+      "path": "assets/items/paper_ward.png",
+      "url": "/godot-prototype/assets/items/paper_ward.png",
+      "category": "局内道具与消耗品图标",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 5448,
+      "lines": 0
+    },
+    {
+      "path": "assets/items/pine_oil.png",
+      "url": "/godot-prototype/assets/items/pine_oil.png",
+      "category": "局内道具与消耗品图标",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 6044,
+      "lines": 0
+    },
+    {
+      "path": "assets/items/shadow_walker.png",
+      "url": "/godot-prototype/assets/items/shadow_walker.png",
+      "category": "局内道具与消耗品图标",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 6326,
+      "lines": 0
+    },
+    {
+      "path": "assets/items/sleeve_spin.png",
+      "url": "/godot-prototype/assets/items/sleeve_spin.png",
+      "category": "局内道具与消耗品图标",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 6180,
+      "lines": 0
+    },
+    {
+      "path": "assets/items/soul_shield.png",
+      "url": "/godot-prototype/assets/items/soul_shield.png",
+      "category": "局内道具与消耗品图标",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 6778,
+      "lines": 0
+    },
+    {
+      "path": "assets/items/spirit_brand.png",
+      "url": "/godot-prototype/assets/items/spirit_brand.png",
+      "category": "局内道具与消耗品图标",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 5880,
+      "lines": 0
+    },
+    {
+      "path": "assets/items/spirit_wax.png",
+      "url": "/godot-prototype/assets/items/spirit_wax.png",
+      "category": "局内道具与消耗品图标",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 4435,
+      "lines": 0
+    },
+    {
+      "path": "assets/items/sword.png",
+      "url": "/godot-prototype/assets/items/sword.png",
+      "category": "局内道具与消耗品图标",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 4422,
+      "lines": 0
+    },
+    {
+      "path": "assets/items/taboo_book.png",
+      "url": "/godot-prototype/assets/items/taboo_book.png",
+      "category": "局内道具与消耗品图标",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 5805,
+      "lines": 0
+    },
+    {
+      "path": "assets/items/talisman.png",
+      "url": "/godot-prototype/assets/items/talisman.png",
+      "category": "局内道具与消耗品图标",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 5021,
+      "lines": 0
+    },
+    {
+      "path": "assets/items/troupe_gong.png",
+      "url": "/godot-prototype/assets/items/troupe_gong.png",
+      "category": "局内道具与消耗品图标",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 6372,
+      "lines": 0
+    },
+    {
+      "path": "assets/items/tung_oil.png",
+      "url": "/godot-prototype/assets/items/tung_oil.png",
+      "category": "局内道具与消耗品图标",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 5790,
+      "lines": 0
+    },
+    {
+      "path": "assets/items/xp_gem_large.png",
+      "url": "/godot-prototype/assets/items/xp_gem_large.png",
+      "category": "局内道具与消耗品图标",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 6694,
+      "lines": 0
+    },
+    {
+      "path": "assets/items/xp_gem_small.png",
+      "url": "/godot-prototype/assets/items/xp_gem_small.png",
+      "category": "局内道具与消耗品图标",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 4329,
+      "lines": 0
+    },
+    {
+      "path": "assets/items/yin_yang_mirror.png",
+      "url": "/godot-prototype/assets/items/yin_yang_mirror.png",
+      "category": "局内道具与消耗品图标",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 7229,
+      "lines": 0
+    },
+    {
+      "path": "assets/sprites/boss_magistrate_cel.json",
+      "url": "/godot-prototype/assets/sprites/boss_magistrate_cel.json",
+      "category": "像素精灵帧表资产",
+      "ext": ".json",
+      "isText": true,
+      "bytes": 36588,
+      "lines": 2059
+    },
+    {
+      "path": "assets/sprites/boss_magistrate_cel.png",
+      "url": "/godot-prototype/assets/sprites/boss_magistrate_cel.png",
+      "category": "像素精灵帧表资产",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 352034,
+      "lines": 0
+    },
+    {
+      "path": "assets/sprites/boss_magistrate_cel.qa.json",
+      "url": "/godot-prototype/assets/sprites/boss_magistrate_cel.qa.json",
+      "category": "像素精灵帧表资产",
+      "ext": ".json",
+      "isText": true,
+      "bytes": 9376,
+      "lines": 461
+    },
+    {
       "path": "assets/sprites/boss_magistrate.png",
       "url": "/godot-prototype/assets/sprites/boss_magistrate.png",
       "category": "像素精灵帧表资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 11100,
+      "bytes": 12329,
       "lines": 0
     },
     {
@@ -1611,8 +2414,8 @@
       "category": "像素精灵帧表资产",
       "ext": ".json",
       "isText": true,
-      "bytes": 3660,
-      "lines": 118
+      "bytes": 6528,
+      "lines": 248
     },
     {
       "path": "assets/sprites/elite_ghost.png",
@@ -1620,7 +2423,7 @@
       "category": "像素精灵帧表资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 8446,
+      "bytes": 7869,
       "lines": 0
     },
     {
@@ -1629,7 +2432,7 @@
       "category": "像素精灵帧表资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 6527,
+      "bytes": 6399,
       "lines": 0
     },
     {
@@ -1638,8 +2441,8 @@
       "category": "像素精灵帧表资产",
       "ext": ".json",
       "isText": true,
-      "bytes": 8202,
-      "lines": 476
+      "bytes": 36567,
+      "lines": 2059
     },
     {
       "path": "assets/sprites/enemy_boar_cel.png",
@@ -1647,7 +2450,7 @@
       "category": "像素精灵帧表资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 37345,
+      "bytes": 131366,
       "lines": 0
     },
     {
@@ -1656,8 +2459,8 @@
       "category": "像素精灵帧表资产",
       "ext": ".json",
       "isText": true,
-      "bytes": 1455,
-      "lines": 76
+      "bytes": 9372,
+      "lines": 461
     },
     {
       "path": "assets/sprites/enemy_shanxiao_cel.json",
@@ -1665,8 +2468,8 @@
       "category": "像素精灵帧表资产",
       "ext": ".json",
       "isText": true,
-      "bytes": 8211,
-      "lines": 476
+      "bytes": 36591,
+      "lines": 2059
     },
     {
       "path": "assets/sprites/enemy_shanxiao_cel.png",
@@ -1674,7 +2477,7 @@
       "category": "像素精灵帧表资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 71728,
+      "bytes": 476321,
       "lines": 0
     },
     {
@@ -1683,8 +2486,8 @@
       "category": "像素精灵帧表资产",
       "ext": ".json",
       "isText": true,
-      "bytes": 1458,
-      "lines": 76
+      "bytes": 9381,
+      "lines": 461
     },
     {
       "path": "assets/sprites/enemy_treant_cel.json",
@@ -1692,8 +2495,8 @@
       "category": "像素精灵帧表资产",
       "ext": ".json",
       "isText": true,
-      "bytes": 8204,
-      "lines": 476
+      "bytes": 36569,
+      "lines": 2059
     },
     {
       "path": "assets/sprites/enemy_treant_cel.png",
@@ -1701,7 +2504,7 @@
       "category": "像素精灵帧表资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 48838,
+      "bytes": 196889,
       "lines": 0
     },
     {
@@ -1710,8 +2513,8 @@
       "category": "像素精灵帧表资产",
       "ext": ".json",
       "isText": true,
-      "bytes": 1456,
-      "lines": 76
+      "bytes": 9370,
+      "lines": 461
     },
     {
       "path": "assets/sprites/enemy_wolf_cel.json",
@@ -1719,8 +2522,8 @@
       "category": "像素精灵帧表资产",
       "ext": ".json",
       "isText": true,
-      "bytes": 8202,
-      "lines": 476
+      "bytes": 36567,
+      "lines": 2059
     },
     {
       "path": "assets/sprites/enemy_wolf_cel.png",
@@ -1728,7 +2531,7 @@
       "category": "像素精灵帧表资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 29909,
+      "bytes": 94226,
       "lines": 0
     },
     {
@@ -1737,8 +2540,35 @@
       "category": "像素精灵帧表资产",
       "ext": ".json",
       "isText": true,
-      "bytes": 1453,
-      "lines": 76
+      "bytes": 9368,
+      "lines": 461
+    },
+    {
+      "path": "assets/sprites/ghost_cel.json",
+      "url": "/godot-prototype/assets/sprites/ghost_cel.json",
+      "category": "像素精灵帧表资产",
+      "ext": ".json",
+      "isText": true,
+      "bytes": 36562,
+      "lines": 2059
+    },
+    {
+      "path": "assets/sprites/ghost_cel.png",
+      "url": "/godot-prototype/assets/sprites/ghost_cel.png",
+      "category": "像素精灵帧表资产",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 158832,
+      "lines": 0
+    },
+    {
+      "path": "assets/sprites/ghost_cel.qa.json",
+      "url": "/godot-prototype/assets/sprites/ghost_cel.qa.json",
+      "category": "像素精灵帧表资产",
+      "ext": ".json",
+      "isText": true,
+      "bytes": 9357,
+      "lines": 461
     },
     {
       "path": "assets/sprites/ghost.png",
@@ -1746,8 +2576,35 @@
       "category": "像素精灵帧表资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 7130,
+      "bytes": 6104,
       "lines": 0
+    },
+    {
+      "path": "assets/sprites/jiangshi_cel.json",
+      "url": "/godot-prototype/assets/sprites/jiangshi_cel.json",
+      "category": "像素精灵帧表资产",
+      "ext": ".json",
+      "isText": true,
+      "bytes": 36565,
+      "lines": 2059
+    },
+    {
+      "path": "assets/sprites/jiangshi_cel.png",
+      "url": "/godot-prototype/assets/sprites/jiangshi_cel.png",
+      "category": "像素精灵帧表资产",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 117855,
+      "lines": 0
+    },
+    {
+      "path": "assets/sprites/jiangshi_cel.qa.json",
+      "url": "/godot-prototype/assets/sprites/jiangshi_cel.qa.json",
+      "category": "像素精灵帧表资产",
+      "ext": ".json",
+      "isText": true,
+      "bytes": 9369,
+      "lines": 461
     },
     {
       "path": "assets/sprites/jiangshi.png",
@@ -1755,7 +2612,7 @@
       "category": "像素精灵帧表资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 5374,
+      "bytes": 4398,
       "lines": 0
     },
     {
@@ -1764,8 +2621,8 @@
       "category": "像素精灵帧表资产",
       "ext": ".json",
       "isText": true,
-      "bytes": 1751,
-      "lines": 14
+      "bytes": 2331,
+      "lines": 92
     },
     {
       "path": "assets/sprites/palette-report.json",
@@ -1773,7 +2630,7 @@
       "category": "像素精灵帧表资产",
       "ext": ".json",
       "isText": true,
-      "bytes": 3300,
+      "bytes": 3337,
       "lines": 118
     },
     {
@@ -1782,8 +2639,8 @@
       "category": "像素精灵帧表资产",
       "ext": ".json",
       "isText": true,
-      "bytes": 12102,
-      "lines": 703
+      "bytes": 101203,
+      "lines": 5749
     },
     {
       "path": "assets/sprites/player_dan_cel.png",
@@ -1791,7 +2648,7 @@
       "category": "像素精灵帧表资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 176144,
+      "bytes": 1048985,
       "lines": 0
     },
     {
@@ -1800,8 +2657,8 @@
       "category": "像素精灵帧表资产",
       "ext": ".json",
       "isText": true,
-      "bytes": 1678,
-      "lines": 87
+      "bytes": 12564,
+      "lines": 615
     },
     {
       "path": "assets/sprites/player_dan.png",
@@ -1809,7 +2666,7 @@
       "category": "像素精灵帧表资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 14507,
+      "bytes": 9765,
       "lines": 0
     },
     {
@@ -1818,8 +2675,8 @@
       "category": "像素精灵帧表资产",
       "ext": ".json",
       "isText": true,
-      "bytes": 12105,
-      "lines": 703
+      "bytes": 101206,
+      "lines": 5749
     },
     {
       "path": "assets/sprites/player_mortal_cel.png",
@@ -1827,7 +2684,7 @@
       "category": "像素精灵帧表资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 170267,
+      "bytes": 1101731,
       "lines": 0
     },
     {
@@ -1836,8 +2693,8 @@
       "category": "像素精灵帧表资产",
       "ext": ".json",
       "isText": true,
-      "bytes": 1678,
-      "lines": 87
+      "bytes": 12563,
+      "lines": 615
     },
     {
       "path": "assets/sprites/player_mortal.png",
@@ -1845,7 +2702,7 @@
       "category": "像素精灵帧表资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 11702,
+      "bytes": 10396,
       "lines": 0
     },
     {
@@ -1854,8 +2711,8 @@
       "category": "像素精灵帧表资产",
       "ext": ".json",
       "isText": true,
-      "bytes": 12104,
-      "lines": 703
+      "bytes": 101205,
+      "lines": 5749
     },
     {
       "path": "assets/sprites/player_sheng_cel.png",
@@ -1863,7 +2720,7 @@
       "category": "像素精灵帧表资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 157329,
+      "bytes": 1102493,
       "lines": 0
     },
     {
@@ -1872,8 +2729,8 @@
       "category": "像素精灵帧表资产",
       "ext": ".json",
       "isText": true,
-      "bytes": 1681,
-      "lines": 87
+      "bytes": 12565,
+      "lines": 615
     },
     {
       "path": "assets/sprites/player_sheng.png",
@@ -1881,7 +2738,7 @@
       "category": "像素精灵帧表资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 13676,
+      "bytes": 15468,
       "lines": 0
     },
     {
@@ -1890,7 +2747,7 @@
       "category": "像素精灵帧表资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 4656,
+      "bytes": 4727,
       "lines": 0
     },
     {
@@ -1908,7 +2765,16 @@
       "category": "像素美术参考基准",
       "ext": ".jpg",
       "isText": false,
-      "bytes": 590564,
+      "bytes": 574133,
+      "lines": 0
+    },
+    {
+      "path": "assets/sprites/reference/day_wolf_boar_sheet.jpg",
+      "url": "",
+      "category": "像素美术参考基准",
+      "ext": ".jpg",
+      "isText": false,
+      "bytes": 510882,
       "lines": 0
     },
     {
@@ -1917,7 +2783,7 @@
       "category": "像素美术参考基准",
       "ext": ".jpg",
       "isText": false,
-      "bytes": 576898,
+      "bytes": 719766,
       "lines": 0
     },
     {
@@ -1935,7 +2801,7 @@
       "category": "像素美术参考基准",
       "ext": ".jpg",
       "isText": false,
-      "bytes": 577544,
+      "bytes": 578697,
       "lines": 0
     },
     {
@@ -1944,7 +2810,7 @@
       "category": "像素美术参考基准",
       "ext": ".jpg",
       "isText": false,
-      "bytes": 622265,
+      "bytes": 648907,
       "lines": 0
     },
     {
@@ -1953,7 +2819,61 @@
       "category": "像素美术参考基准",
       "ext": ".jpg",
       "isText": false,
-      "bytes": 648907,
+      "bytes": 602015,
+      "lines": 0
+    },
+    {
+      "path": "assets/sprites/reference/items_pickups_sheet.jpg",
+      "url": "",
+      "category": "像素美术参考基准",
+      "ext": ".jpg",
+      "isText": false,
+      "bytes": 568194,
+      "lines": 0
+    },
+    {
+      "path": "assets/sprites/reference/items_upgrades_sheet.jpg",
+      "url": "",
+      "category": "像素美术参考基准",
+      "ext": ".jpg",
+      "isText": false,
+      "bytes": 539333,
+      "lines": 0
+    },
+    {
+      "path": "assets/sprites/reference/map_ground_tiles_45deg.jpg",
+      "url": "",
+      "category": "像素美术参考基准",
+      "ext": ".jpg",
+      "isText": false,
+      "bytes": 623670,
+      "lines": 0
+    },
+    {
+      "path": "assets/sprites/reference/town_buildings_45deg.jpg",
+      "url": "",
+      "category": "像素美术参考基准",
+      "ext": ".jpg",
+      "isText": false,
+      "bytes": 619644,
+      "lines": 0
+    },
+    {
+      "path": "assets/sprites/reference/town_props_45deg.jpg",
+      "url": "",
+      "category": "像素美术参考基准",
+      "ext": ".jpg",
+      "isText": false,
+      "bytes": 494208,
+      "lines": 0
+    },
+    {
+      "path": "assets/sprites/reference/wilderness_landmarks_45deg.jpg",
+      "url": "",
+      "category": "像素美术参考基准",
+      "ext": ".jpg",
+      "isText": false,
+      "bytes": 518260,
       "lines": 0
     },
     {
@@ -1962,7 +2882,7 @@
       "category": "像素精灵帧表资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 6599,
+      "bytes": 6543,
       "lines": 0
     },
     {
@@ -1971,8 +2891,359 @@
       "category": "像素精灵帧表资产",
       "ext": ".png",
       "isText": false,
-      "bytes": 6421,
+      "bytes": 6444,
       "lines": 0
+    },
+    {
+      "path": "assets/world/buildings/ancestral_furnace.png",
+      "url": "/godot-prototype/assets/world/buildings/ancestral_furnace.png",
+      "category": "地图瓦片与安全区建筑",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 34384,
+      "lines": 0
+    },
+    {
+      "path": "assets/world/buildings/apothecary.png",
+      "url": "/godot-prototype/assets/world/buildings/apothecary.png",
+      "category": "地图瓦片与安全区建筑",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 62215,
+      "lines": 0
+    },
+    {
+      "path": "assets/world/buildings/north_gate.png",
+      "url": "/godot-prototype/assets/world/buildings/north_gate.png",
+      "category": "地图瓦片与安全区建筑",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 46682,
+      "lines": 0
+    },
+    {
+      "path": "assets/world/buildings/oil_shop.png",
+      "url": "/godot-prototype/assets/world/buildings/oil_shop.png",
+      "category": "地图瓦片与安全区建筑",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 65570,
+      "lines": 0
+    },
+    {
+      "path": "assets/world/buildings/paper_shop.png",
+      "url": "/godot-prototype/assets/world/buildings/paper_shop.png",
+      "category": "地图瓦片与安全区建筑",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 62076,
+      "lines": 0
+    },
+    {
+      "path": "assets/world/buildings/tea_pavilion.png",
+      "url": "/godot-prototype/assets/world/buildings/tea_pavilion.png",
+      "category": "地图瓦片与安全区建筑",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 66887,
+      "lines": 0
+    },
+    {
+      "path": "assets/world/landmarks/bamboo_grove.png",
+      "url": "/godot-prototype/assets/world/landmarks/bamboo_grove.png",
+      "category": "地图瓦片与安全区建筑",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 21562,
+      "lines": 0
+    },
+    {
+      "path": "assets/world/landmarks/ghost_market_stall.png",
+      "url": "/godot-prototype/assets/world/landmarks/ghost_market_stall.png",
+      "category": "地图瓦片与安全区建筑",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 31686,
+      "lines": 0
+    },
+    {
+      "path": "assets/world/landmarks/gravestone_stele.png",
+      "url": "/godot-prototype/assets/world/landmarks/gravestone_stele.png",
+      "category": "地图瓦片与安全区建筑",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 13702,
+      "lines": 0
+    },
+    {
+      "path": "assets/world/landmarks/nether_altar.png",
+      "url": "/godot-prototype/assets/world/landmarks/nether_altar.png",
+      "category": "地图瓦片与安全区建筑",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 25585,
+      "lines": 0
+    },
+    {
+      "path": "assets/world/landmarks/ruined_wall.png",
+      "url": "/godot-prototype/assets/world/landmarks/ruined_wall.png",
+      "category": "地图瓦片与安全区建筑",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 24971,
+      "lines": 0
+    },
+    {
+      "path": "assets/world/landmarks/spirit_gate.png",
+      "url": "/godot-prototype/assets/world/landmarks/spirit_gate.png",
+      "category": "地图瓦片与安全区建筑",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 15498,
+      "lines": 0
+    },
+    {
+      "path": "assets/world/landmarks/stone_bridge.png",
+      "url": "/godot-prototype/assets/world/landmarks/stone_bridge.png",
+      "category": "地图瓦片与安全区建筑",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 32047,
+      "lines": 0
+    },
+    {
+      "path": "assets/world/landmarks/styx_paper_bridge.png",
+      "url": "/godot-prototype/assets/world/landmarks/styx_paper_bridge.png",
+      "category": "地图瓦片与安全区建筑",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 25926,
+      "lines": 0
+    },
+    {
+      "path": "assets/world/props/ancient_locust_tree.png",
+      "url": "/godot-prototype/assets/world/props/ancient_locust_tree.png",
+      "category": "地图瓦片与安全区建筑",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 20346,
+      "lines": 0
+    },
+    {
+      "path": "assets/world/props/ancient_well.png",
+      "url": "/godot-prototype/assets/world/props/ancient_well.png",
+      "category": "地图瓦片与安全区建筑",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 12112,
+      "lines": 0
+    },
+    {
+      "path": "assets/world/props/bamboo_planter.png",
+      "url": "/godot-prototype/assets/world/props/bamboo_planter.png",
+      "category": "地图瓦片与安全区建筑",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 9904,
+      "lines": 0
+    },
+    {
+      "path": "assets/world/props/courtyard_lantern.png",
+      "url": "/godot-prototype/assets/world/props/courtyard_lantern.png",
+      "category": "地图瓦片与安全区建筑",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 7897,
+      "lines": 0
+    },
+    {
+      "path": "assets/world/props/incense_burner.png",
+      "url": "/godot-prototype/assets/world/props/incense_burner.png",
+      "category": "地图瓦片与安全区建筑",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 7064,
+      "lines": 0
+    },
+    {
+      "path": "assets/world/props/notice_board.png",
+      "url": "/godot-prototype/assets/world/props/notice_board.png",
+      "category": "地图瓦片与安全区建筑",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 12787,
+      "lines": 0
+    },
+    {
+      "path": "assets/world/props/oil_barrels.png",
+      "url": "/godot-prototype/assets/world/props/oil_barrels.png",
+      "category": "地图瓦片与安全区建筑",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 12481,
+      "lines": 0
+    },
+    {
+      "path": "assets/world/props/opera_rack.png",
+      "url": "/godot-prototype/assets/world/props/opera_rack.png",
+      "category": "地图瓦片与安全区建筑",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 8527,
+      "lines": 0
+    },
+    {
+      "path": "assets/world/props/spirit_screen.png",
+      "url": "/godot-prototype/assets/world/props/spirit_screen.png",
+      "category": "地图瓦片与安全区建筑",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 19465,
+      "lines": 0
+    },
+    {
+      "path": "assets/world/props/stone_bench.png",
+      "url": "/godot-prototype/assets/world/props/stone_bench.png",
+      "category": "地图瓦片与安全区建筑",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 11013,
+      "lines": 0
+    },
+    {
+      "path": "assets/world/props/street_lamp_post.png",
+      "url": "/godot-prototype/assets/world/props/street_lamp_post.png",
+      "category": "地图瓦片与安全区建筑",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 4687,
+      "lines": 0
+    },
+    {
+      "path": "assets/world/props/tea_table.png",
+      "url": "/godot-prototype/assets/world/props/tea_table.png",
+      "category": "地图瓦片与安全区建筑",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 8212,
+      "lines": 0
+    },
+    {
+      "path": "assets/world/tiles/spectral_blood_slate.png",
+      "url": "/godot-prototype/assets/world/tiles/spectral_blood_slate.png",
+      "category": "地图瓦片与安全区建筑",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 4092,
+      "lines": 0
+    },
+    {
+      "path": "assets/world/tiles/spectral_cracked_stone.png",
+      "url": "/godot-prototype/assets/world/tiles/spectral_cracked_stone.png",
+      "category": "地图瓦片与安全区建筑",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 5649,
+      "lines": 0
+    },
+    {
+      "path": "assets/world/tiles/spectral_paper_ash.png",
+      "url": "/godot-prototype/assets/world/tiles/spectral_paper_ash.png",
+      "category": "地图瓦片与安全区建筑",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 5072,
+      "lines": 0
+    },
+    {
+      "path": "assets/world/tiles/spectral_styx_water.png",
+      "url": "/godot-prototype/assets/world/tiles/spectral_styx_water.png",
+      "category": "地图瓦片与安全区建筑",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 5026,
+      "lines": 0
+    },
+    {
+      "path": "assets/world/tiles/town_avenue.png",
+      "url": "/godot-prototype/assets/world/tiles/town_avenue.png",
+      "category": "地图瓦片与安全区建筑",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 8001,
+      "lines": 0
+    },
+    {
+      "path": "assets/world/tiles/town_bluestone.png",
+      "url": "/godot-prototype/assets/world/tiles/town_bluestone.png",
+      "category": "地图瓦片与安全区建筑",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 6230,
+      "lines": 0
+    },
+    {
+      "path": "assets/world/tiles/town_moss_cobble.png",
+      "url": "/godot-prototype/assets/world/tiles/town_moss_cobble.png",
+      "category": "地图瓦片与安全区建筑",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 9880,
+      "lines": 0
+    },
+    {
+      "path": "assets/world/tiles/town_timber_deck.png",
+      "url": "/godot-prototype/assets/world/tiles/town_timber_deck.png",
+      "category": "地图瓦片与安全区建筑",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 7056,
+      "lines": 0
+    },
+    {
+      "path": "assets/world/tiles/wild_dark_pond.png",
+      "url": "/godot-prototype/assets/world/tiles/wild_dark_pond.png",
+      "category": "地图瓦片与安全区建筑",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 3752,
+      "lines": 0
+    },
+    {
+      "path": "assets/world/tiles/wild_dirt_road.png",
+      "url": "/godot-prototype/assets/world/tiles/wild_dirt_road.png",
+      "category": "地图瓦片与安全区建筑",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 6057,
+      "lines": 0
+    },
+    {
+      "path": "assets/world/tiles/wild_grave_earth.png",
+      "url": "/godot-prototype/assets/world/tiles/wild_grave_earth.png",
+      "category": "地图瓦片与安全区建筑",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 6424,
+      "lines": 0
+    },
+    {
+      "path": "assets/world/tiles/wild_mountain_grass.png",
+      "url": "/godot-prototype/assets/world/tiles/wild_mountain_grass.png",
+      "category": "地图瓦片与安全区建筑",
+      "ext": ".png",
+      "isText": false,
+      "bytes": 7311,
+      "lines": 0
+    },
+    {
+      "path": "assets/world/world_manifest.json",
+      "url": "/godot-prototype/assets/world/world_manifest.json",
+      "category": "地图瓦片与安全区建筑",
+      "ext": ".json",
+      "isText": true,
+      "bytes": 13135,
+      "lines": 385
     },
     {
       "path": "docs/screenshots/bag.png",
@@ -2178,8 +3449,8 @@
       "category": "GDScript 核心模块",
       "ext": ".gd",
       "isText": true,
-      "bytes": 18629,
-      "lines": 340
+      "bytes": 22100,
+      "lines": 393
     },
     {
       "path": "scripts/data.gd.uid",
@@ -2205,8 +3476,8 @@
       "category": "GDScript 核心模块",
       "ext": ".gd",
       "isText": true,
-      "bytes": 47294,
-      "lines": 908
+      "bytes": 47841,
+      "lines": 916
     },
     {
       "path": "scripts/hud.gd.uid",
@@ -2223,8 +3494,8 @@
       "category": "GDScript 核心模块",
       "ext": ".gd",
       "isText": true,
-      "bytes": 74992,
-      "lines": 2195
+      "bytes": 75731,
+      "lines": 2214
     },
     {
       "path": "scripts/main.gd.uid",
@@ -2241,8 +3512,8 @@
       "category": "GDScript 核心模块",
       "ext": ".gd",
       "isText": true,
-      "bytes": 61715,
-      "lines": 1167
+      "bytes": 70972,
+      "lines": 1343
     },
     {
       "path": "scripts/renderer.gd.uid",
@@ -2259,8 +3530,8 @@
       "category": "GDScript 核心模块",
       "ext": ".gd",
       "isText": true,
-      "bytes": 10606,
-      "lines": 305
+      "bytes": 14403,
+      "lines": 391
     },
     {
       "path": "scripts/sprite_bank.gd.uid",
@@ -2270,6 +3541,15 @@
       "isText": false,
       "bytes": 19,
       "lines": 0
+    },
+    {
+      "path": "scripts/world_asset_bank.gd",
+      "url": "/godot-prototype/scripts/world_asset_bank.gd",
+      "category": "GDScript 核心模块",
+      "ext": ".gd",
+      "isText": true,
+      "bytes": 3279,
+      "lines": 114
     },
     {
       "path": "shaders/night_light.gdshader",
@@ -2448,8 +3728,8 @@
       "category": "Aseprite 自动化与 QA 管线",
       "ext": ".sh",
       "isText": true,
-      "bytes": 2609,
-      "lines": 73
+      "bytes": 2705,
+      "lines": 76
     },
     {
       "path": "tools/aseprite/qa_check.py",
@@ -2457,8 +3737,8 @@
       "category": "Aseprite 自动化与 QA 管线",
       "ext": ".py",
       "isText": true,
-      "bytes": 8322,
-      "lines": 218
+      "bytes": 8453,
+      "lines": 220
     },
     {
       "path": "tools/subset_fonts.sh",

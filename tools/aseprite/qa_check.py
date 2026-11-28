@@ -87,10 +87,12 @@ def run_qa(sheet_path, json_path, report_path=None, allow_vermilion=False):
     frame_size = int(frames[0]["frame"]["h"]) if frames else h
     if frame_size not in (64, 96):
         errors.append(f"Expected frameSize 64 or 96, got {frame_size}")
-    if h != frame_size:
-        errors.append(f"Expected height {frame_size}, got {h}")
-    if w != len(frames) * frame_size:
-        errors.append(f"Expected width {len(frames) * frame_size}, got {w}")
+    if h % frame_size != 0 or w % frame_size != 0:
+        errors.append(f"Dimensions {w}x{h} must be exact multiples of frameSize {frame_size}")
+    rows = h // frame_size
+    cols = w // frame_size
+    if rows * cols != len(frames):
+        errors.append(f"Grid capacity {cols}x{rows} ({rows * cols}) != frame count {len(frames)}")
 
     frame_stats = []
     frame_buffers = []

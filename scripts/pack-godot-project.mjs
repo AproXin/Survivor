@@ -42,6 +42,8 @@ function categoryFor(relPath) {
   if (relPath.startsWith('art_pipeline/')) return '高精源帧资产';
   if (relPath.startsWith('assets/sprites/reference/')) return '像素美术参考基准';
   if (relPath.startsWith('assets/sprites/')) return '像素精灵帧表资产';
+  if (relPath.startsWith('assets/world/')) return '地图瓦片与安全区建筑';
+  if (relPath.startsWith('assets/items/')) return '局内道具与消耗品图标';
   if (relPath.startsWith('assets/fonts/')) return '中英字体与开源协议';
   if (relPath.startsWith('docs/')) return '实机截图与设计文档';
   return '工程配置';
@@ -67,10 +69,13 @@ function walk(dir, prefix = '') {
         lines = content.split('\n').length;
       }
 
-      // Mirror text files and sprite PNGs into public/godot-prototype (skip 30MB TTFs in web mirror; full ZIP includes everything)
+      // Mirror text files and sprite/world/item PNGs into public/godot-prototype (skip 30MB TTFs in web mirror; full ZIP includes everything)
       const shouldMirror =
         isText ||
-        (MIRROR_BINARY_EXTS.has(ext) && rel.startsWith('assets/sprites/'));
+        (MIRROR_BINARY_EXTS.has(ext) &&
+          (rel.startsWith('assets/sprites/') ||
+            rel.startsWith('assets/world/') ||
+            rel.startsWith('assets/items/')));
       if (shouldMirror) {
         const dest = path.join(PUB_GODOT, rel);
         fs.mkdirSync(path.dirname(dest), { recursive: true });
@@ -126,6 +131,8 @@ const index = {
   gdscriptFiles: files.filter((f) => f.ext === '.gd').length,
   testFiles: files.filter((f) => f.path.startsWith('tests/') && f.ext === '.gd').length,
   spriteSheets: files.filter((f) => f.path.startsWith('assets/sprites/') && f.ext === '.png').length,
+  worldAssets: files.filter((f) => f.path.startsWith('assets/world/') && f.ext === '.png').length,
+  itemIcons: files.filter((f) => f.path.startsWith('assets/items/') && f.ext === '.png').length,
   referenceSheets: files.filter((f) => f.path.startsWith('assets/sprites/reference/') && f.ext === '.jpg').length,
   files,
 };

@@ -96,6 +96,7 @@ var player := {
 	"max_hp": 85.0,
 	"fuel": 100.0,
 	"facing": 1.0,
+	"facing_dir": Vector2(0.0, 1.0),
 	"walk": 0.0,
 	"pickup_radius": 68.0,
 	"speed_bonus": 0.0,
@@ -135,11 +136,15 @@ var slashes: Array[Dictionary] = []
 var floaters: Array[Dictionary] = []
 var afterimages: Array[Dictionary] = []
 var dying_corpses: Array[Dictionary] = []
-var town_bounds := Rect2(-440.0, -240.0, 880.0, 480.0)
+var town_bounds := Rect2(-760.0, -240.0, 1520.0, 720.0)
 var town_spots := {
 	"furnace": Vector2(0.0, 20.0),
-	"oil_shop": Vector2(-245.0, 30.0),
-	"paper_shop": Vector2(245.0, 30.0),
+	"oil_shop": Vector2(-265.0, 10.0),
+	"paper_shop": Vector2(265.0, 10.0),
+	"tea_pavilion": Vector2(-535.0, 20.0),
+	"apothecary": Vector2(535.0, 20.0),
+	"ancient_well": Vector2(-330.0, 290.0),
+	"notice_board": Vector2(310.0, 270.0),
 	"north_gate": Vector2(0.0, -210.0),
 }
 var town_nearby := ""
@@ -527,6 +532,7 @@ func _reset_run_state() -> void:
 		"max_hp": 85.0,
 		"fuel": 100.0,
 		"facing": 1.0,
+		"facing_dir": Vector2(0.0, 1.0),
 		"walk": 0.0,
 		"pickup_radius": 68.0,
 		"speed_bonus": 0.0,
@@ -652,6 +658,16 @@ func interact_in_town() -> void:
 		town_modal_open = true
 		town_modal_kind = "paper_shop"
 		hud.open_town_modal("paper_shop")
+	elif InkData.TOWN_LANDMARK_LORE.has(town_nearby):
+		var lore_entry: Dictionary = InkData.TOWN_LANDMARK_LORE.get(town_nearby, {})
+		var msg: String = str(lore_entry.get(lang, lore_entry.get("zh", "")))
+		if town_nearby == "tea_pavilion" or town_nearby == "apothecary":
+			player.hp = player.max_hp
+			player.fuel = 100.0
+			play_sfx("xp")
+		if msg != "":
+			_push_subtitle(msg, 5.2)
+		_emit_hud()
 
 func toggle_selected_mode() -> void:
 	selected_mode = "prototype" if selected_mode == "full_vigil" else "full_vigil"
@@ -694,10 +710,11 @@ func _step_town(dt: float) -> void:
 	if absf(move.x) > 0.01:
 		player.facing = signf(move.x)
 	if move.length_squared() > 0.01:
+		player.facing_dir = move.normalized()
 		player.walk += speed * dt
-	camera = camera.lerp(p_pos * 0.45, 1.0 - exp(-6.0 * dt))
+	camera = camera.lerp(p_pos * 0.68, 1.0 - exp(-6.0 * dt))
 	town_nearby = ""
-	var best_d := 115.0
+	var best_d := 125.0
 	for spot_id in town_spots:
 		var sp: Vector2 = town_spots[spot_id]
 		var d: float = p_pos.distance_to(sp)
@@ -743,6 +760,7 @@ func step(dt: float) -> void:
 	if absf(move.x) > 0.01:
 		player.facing = signf(move.x)
 	if move.length_squared() > 0.01:
+		player.facing_dir = move.normalized()
 		player.walk += speed * dt
 	var look_ahead: Vector2 = move * 34.0
 	camera = camera.lerp(player.pos + look_ahead, 1.0 - exp(-7.5 * dt))
@@ -1052,7 +1070,7 @@ func _spawn_ink_burst(pos: Vector2, color: Color, count: int, speed_scale: float
 			"color": color,
 		})
 
-func damage_enemy(index: int, amount: float) -> void:
+func damage_enemy(index: int, amount: float, knockback_force: float = 145.0) -> void:
 	if index < 0 or index >= enemies.size():
 		return
 	var enemy := enemies[index]
@@ -1062,7 +1080,7 @@ func damage_enemy(index: int, amount: float) -> void:
 	var away: Vector2 = enemy.pos - p_pos
 	if away.length_squared() > 0.01:
 		var kb_scale := 0.25 if bool(enemy.get("is_boss", false)) else (0.55 if bool(enemy.get("is_elite", false)) else 1.0)
-		enemy.knockback = away.normalized() * 145.0 * kb_scale
+		enemy.knockback = away.normalized() * maxf(145.0, knockback_force) * kb_scale
 	var pal := InkData.palette()
 	var is_heavy := amount >= 20.0
 	floaters.append({
@@ -1083,14 +1101,16 @@ func damage_enemy(index: int, amount: float) -> void:
 	if enemy.xp > 0.0:
 		gems.append({"pos": enemy.pos, "value": enemy.xp, "life": 24.0})
 	var coin_drop: int = int(enemy.get("coins", 0))
-	if realm == "spectral" and dual_landmarks.has("market"):
-		var market_def: Dictionary = dual_landmarks.get("market", {})
-		var market_pos: Vector2 = market_def.get("pos", Vector2(-99999.0, -99999.0))
-		var market_rad: float = float(market_def.get("radius", 160.0))
-		if enemy.pos.distance_to(market_pos) <= market_rad:
-			coin_drop += 1
-			if enemy.xp > 0.0:
-				gems.append({"pos": enemy.pos + Vector2(10.0, -6.0), "value": maxf(1.0, enemy.xp * 0.25), "life": 20.0})
+	if realm == "spectral":
+		for lm_item in dual_landmarks:
+			if typeof(lm_item) == TYPE_DICTIONARY and str(lm_item.get("id", "")) == "market":
+				var market_pos: Vector2 = lm_item.get("pos", Vector2(-99999.0, -99999.0))
+				var market_rad: float = float(lm_item.get("radius", 160.0))
+				if enemy.pos.distance_to(market_pos) <= market_rad:
+					coin_drop += 1
+					if enemy.xp > 0.0:
+						gems.append({"pos": enemy.pos + Vector2(10.0, -6.0), "value": maxf(1.0, enemy.xp * 0.25), "life": 20.0})
+				break
 	if coin_drop > 0:
 		coins += coin_drop
 	if realm == "spectral":
@@ -1317,9 +1337,7 @@ func update_combat(dt: float) -> void:
 			if dist <= dan_r + float(enemies[i].radius):
 				var ang_diff: float = absf(angle_difference(aim_angle, delta_v.angle())) if dist > 0.1 else 0.0
 				if ang_diff <= half_arc:
-					var push_dir: Vector2 = delta_v.normalized() if dist > 0.1 else Vector2(cos(aim_angle), sin(aim_angle))
-					enemies[i]["knockback"] = Vector2(enemies[i].knockback) + push_dir * (kb_px * 10.0)
-					damage_enemy(i, dmg)
+					damage_enemy(i, dmg, kb_px * 10.0)
 
 func update_enemies(dt: float) -> void:
 	var cell_size := 52.0
@@ -1670,7 +1688,8 @@ func update_taboos(dt: float) -> void:
 				nc.active = true
 				nc.timer = 6.0
 				if realm == "spectral":
-					var facing_dir: Vector2 = player.get("facing", Vector2.RIGHT)
+					var p_vel: Vector2 = player.get("vel", Vector2.ZERO)
+					var facing_dir: Vector2 = p_vel.normalized() if p_vel.length_squared() > 0.01 else Vector2(float(player.get("facing", 1.0)), 0.0)
 					var behind_dir: Vector2 = (-facing_dir).normalized() if facing_dir.length_squared() > 0.01 else Vector2.LEFT
 					nc.pos = p_pos + behind_dir * 185.0
 					_push_subtitle("诡界背后传来熟人唤名……万勿转身踏入白圈。", 3.0)

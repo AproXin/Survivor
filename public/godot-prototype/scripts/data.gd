@@ -131,6 +131,59 @@ const DUAL_REALM_LANDMARKS := [
 	},
 ]
 
+# 扩建美化后的渡墨镇安全区（1520×720）庭院物件与新增地标语录
+const TOWN_PROPS := [
+	{"id": "ancient_locust_tree", "pos": Vector2(-650.0, -145.0), "scale": 1.35},
+	{"id": "ancient_locust_tree", "pos": Vector2(650.0, -145.0), "scale": 1.35},
+	{"id": "ancient_locust_tree", "pos": Vector2(-650.0, 355.0), "scale": 1.42},
+	{"id": "ancient_locust_tree", "pos": Vector2(650.0, 355.0), "scale": 1.42},
+	{"id": "courtyard_lantern", "pos": Vector2(-112.0, -110.0), "scale": 0.92, "glow": true},
+	{"id": "courtyard_lantern", "pos": Vector2(112.0, -110.0), "scale": 0.92, "glow": true},
+	{"id": "courtyard_lantern", "pos": Vector2(-112.0, 145.0), "scale": 0.92, "glow": true},
+	{"id": "courtyard_lantern", "pos": Vector2(112.0, 145.0), "scale": 0.92, "glow": true},
+	{"id": "courtyard_lantern", "pos": Vector2(-112.0, 330.0), "scale": 0.92, "glow": true},
+	{"id": "courtyard_lantern", "pos": Vector2(112.0, 330.0), "scale": 0.92, "glow": true},
+	{"id": "street_lamp_post", "pos": Vector2(-400.0, -115.0), "scale": 1.0, "glow": true},
+	{"id": "street_lamp_post", "pos": Vector2(400.0, -115.0), "scale": 1.0, "glow": true},
+	{"id": "street_lamp_post", "pos": Vector2(-430.0, 210.0), "scale": 1.0, "glow": true},
+	{"id": "street_lamp_post", "pos": Vector2(430.0, 210.0), "scale": 1.0, "glow": true},
+	{"id": "oil_barrels", "pos": Vector2(-362.0, 58.0), "scale": 0.96},
+	{"id": "oil_barrels", "pos": Vector2(-180.0, 68.0), "scale": 0.85},
+	{"id": "tea_table", "pos": Vector2(-565.0, 128.0), "scale": 0.96},
+	{"id": "tea_table", "pos": Vector2(-455.0, 128.0), "scale": 0.96},
+	{"id": "opera_rack", "pos": Vector2(-645.0, 35.0), "scale": 0.98},
+	{"id": "incense_burner", "pos": Vector2(0.0, 118.0), "scale": 0.90},
+	{"id": "incense_burner", "pos": Vector2(438.0, 96.0), "scale": 0.86},
+	{"id": "bamboo_planter", "pos": Vector2(178.0, 62.0), "scale": 0.86},
+	{"id": "bamboo_planter", "pos": Vector2(358.0, 62.0), "scale": 0.86},
+	{"id": "bamboo_planter", "pos": Vector2(-620.0, 118.0), "scale": 0.86},
+	{"id": "bamboo_planter", "pos": Vector2(620.0, 118.0), "scale": 0.86},
+	{"id": "ancient_well", "pos": Vector2(-330.0, 290.0), "scale": 1.12},
+	{"id": "notice_board", "pos": Vector2(310.0, 270.0), "scale": 1.08},
+	{"id": "stone_bench", "pos": Vector2(-215.0, 325.0), "scale": 0.96},
+	{"id": "stone_bench", "pos": Vector2(215.0, 325.0), "scale": 0.96},
+	{"id": "spirit_screen", "pos": Vector2(0.0, 415.0), "scale": 1.24},
+]
+
+const TOWN_LANDMARK_LORE := {
+	"tea_pavilion": {
+		"zh": "月下茶亭 · 温茶入喉，气血已全数回满。戏班旧闻：今夜乱葬岗三更有纸扎判官点卯。",
+		"en": "Moonlit Tea Pavilion · Warm tea restores your vigor. Rumor says the Paper Judge holds roll-call at midnight.",
+	},
+	"apothecary": {
+		"zh": "济世药铺 · 老掌柜奉上一枚青艾糕与安神香，叮嘱过门切莫应声回头。",
+		"en": "Apothecary Hall · The herbalist offers mugwort cake and warns: never answer voices behind you.",
+	},
+	"ancient_well": {
+		"zh": "青苔古井 · 井水澄澈如镜，映出手中六角提灯未曾动摇的微光。",
+		"en": "Mossy Well · Still water reflects your hexagonal lantern, steady before the long watch.",
+	},
+	"notice_board": {
+		"zh": "镇南悬榜 · 凡出镇北铁门守夜者，须记九大禁忌；若听锣响莫窥暗潭，闻叩门切莫轻启。",
+		"en": "Notice Board · Keep the nine taboos beyond the North Gate; heed not the gong by the pond nor three hollow knocks.",
+	},
+}
+
 
 # 乱葬岗九大禁忌：戒律主句 + 执念微语 + 英文对照（对齐 37 号终审稿）
 const FIXED_RULES := [
